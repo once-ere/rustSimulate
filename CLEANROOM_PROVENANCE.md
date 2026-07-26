@@ -256,7 +256,8 @@ disk.
 
 ### What happened
 
-Between commits `2d59163` and `dd8c456` (all on 2026-07-26), **749 files
+Across the three commits of 2026-07-26 in the *previous* repository,
+**749 files
 of the SolveIt 2002 C/C++ sources — 56 MB — were tracked and pushed to
 the then-public `once-ere/rustSimulate`.** Among them were the three
 files named in the licensing review:
@@ -309,56 +310,50 @@ Three checks all missed it, and each miss is instructive:
 
 ### Remediation
 
-1. Repository visibility set to **private** immediately, to stop
-   ongoing exposure before anything else was attempted.
+The first round was containment, inside the original repository:
+
+1. Visibility set to **private** immediately, to stop ongoing exposure
+   before anything else was attempted.
 2. Full backup taken first — a verified `git bundle` of all refs plus a
-   local `backup/pre-rewrite-dd8c456` branch.
+   local `backup/pre-rewrite` branch, never pushed.
 3. The three affected commits rewritten with
-   `git filter-branch --index-filter` to strip the tree from history
-   entirely, so the objects are unreachable rather than merely absent
-   from the tip.
-4. `.gitignore` corrected to `/obsolete_or_historic/` (leading slash to
-   anchor, trailing slash to restrict to directories), with the two
-   sibling trees added, and a comment explaining the `./` trap so it is
-   not reintroduced.
+   `git filter-branch --index-filter` to strip the tree from history, so
+   the objects became unreachable rather than merely absent from the tip.
+4. `.gitignore` corrected to `/obsolete_or_historic/` — leading slash to
+   anchor, trailing slash to restrict to directories — with the sibling
+   trees added and a comment recording the `./` trap.
 5. Force-pushed, then re-certified from a fresh plain clone.
 
-### Residual risk — remediation is NOT complete
+That was **not sufficient**, and it is worth being precise about why.
+Force-pushing makes objects unreachable; it does not delete them.
+GitHub does not garbage-collect on demand, and a fetch of the old
+commit by direct SHA still succeeded afterwards, still yielding all 749
+files. The SHA was not a secret — it had been in the public commit list
+for the whole exposure window, and GitHub's events feed is archived by
+third parties. The only remaining lever inside that repository would
+have been a GitHub Support request to purge unreachable objects.
 
-Force-pushing made the old commits unreachable from any branch, but
-**GitHub does not garbage-collect unreachable objects on demand.**
-Verified after the rewrite, from a fresh clone:
+So the repository was **deleted outright** and this one created fresh
+and private. Deleting destroys the objects with it: no Support ticket,
+no waiting, no residual copies. The fork count had been 0 throughout, so
+no fork network held an independent copy. **This repository has never
+contained the reference trees in any commit**, which the certification
+script verifies against history and not merely against the tip.
 
-```
-git fetch origin dd8c456b4a8d3496dae1aeddcc727c1854878207   # succeeds
-git ls-tree -r --name-only dd8c456 | grep -c obsolete_or_historic
-749
-```
+Two structural changes came out of it, and they matter more than the
+cleanup did:
 
-The leaked commit is still retrievable **by direct SHA**. While the
-repository is private this is reachable only by the owner and
-collaborators, so it is contained. It would become publicly retrievable
-again the moment the repository is made public — and the SHA is not a
-secret: it was visible in the commit list for the whole window the
-repository was public, and GitHub's public events feed is archived by
-third parties.
-
-Mitigating factor: **the fork count is 0**, so no fork network holds an
-independent copy. Forks would have to be handled separately, since each
-carries its own objects.
-
-**Therefore the repository stays PRIVATE until GitHub Support has
-garbage-collected the unreachable objects.** That request has to come
-from the account owner; it cannot be done through the API or the web UI.
-Ask GitHub Support to "permanently remove unreachable Git objects and
-purge stale cached views" for `once-ere/rustSimulate`, citing the
-force-push that removed them. Only after they confirm should visibility
-be restored.
-
-A local backup of the pre-rewrite history exists as a verified
-`git bundle` and the branch `backup/pre-rewrite-dd8c456`, which was
-never pushed. Delete it once the remediation is confirmed and you no
-longer want the old history recoverable.
+- **The reference trees no longer live inside the working tree at all.**
+  Previously `.gitignore` was the single thing standing between
+  `git add -A` and a licensing incident — and a gitignore rule is a
+  thing you can get silently wrong, as this project did twice. A file
+  outside the repository cannot be added by any command regardless of
+  how the ignore rules are written. The `.gitignore` entries remain as a
+  second layer, but nothing depends on them any more.
+- **The repository stays private until the port is complete** and
+  `scripts/certify_clean.sh` passes against a fresh plain clone. The
+  asymmetry is the whole argument: private costs nothing during
+  development, while public makes the next mistake permanent.
 
 ### The standing rule this produces
 
