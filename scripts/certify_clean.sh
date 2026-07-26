@@ -32,7 +32,14 @@ pass() { printf '  \033[32mPASS\033[0m  %s\n' "$1"; }
 bad()  { printf '  \033[31mFAIL\033[0m  %s\n' "$1"; fail=1; }
 
 # Paths that must never be tracked. These are local-only reference trees.
-FORBIDDEN_PATHS='^(obsolete_or_historic|SolveIt|SolveIt_2026_MFC)/'
+FORBIDDEN_PATHS='^(obsolete_or_historic|SolveIt|SolveIt_2026_MFC)(/|$)'
+
+# The SAME set, matched against `git rev-list --objects` output, whose
+# lines are "<sha> <path>" — so the path is NOT at the start of the line.
+# Anchoring this one with `^` is precisely the bug that made check 2
+# vacuous the first time. Keep the two patterns separate and obviously
+# different so the distinction cannot be lost in an edit.
+FORBIDDEN_OBJECTS='[[:space:]](obsolete_or_historic|SolveIt|SolveIt_2026_MFC)(/|$)'
 
 # Signatures of encumbered CODE. Deliberately matched only against
 # SOURCE files: the documentation legitimately *discusses* Numerical
@@ -45,6 +52,30 @@ echo "Certifying $(pwd)"
 echo "HEAD: $(git log --oneline -1 2>/dev/null || echo '<not a git repo>')"
 echo
 
+# ---- 0. SELF-TEST: prove each detector can actually fire ---------------
+#
+# The first version of this script shipped a VACUOUS gate. Check 2 piped
+# `git rev-list --objects`, whose lines are "<sha> <path>", into a
+# pattern anchored with `^` — so it matched against the SHA and never
+# fired. 676 forbidden objects were present and it reported PASS.
+#
+# A check that cannot fail is worse than no check, because it manufactures
+# confidence. So every detector below is first run against a synthetic
+# line that MUST match. If a detector does not fire on known-bad input,
+# this script aborts rather than printing reassuring PASS lines.
+selftest() { # <description> <text that must match> <pattern>
+  if ! printf '%s\n' "$2" | grep -qE "$3"; then
+    printf '  \033[31mABORT\033[0m  self-test failed: %s\n' "$1"
+    printf '         the detector below cannot fire, so its PASS would be meaningless\n'
+    exit 2
+  fi
+}
+selftest "tracked-path detector"  "obsolete_or_historic/SolveIt/QM/QMEvolve.h" "$FORBIDDEN_PATHS"
+selftest "history-object detector" \
+         "9da888ae98f3ac8b3e997384da2654a298f5dcd3 obsolete_or_historic/SolveIt/QM/QMEvolve.h" \
+         "$FORBIDDEN_OBJECTS"
+selftest "code-signature detector" "float bessj0(float x)" "$CODE_SIGNATURES"
+
 # ---- 1. no forbidden path tracked at the tip --------------------------
 n=$(git ls-files | grep -cE "$FORBIDDEN_PATHS")
 if [ "$n" -eq 0 ]; then
@@ -56,12 +87,17 @@ fi
 
 # ---- 2. no forbidden path anywhere in history -------------------------
 # Removing files at the tip is not enough: old commits stay fetchable.
-n=$(git rev-list --objects --all | grep -cE "$FORBIDDEN_PATHS" || true)
+n=$(git rev-list --objects --all | grep -cE "$FORBIDDEN_OBJECTS" || true)
 if [ "$n" -eq 0 ]; then
   pass "no reference-tree objects reachable in history"
 else
   bad "$n reference-tree objects are still REACHABLE IN HISTORY"
-  echo "        (removing them at the tip is not enough — rewrite is required)"
+  git rev-list --objects --all | grep -E "$FORBIDDEN_OBJECTS" \
+    | head -5 | sed 's/^/        /'
+  echo "        Reachable from these refs:"
+  git for-each-ref --format='          %(refname:short)' | sed 's/$//' | head -10
+  echo "        (removing files at the tip is NOT enough — the objects stay"
+  echo "         fetchable by SHA. Rewrite history, or drop the ref holding them.)"
 fi
 
 # ---- 3. no encumbered code signatures in source files -----------------
