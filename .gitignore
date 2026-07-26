@@ -1,0 +1,22 @@
+# Rust build output (any workspace, including sundials_rs/)
+target/
+
+# LaTeX intermediates (the .tex sources and .pdf outputs ARE tracked).
+# Anchored to the repo root ON PURPOSE: an unanchored `*.out` would also
+# swallow sundials_rs/localref/*.out — the byte-exact C reference outputs
+# the example-verification harness compares against.
+/*.aux
+/*.log
+/*.toc
+/*.out
+
+# Pre-modification file backups (see CLAUDE.md workflow)
+.backups/
+
+# Runtime artifact produced by running the notebooks/examples
+session.posim
+
+# Editor / OS clutter
+*.swp
+*~
+.DS_Store

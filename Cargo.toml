@@ -1,0 +1,20 @@
+[workspace]
+resolver = "2"
+members = [
+    "physical_object",
+    "posim",
+]
+default-members = ["posim"]
+# sundials_rs is a self-contained workspace vendored beneath this one.
+# Without this exclude, cargo would absorb its crates into THIS workspace
+# and they would inherit `version.workspace` from here (0.1.0) instead of
+# their own 7.7.0 — silently misreporting the SUNDIALS version they port.
+exclude = ["sundials_rs"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "BSD-3-Clause"
+
+[profile.release]
+opt-level = 3

@@ -1,0 +1,30 @@
+# The tennis-racket theorem: unstable intermediate-axis tumbling — dynamic notebook
+#
+# A torque-free cuboid spun about its intermediate principal axis is
+# unstable (Dzhanibekov effect). Half-extents [0.5, 1, 2] at mass 3 give
+# principal moments [5, 4.25, 1.25]; spinning about y (4.25, the middle
+# value) with a 0.01 wobble makes the body flip near t ~ 40 (mid-flip
+# w_x ~ 1.54, clean spin again by t ~ 80) — yet L = I.w = [0.05, 12.75,
+# 0.0125] and E = 19.1253125 never move: watch the hud E/P/L stay pinned
+# while the long box tumbles end over end. The Rust example
+# tumbling_body.rs (1e-4 wobble variant) and userguide Example S11 are
+# this same physics — one notebook covers all three.
+#
+# Launch:   posim_notebook tumbling_body
+#     or:   cargo run -p posim --release -- --notebook dynamic_notebooks/tumbling_body.posim
+# Press Start in the scene window (or type SCENE START here) to run
+# and display the simulation.
+
+new cuboid { mass = 3, half_extents = [0.5, 1, 2], angular_velocity = [0.01, 3, 0.01] }
+
+# Baselines before running: the diagonal inertia [5, 4.25, 1.25], the
+# perturbed spin, the conserved L = I.w, and the rotational energy.
+get obj0.inertia_tensor
+get obj0.angular_velocity
+angmom
+energy
+
+scene create
+# 0.05 per tick at ~30 ticks/s -> the t ~ 40 first flip arrives in
+# about 27 wall seconds.
+scene set_time_step 0.05

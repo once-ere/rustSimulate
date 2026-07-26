@@ -1,0 +1,34 @@
+[package]
+name = "ida_rs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Pure-Rust, memory-safe translation of IDA v7.7.0 (SUNDIALS)"
+
+[dependencies]
+sundials_core = { path = "../sundials_core" }
+
+# Translated IDA serial examples (from sundials-7.7.0/examples/ida/serial)
+[[example]]
+name = "idaRoberts_dns"
+
+[[example]]
+name = "idaAnalytic_mels"
+
+[[example]]
+name = "idaFoodWeb_bnd"
+
+[[example]]
+name = "idaFoodWeb_kry"
+
+[[example]]
+name = "idaHeat2D_bnd"
+
+[[example]]
+name = "idaSlCrank_dns"
+
+[[example]]
+name = "idaHeat2D_kry"
+
+[[example]]
+name = "idaKrylovDemo_ls"

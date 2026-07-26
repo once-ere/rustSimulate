@@ -1,0 +1,310 @@
+/* -----------------------------------------------------------------
+ * Translation of sundials-7.7.0/src/arkode/arkode_arkstep_impl.h
+ * (+ the ARKSTEP_DEFAULT_* constants of include/arkode/
+ * arkode_arkstep.h).
+ *
+ * Modeling notes (following arkode_erkstep_impl.rs):
+ *  - `N_Vector* Fe/Fi/z` -> Vec<NVector> (empty = unallocated).
+ *  - `Xvecs` (scratch array of N_Vector POINTERS for fused ops)
+ *    cannot be stored in safe Rust; operand lists are assembled at
+ *    each call site.  The liw accounting for it is kept
+ *    (nfusedopvecs).
+ *  - `void* lmem` lives on ARKodeMem.lmem (Addendum C.1: hoisted so
+ *    the ARKLS interface avoids double-nested take/put-back); this
+ *    struct keeps the linit/lsetup/lsolve/lfree pointers and
+ *    lsolve_type.
+ *  - `fn_implicit` (C: alias to a saved implicit RHS evaluation for
+ *    the deduce_rhs/trivial-predictor-autonomous residual forms) is
+ *    re-derived at the use sites in arkode_arkstep_nls.rs instead of
+ *    being stored as an alias.
+ *  - Mass-matrix solver data: fn pointers live here; the
+ *    ARKLsMassMem box lives on ARKodeMem.mass_mem (Addendum C.2).
+ *  - `adj_fe` (SUNAdjRhsFn) is deferred with the adjoint machinery
+ *    (needs the ManyVector module).
+ *  - `forcing` in C aliases the caller's vectors (MRIStep); here it
+ *    is an owned copy refreshed on every arkStep_SetInnerForcing
+ *    call.
+ * -----------------------------------------------------------------*/
+
+use crate::arkode_butcher::ARKodeButcherTable;
+use crate::arkode_butcher_dirk::{
+    ARKODE_ARK2_DIRK_3_1_2, ARKODE_ARK324L2SA_DIRK_4_2_3, ARKODE_ARK437L2SA_DIRK_7_3_4,
+    ARKODE_ARK548L2SAb_DIRK_8_4_5, ARKODE_BACKWARD_EULER_1_1, ARKODE_ESDIRK325L2SA_5_2_3,
+    ARKODE_ESDIRK436L2SA_6_3_4, ARKODE_ESDIRK547L2SA2_7_4_5, ARKODE_DIRKTableID,
+};
+use crate::arkode_butcher_erk::{
+    ARKODE_ARK2_ERK_3_1_2, ARKODE_ARK324L2SA_ERK_4_2_3, ARKODE_ARK437L2SA_ERK_7_3_4,
+    ARKODE_ARK548L2SAb_ERK_8_4_5, ARKODE_BOGACKI_SHAMPINE_4_2_3, ARKODE_FORWARD_EULER_1_1,
+    ARKODE_RALSTON_3_1_2, ARKODE_SOFRONIOU_SPALETTA_5_3_4, ARKODE_TSITOURAS_7_4_5,
+    ARKODE_VERNER_10_6_7, ARKODE_VERNER_13_7_8, ARKODE_VERNER_16_8_9, ARKODE_VERNER_9_5_6,
+    ARKODE_ERKTableID,
+};
+use crate::arkode_impl::{
+    ARKLinsolFreeFn, ARKLinsolInitFn, ARKLinsolSetupFn, ARKLinsolSolveFn, ARKMassFreeFn,
+    ARKMassInitFn, ARKMassMultFn, ARKMassSetupFn, ARKMassSolveFn, ARKRhsFn, ARKStagePredictFn,
+};
+use crate::nvector_serial::NVector;
+use crate::sundials_linearsolver::SUNLinearSolver_Type;
+use crate::sundials_nonlinearsolver::NonlinearSolver;
+
+/*===============================================================
+  ARK time step module constants
+  ===============================================================*/
+
+/* max number of nonlinear iterations */
+pub const MAXCOR: i32 = 3;
+/* constant to estimate the convergence rate for the nonlinear equation */
+pub const CRDOWN: f64 = 0.3;
+/* if |gamma/gammap-1| > DGMAX then call lsetup */
+pub const DGMAX: f64 = 0.2;
+/* declare divergence if ratio del/delp > RDIV */
+pub const RDIV: f64 = 2.3;
+/* max no. of steps between lsetup calls */
+pub const MSBP: i32 = 20;
+
+/* Default solver tolerance factor */
+pub const NLSCOEF: f64 = 0.1;
+
+/* Mass matrix types */
+pub const MASS_IDENTITY: i32 = 0;
+pub const MASS_FIXED: i32 = 1;
+pub const MASS_TIMEDEP: i32 = 2;
+
+/* Default Butcher tables per order (arkode_arkstep.h) */
+pub const ARKSTEP_DEFAULT_ERK_1: ARKODE_ERKTableID = ARKODE_FORWARD_EULER_1_1;
+pub const ARKSTEP_DEFAULT_ERK_2: ARKODE_ERKTableID = ARKODE_RALSTON_3_1_2;
+pub const ARKSTEP_DEFAULT_ERK_3: ARKODE_ERKTableID = ARKODE_BOGACKI_SHAMPINE_4_2_3;
+pub const ARKSTEP_DEFAULT_ERK_4: ARKODE_ERKTableID = ARKODE_SOFRONIOU_SPALETTA_5_3_4;
+pub const ARKSTEP_DEFAULT_ERK_5: ARKODE_ERKTableID = ARKODE_TSITOURAS_7_4_5;
+pub const ARKSTEP_DEFAULT_ERK_6: ARKODE_ERKTableID = ARKODE_VERNER_9_5_6;
+pub const ARKSTEP_DEFAULT_ERK_7: ARKODE_ERKTableID = ARKODE_VERNER_10_6_7;
+pub const ARKSTEP_DEFAULT_ERK_8: ARKODE_ERKTableID = ARKODE_VERNER_13_7_8;
+pub const ARKSTEP_DEFAULT_ERK_9: ARKODE_ERKTableID = ARKODE_VERNER_16_8_9;
+
+pub const ARKSTEP_DEFAULT_DIRK_1: ARKODE_DIRKTableID = ARKODE_BACKWARD_EULER_1_1;
+pub const ARKSTEP_DEFAULT_DIRK_2: ARKODE_DIRKTableID = ARKODE_ARK2_DIRK_3_1_2;
+pub const ARKSTEP_DEFAULT_DIRK_3: ARKODE_DIRKTableID = ARKODE_ESDIRK325L2SA_5_2_3;
+pub const ARKSTEP_DEFAULT_DIRK_4: ARKODE_DIRKTableID = ARKODE_ESDIRK436L2SA_6_3_4;
+pub const ARKSTEP_DEFAULT_DIRK_5: ARKODE_DIRKTableID = ARKODE_ESDIRK547L2SA2_7_4_5;
+
+pub const ARKSTEP_DEFAULT_ARK_ETABLE_2: ARKODE_ERKTableID = ARKODE_ARK2_ERK_3_1_2;
+pub const ARKSTEP_DEFAULT_ARK_ETABLE_3: ARKODE_ERKTableID = ARKODE_ARK324L2SA_ERK_4_2_3;
+pub const ARKSTEP_DEFAULT_ARK_ETABLE_4: ARKODE_ERKTableID = ARKODE_ARK437L2SA_ERK_7_3_4;
+pub const ARKSTEP_DEFAULT_ARK_ETABLE_5: ARKODE_ERKTableID = ARKODE_ARK548L2SAb_ERK_8_4_5;
+pub const ARKSTEP_DEFAULT_ARK_ITABLE_2: ARKODE_DIRKTableID = ARKODE_ARK2_DIRK_3_1_2;
+pub const ARKSTEP_DEFAULT_ARK_ITABLE_3: ARKODE_DIRKTableID = ARKODE_ARK324L2SA_DIRK_4_2_3;
+pub const ARKSTEP_DEFAULT_ARK_ITABLE_4: ARKODE_DIRKTableID = ARKODE_ARK437L2SA_DIRK_7_3_4;
+pub const ARKSTEP_DEFAULT_ARK_ITABLE_5: ARKODE_DIRKTableID = ARKODE_ARK548L2SAb_DIRK_8_4_5;
+
+/*===============================================================
+  Reusable ARKStep Error Messages
+  ===============================================================*/
+
+/* Initialization and I/O error messages */
+pub const MSG_ARKSTEP_NO_MEM: &str = "Time step module memory is NULL.";
+pub const MSG_NLS_INIT_FAIL: &str = "The nonlinear solver's init routine failed.";
+
+/* Other error messages */
+pub const MSG_ARK_MISSING_FE: &str =
+    "Cannot specify that method is explicit without providing a function pointer to fe(t,y).";
+pub const MSG_ARK_MISSING_FI: &str =
+    "Cannot specify that method is implicit without providing a function pointer to fi(t,y).";
+pub const MSG_ARK_MISSING_F: &str =
+    "Cannot specify that method is ImEx without providing function pointers to fi(t,y) and fe(t,y).";
+
+/// Which vector C's `step_mem->fn_implicit` alias points at
+/// (NULL / Fi[0] / ark_mem->tempv5 / ark_mem->fn).
+#[derive(Clone, Copy, PartialEq, Eq, Default)]
+pub enum FnImplicitAlias {
+    #[default]
+    None,
+    Fi0,
+    Tempv5,
+    ArkFn,
+}
+
+/// struct ARKodeARKStepMemRec (arkode_arkstep_impl.h)
+pub struct ARKodeARKStepMem {
+    /* ARK problem specification */
+    pub fe: Option<ARKRhsFn>, /* My' = fe(t,y) + fi(t,y) */
+    pub fi: Option<ARKRhsFn>,
+    pub autonomous: bool,     /* SUNTRUE if fi depends on t     */
+    pub linear: bool,         /* SUNTRUE if fi is linear        */
+    pub linear_timedep: bool, /* SUNTRUE if dfi/dy depends on t */
+    pub explicit: bool,       /* SUNTRUE if fe is enabled       */
+    pub implicit: bool,       /* SUNTRUE if fi is enabled       */
+    pub deduce_rhs: bool,     /* SUNTRUE if fi is deduced after
+                              a nonlinear solve               */
+
+    /* (adj_fe: SUNAdjRhsFn — deferred with the adjoint machinery) */
+
+    /* ARK method storage and parameters */
+    pub Fe: Vec<NVector>,  /* explicit RHS at each stage */
+    pub Fi: Vec<NVector>,  /* implicit RHS at each stage */
+    pub z: Vec<NVector>,   /* stages (for relaxation)    */
+    pub sdata: NVector,    /* old stage data in residual */
+    pub zpred: NVector,    /* predicted stage solution   */
+    pub zcor: NVector,     /* stage correction           */
+    pub q: i32,            /* method order               */
+    pub p: i32,            /* embedding order            */
+    pub istage: i32,       /* current stage              */
+    pub stages: i32,       /* number of stages           */
+    pub Be: Option<ARKodeButcherTable>, /* ERK Butcher table */
+    pub Bi: Option<ARKodeButcherTable>, /* IRK Butcher table */
+
+    /* User-supplied stage predictor routine */
+    pub stage_predict: Option<ARKStagePredictFn>,
+
+    /* (Non)Linear solver parameters & data */
+    pub NLS: Option<NonlinearSolver>, /* generic SUNNonlinearSolver object */
+    pub ownNLS: bool,                 /* flag indicating ownership of NLS  */
+    pub nls_fi: Option<ARKRhsFn>,     /* fi(t,y) used in the nonlinear solver */
+    pub gamma: f64,  /* gamma = h * A(i,i)                       */
+    pub gammap: f64, /* gamma at the last setup call             */
+    pub gamrat: f64, /* gamma / gammap                           */
+    pub dgmax: f64,  /* call lsetup if |gamma/gammap-1| >= dgmax */
+
+    pub predictor: i32, /* implicit prediction method to use        */
+    pub crdown: f64,    /* nonlinear conv rate estimation constant  */
+    pub rdiv: f64,      /* nonlin divergence if del/delp > rdiv     */
+    pub crate_: f64,    /* estimated nonlin convergence rate
+                        (C: `crate`; renamed — reserved word)    */
+    pub delp: f64,      /* norm of previous nonlinear solver update */
+    pub eRNrm: f64,     /* estimated residual norm, used in nonlin
+                        and linear solver convergence tests      */
+    pub nlscoef: f64,   /* coefficient in nonlin. convergence test  */
+
+    pub msbp: i32,   /* positive => max # steps between lsetup
+                     negative => call at each Newton iter     */
+    pub nstlp: i64,  /* step number of last setup call           */
+
+    pub maxcor: i32, /* max num iterations for solving the
+                     nonlinear equation                       */
+
+    pub convfail: i32, /* NLS fail flag (for interface routines)   */
+    pub jcur: bool,    /* is Jacobian info for lin solver current? */
+    /* C: `N_Vector fn_implicit` — an ALIAS to a saved implicit RHS
+       evaluation (Fi[0], tempv5, or ark_mem->fn); safe Rust stores
+       which vector it aliases and re-derives at the use sites. */
+    pub fn_implicit: FnImplicitAlias,
+
+    /* Linear Solver Data (the lmem box itself lives on
+       ARKodeMem.lmem — Addendum C.1) */
+    pub linit: Option<ARKLinsolInitFn>,
+    pub lsetup: Option<ARKLinsolSetupFn>,
+    pub lsolve: Option<ARKLinsolSolveFn>,
+    pub lfree: Option<ARKLinsolFreeFn>,
+    pub lsolve_type: SUNLinearSolver_Type,
+
+    /* Mass matrix solver data (the mass_mem box itself lives on
+       ARKodeMem.mass_mem — Addendum C.2) */
+    pub minit: Option<ARKMassInitFn>,
+    pub msetup: Option<ARKMassSetupFn>,
+    pub mmult: Option<ARKMassMultFn>,
+    pub msolve: Option<ARKMassSolveFn>,
+    pub mfree: Option<ARKMassFreeFn>,
+    pub mass_type: i32, /* 0=identity, 1=fixed, 2=time-dep */
+    pub msolve_type: crate::sundials_linearsolver::SUNLinearSolver_Type,
+
+    /* Counters */
+    pub nfe: i64,       /* num fe calls               */
+    pub nfi: i64,       /* num fi calls               */
+    pub nsetups: i64,   /* num setup calls            */
+    pub nls_iters: i64, /* num nonlinear solver iters */
+    pub nls_fails: i64, /* num nonlinear solver fails */
+
+    /* Reusable arrays for fused vector operations */
+    pub cvals: Vec<f64>,   /* scalar array for fused ops       */
+    pub nfusedopvecs: i32, /* length of cvals and Xvecs arrays */
+
+    /* Data for using ARKStep with external polynomial forcing */
+    pub expforcing: bool,       /* add forcing to explicit RHS */
+    pub impforcing: bool,       /* add forcing to implicit RHS */
+    pub tshift: f64,            /* time normalization shift    */
+    pub tscale: f64,            /* time normalization scaling  */
+    pub forcing: Vec<NVector>,  /* array of forcing vectors    */
+    pub nforcing: i32,          /* number of forcing vectors   */
+    pub stage_times: Vec<f64>,  /* workspace for applying forcing */
+    pub stage_coefs: Vec<f64>,  /* workspace for applying forcing */
+}
+
+/* C ARKStepCreate memset(step_mem, 0, ...) equivalence; also used for
+   the throwaway box swapped in while step_mem is temporarily
+   re-installed into ark_mem around lsetup/lsolve op re-entries
+   (arkode_arkstep_nls.rs).  lsolve_type: C initializes to -1
+   ("none"); the Rust enum placeholder is DIRECT until a linear
+   solver is attached. */
+impl Default for ARKodeARKStepMem {
+    fn default() -> Self {
+        ARKodeARKStepMem {
+            fe: None,
+            fi: None,
+            autonomous: false,
+            linear: false,
+            linear_timedep: false,
+            explicit: false,
+            implicit: false,
+            deduce_rhs: false,
+            Fe: Vec::new(),
+            Fi: Vec::new(),
+            z: Vec::new(),
+            sdata: NVector::new(0),
+            zpred: NVector::new(0),
+            zcor: NVector::new(0),
+            q: 0,
+            p: 0,
+            istage: 0,
+            stages: 0,
+            Be: None,
+            Bi: None,
+            stage_predict: None,
+            NLS: None,
+            ownNLS: false,
+            nls_fi: None,
+            gamma: 0.0,
+            gammap: 0.0,
+            gamrat: 0.0,
+            dgmax: 0.0,
+            predictor: 0,
+            crdown: 0.0,
+            rdiv: 0.0,
+            crate_: 0.0,
+            delp: 0.0,
+            eRNrm: 0.0,
+            nlscoef: 0.0,
+            msbp: 0,
+            nstlp: 0,
+            maxcor: 0,
+            convfail: 0,
+            jcur: false,
+            fn_implicit: FnImplicitAlias::None,
+            linit: None,
+            lsetup: None,
+            lsolve: None,
+            lfree: None,
+            lsolve_type: crate::sundials_linearsolver::SUNLINEARSOLVER_DIRECT,
+            minit: None,
+            msetup: None,
+            mmult: None,
+            msolve: None,
+            mfree: None,
+            mass_type: MASS_IDENTITY,
+            msolve_type: crate::sundials_linearsolver::SUNLINEARSOLVER_DIRECT,
+            nfe: 0,
+            nfi: 0,
+            nsetups: 0,
+            nls_iters: 0,
+            nls_fails: 0,
+            cvals: Vec::new(),
+            nfusedopvecs: 0,
+            expforcing: false,
+            impforcing: false,
+            tshift: 0.0,
+            tscale: 0.0,
+            forcing: Vec::new(),
+            nforcing: 0,
+            stage_times: Vec::new(),
+            stage_coefs: Vec::new(),
+        }
+    }
+}
