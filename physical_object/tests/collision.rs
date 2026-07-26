@@ -417,8 +417,8 @@ fn ball_in_a_rigid_box_conserves_energy_and_walls_never_move() {
     }
     // The walls' positions are bit-identical to construction.
     let fresh = bounding_box_slabs(0, 2.0);
-    for k in 0..6 {
-        assert_eq!(sys.objects[k].get_position(), fresh[k].get_position(), "wall {k} position");
+    for (k, w) in fresh.iter().enumerate().take(6) {
+        assert_eq!(sys.objects[k].get_position(), w.get_position(), "wall {k} position");
     }
 }
 

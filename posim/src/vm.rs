@@ -9,6 +9,7 @@ use std::fmt;
 use ::physical_object::boundary::Boundary;
 use ::physical_object::integrate::{run as sundials_run, step as sundials_step, Method};
 use ::physical_object::linalg::{Mat3, Quat, Vec3};
+use ::special_functions::complex::Complex64;
 use ::physical_object::physical_object::physical_object;
 use ::physical_object::PhysicalObjectSystem;
 
@@ -16,6 +17,9 @@ use ::physical_object::PhysicalObjectSystem;
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
     Num(f64),
+    /// A complex number. Wavefunctions are complex, so the propagator
+    /// routines need this; see `special_functions::complex`.
+    Complex(Complex64),
     Vec3(Vec3),
     Quat(Quat),
     Mat3(Mat3),
@@ -28,6 +32,13 @@ impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Value::Num(n) => write!(f, "{n}"),
+            Value::Complex(z) => {
+                if z.im < 0.0 {
+                    write!(f, "{} - {}i", z.re, -z.im)
+                } else {
+                    write!(f, "{} + {}i", z.re, z.im)
+                }
+            }
             Value::Vec3(v) => write!(f, "[{}, {}, {}]", v.x, v.y, v.z),
             Value::Quat(q) => write!(f, "quat[w={}, x={}, y={}, z={}]", q.w, q.x, q.y, q.z),
             Value::Mat3(m) => write!(
@@ -56,6 +67,7 @@ impl fmt::Display for Value {
 fn type_name(v: &Value) -> &'static str {
     match v {
         Value::Num(_) => "number",
+        Value::Complex(_) => "complex",
         Value::Vec3(_) => "vec3",
         Value::Quat(_) => "quaternion",
         Value::Mat3(_) => "mat3",
@@ -370,6 +382,8 @@ posim command language (case-insensitive keywords):
   <expr>                    evaluate: numbers, [x,y,z], paths, + - * /,
                             dot() cross() norm() normalize() sqrt() abs()
                             sin() cos() exp() log(), pi, tau
+                            complex: 3i is imaginary, so 2 + 3i is a
+                            complex number; + - * / all accept them
   RESET                     clear the system
   HELP                      this text
 special functions (see grammar.md; orders must be WHOLE numbers):
@@ -390,7 +404,15 @@ special functions (see grammar.md; orders must be WHOLE numbers):
   quadrature                gauss_legendre(n)  -> [nodes, weights]
   eigenproblems             eigenvalues(matrix)          -> list
                             jacobi_eigen(matrix) -> [values, vectors]
+  angular momentum          wigner_3j(j1,j2,j3,m1,m2,m3)
+                            wigner_6j(j1,j2,j3,j4,j5,j6)
+                            clebsch_gordan(j1,m1,j2,m2,j3,m3)
+                            (spins may be HALF-integers; a forbidden
+                            coupling is 0, not an error)
   linear algebra            solve_tridiag(sub,diag,sup,rhs) -> list
+                            solve_tridiag_c(sub,diag,sup,rhs) -> list
+                            solve_cyclic_tridiag_c(sub,diag,sup,rhs,
+                                                   bl,tr) -> list
   utility                   rel_err(a,b)
                             a 3-element bracket is a VECTOR, so it is
                             also accepted wherever a list is wanted; a
@@ -529,6 +551,12 @@ fn exec_one(instr: &Instr, state: &mut SimState, stack: &mut Vec<Value>) -> Resu
         Instr::Div => {
             let b = pop(stack)?;
             let a = pop(stack)?;
+            if matches!(a, Value::Complex(_)) || matches!(b, Value::Complex(_)) {
+                if let (Some(x), Some(y)) = (as_c(&a), as_c(&b)) {
+                    stack.push(Value::Complex(x / y));
+                    return Ok(());
+                }
+            }
             match (a, b) {
                 (Value::Num(x), Value::Num(y)) => stack.push(Value::Num(x / y)),
                 (Value::Vec3(v), Value::Num(y)) => stack.push(Value::Vec3(v / y)),
@@ -1429,7 +1457,24 @@ fn exec_scene(cmd: &SceneCmd, state: &mut SimState, stack: &mut Vec<Value>) -> R
     }
 }
 
+/// Promote a real to a complex so the mixed cases below need only one
+/// arm each. A complex result whose imaginary part has vanished stays
+/// complex: `(2+3i) - 3i` displays as `2 + 0i`, which is honest about
+/// the type rather than silently collapsing it.
+fn as_c(v: &Value) -> Option<Complex64> {
+    match v {
+        Value::Num(x) => Some(Complex64::real(*x)),
+        Value::Complex(z) => Some(*z),
+        _ => None,
+    }
+}
+
 fn binary_add(a: Value, b: Value, op: &str) -> Result<Value, String> {
+    if matches!(a, Value::Complex(_)) || matches!(b, Value::Complex(_)) {
+        if let (Some(x), Some(y)) = (as_c(&a), as_c(&b)) {
+            return Ok(Value::Complex(x + y));
+        }
+    }
     match (a, b) {
         (Value::Num(x), Value::Num(y)) => Ok(Value::Num(x + y)),
         (Value::Vec3(x), Value::Vec3(y)) => Ok(Value::Vec3(x + y)),
@@ -1443,6 +1488,11 @@ fn binary_add(a: Value, b: Value, op: &str) -> Result<Value, String> {
 }
 
 fn binary_mul(a: Value, b: Value) -> Result<Value, String> {
+    if matches!(a, Value::Complex(_)) || matches!(b, Value::Complex(_)) {
+        if let (Some(x), Some(y)) = (as_c(&a), as_c(&b)) {
+            return Ok(Value::Complex(x * y));
+        }
+    }
     match (a, b) {
         (Value::Num(x), Value::Num(y)) => Ok(Value::Num(x * y)),
         (Value::Num(x), Value::Vec3(v)) | (Value::Vec3(v), Value::Num(x)) => Ok(Value::Vec3(v * x)),
@@ -1850,7 +1900,7 @@ fn call_builtin(name: &str, mut args: Vec<Value>) -> Result<Value, String> {
     }
 }
 
-fn get_object<'a>(state: &'a SimState, i: usize) -> Result<&'a physical_object, String> {
+fn get_object(state: &SimState, i: usize) -> Result<&physical_object, String> {
     state.system.objects.get(i).ok_or_else(|| format!("no object obj{i}"))
 }
 

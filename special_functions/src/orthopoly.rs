@@ -480,7 +480,7 @@ mod tests {
     /// below; deliberately written here rather than imported so the
     /// quadrature is independent of anything under test.
     fn simpson<F: Fn(f64) -> f64>(f: F, a: f64, b: f64, panels: usize) -> f64 {
-        assert!(panels >= 2 && panels % 2 == 0, "panels must be even and >= 2");
+        assert!(panels >= 2 && panels.is_multiple_of(2), "panels must be even and >= 2");
         let h = (b - a) / panels as f64;
         let mut s = f(a) + f(b);
         for i in 1..panels {

@@ -131,6 +131,18 @@ else
 fi
 rm -f /tmp/cert_build.$$
 
+# clippy across ALL targets, not just the library: examples, tests and
+# benches are shipped code too, and lints only surface in the crate the
+# run reaches before the first failure — so a partial pass here is
+# genuinely uninformative.
+if cargo clippy --workspace --all-targets >/tmp/cert_clippy.$$ 2>&1; then
+  pass "clippy --workspace --all-targets, 0 errors"
+else
+  bad "clippy reported problems:"
+  grep -E '^(error|warning)' /tmp/cert_clippy.$$ | head -10 | sed 's/^/        /'
+fi
+rm -f /tmp/cert_clippy.$$
+
 if cargo test --workspace >/tmp/cert_test.$$ 2>&1; then
   p=$(grep -E 'test result' /tmp/cert_test.$$ | awk '{s+=$4} END {print s}')
   pass "all tests pass ($p assertions across the workspace)"

@@ -383,8 +383,7 @@ impl SceneHandle {
             .map_err(|e| format!("scene: {e}"))?;
         let url = format!("http://{addr}/");
 
-        let mut camera = Camera::default();
-        camera.dist = fit_distance(&system);
+        let camera = Camera { dist: fit_distance(&system), ..Camera::default() };
         /* the playback copy starts with NO contact records: frames must
          * only ever carry contacts the playback itself resolved */
         let mut system = system;

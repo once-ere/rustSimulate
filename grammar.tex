@@ -330,10 +330,24 @@ cylindrical Bessel & \code{bessel\_j(n,x)},
 quadrature & \code{gauss\_legendre(n)} $\to$ \code{[nodes, weights]}\\
 eigenproblems & \code{eigenvalues(matrix)} $\to$ list,
   \code{jacobi\_eigen(matrix)} $\to$ \code{[values, vectors]}\\
-linear algebra & \code{solve\_tridiag(sub, diag, sup, rhs)} $\to$ list\\
+angular momentum & \code{wigner\_3j(j1,j2,j3,m1,m2,m3)},
+  \code{wigner\_6j(j1,j2,j3,j4,j5,j6)},
+  \code{clebsch\_gordan(j1,m1,j2,m2,j3,m3)}\\
+linear algebra & \code{solve\_tridiag(sub, diag, sup, rhs)} $\to$ list,
+  \code{solve\_tridiag\_c(\ldots)} $\to$ list,
+  \code{solve\_cyclic\_tridiag\_c(sub, diag, sup, rhs, bl, tr)} $\to$ list\\
 utility & \code{rel\_err(a, b)}\\
 \end{tabular}
 \end{center}
+
+\textbf{Angular momenta may be half-integers}, so \code{wigner\_3j},
+\code{wigner\_6j} and \code{clebsch\_gordan} take plain numbers rather
+than demanding whole ones --- \code{clebsch\_gordan(0.5, 0.5, 0.5, -0.5,
+1, 0)} is exactly what you want to write for two spin-$\tfrac12$
+particles. A coupling that violates a selection rule returns
+\textbf{0}, which is the mathematically correct answer, not an error; a
+value that is not an angular momentum at all ($j=0.3$, or a negative
+$j$) \emph{is} an error.
 
 \textbf{A wrinkle worth knowing about lists.} The bracket literal is
 overloaded: \code{[a,b,c]} is a \emph{vector}, \code{[a,b,c,d]} is a
@@ -345,13 +359,47 @@ whose rows are 4-element brackets works exactly as you would expect, and
 $3\times3$ matrix value is likewise accepted directly wherever a matrix
 argument is wanted.
 
-Two functions are \textbf{not} exposed, and the reason is worth stating
-rather than leaving you to discover it: \code{solve\_tridiag\_c} and
-\code{solve\_cyclic\_tridiag\_c} are complex-valued, and this language
-has no complex type. Reaching them needs a new value kind plus literal
-syntax in the lexer, which is a language change rather than a
-registration; it is staged deliberately instead of being half-done. The
-real-valued \code{solve\_tridiag} is available now.
+\subsection{Complex numbers}\label{sec:complex}
+
+A number with an \code{i} suffix is imaginary, so \code{2 + 3i} needs no
+complex literal syntax of its own --- it is ordinary addition of a real
+and an imaginary:
+
+\begin{lstlisting}
+In[1]:= 3i
+Out[1]= 0 + 3i
+In[2]:= 2 + 3i
+Out[2]= 2 + 3i
+In[3]:= (2 + 3i) * (2 - 3i)
+Out[3]= 13 + 0i
+In[4]:= 1 / (0 + 1i)
+Out[4]= 0 - 1i
+\end{lstlisting}
+
+\code{+}, \code{-}, \code{*} and \code{/} all accept complex operands,
+and reals promote automatically. Note \code{In[3]}: the result stays
+typed as complex and displays \code{13 + 0i} rather than collapsing to
+\code{13}. That is deliberate --- the type you get out should not depend
+on whether a particular cancellation happened to be exact.
+
+The suffix only binds when the \code{i} is not followed by another
+identifier character, so \code{2intercept} still lexes exactly as it did
+before complex numbers existed.
+
+This is what makes the complex Crank--Nicolson solvers reachable.
+\code{solve\_tridiag\_c} and \code{solve\_cyclic\_tridiag\_c} take the
+same arguments as the real solver and accept a mix --- a real band with
+a complex diagonal and a real right-hand side is fine, since reals
+promote:
+
+\begin{lstlisting}
+In[5]:= solve_tridiag_c([0, 1, 1], [1i, 1i, 1i], [1, 1, 0], [1, 0, 0])
+Out[5]= [0 - 0.6666666666666666i, 0.33333333333333337 + 0i, 0 + 0.3333333333333333i]
+\end{lstlisting}
+
+Over the machine bridge (JupyterLab), a complex value is reported as the
+two-element array \code{[re, im]}, matching how \code{sph\_harm} reports
+its value --- JSON has no complex type.
 
 \section{Command semantics}
 

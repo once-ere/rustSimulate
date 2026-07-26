@@ -361,7 +361,7 @@ mod tests {
     /// Composite Simpson on a fine grid — good enough to confirm
     /// orthogonality integrals to ~1e-10 for smooth integrands.
     fn simpson<F: Fn(f64) -> f64>(f: F, a: f64, b: f64, n: usize) -> f64 {
-        let n = if n % 2 == 0 { n } else { n + 1 };
+        let n = if n.is_multiple_of(2) { n } else { n + 1 };
         let h = (b - a) / n as f64;
         let mut s = f(a) + f(b);
         for i in 1..n {

@@ -94,6 +94,11 @@ impl Mul<f64> for Complex64 {
 }
 impl Div for Complex64 {
     type Output = Self;
+    // clippy flags `*` inside a `Div` impl as a likely copy-paste slip.
+    // Here it is the definition: z/w = z * (1/w), and routing through
+    // `inv` means the overflow-avoiding scaling lives in exactly one
+    // place instead of being duplicated.
+    #[allow(clippy::suspicious_arithmetic_impl)]
     fn div(self, o: Self) -> Self {
         self * o.inv()
     }

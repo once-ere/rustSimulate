@@ -25,6 +25,13 @@
 //! diagonalise (n of order 10²–10³), the constant factor is irrelevant
 //! next to being obviously correct.
 
+// A Jacobi sweep walks a matrix by index, mutating rows and columns
+// through the SAME index in the same iteration. clippy's
+// `needless_range_loop` wants iterator forms that cannot express that
+// without splitting borrows, and the result would be markedly harder to
+// check against the published algorithm. The index loops stay.
+#![allow(clippy::needless_range_loop)]
+
 /// Diagonalise a real symmetric matrix.
 ///
 /// `a` is an `n x n` symmetric matrix given row-wise. Returns

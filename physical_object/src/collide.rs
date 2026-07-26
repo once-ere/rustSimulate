@@ -677,10 +677,7 @@ fn round_ball_contact(
             (surface, delta / dist, dist)
         }
         Boundary::Cylinder { radius, half_height } => {
-            match cylinder_closest(c, *radius, *half_height, 0.0) {
-                Some(t) => t,
-                None => return None,
-            }
+            cylinder_closest(c, *radius, *half_height, 0.0)?
         }
         Boundary::Dumbbell { r1, r2, rod_radius, z1, z2, .. } => {
             // Union of three parts: the closest surface belongs to the
@@ -709,10 +706,7 @@ fn round_ball_contact(
                     best = Some(cand);
                 }
             }
-            match best {
-                Some(t) => t,
-                None => return None,
-            }
+            best?
         }
         _ => unreachable!("round_ball_contact needs a torus/disk/cylinder/dumbbell"),
     };
@@ -1261,7 +1255,7 @@ mod tests {
         // One box rotated 45° about z, corner-on: the SAT still finds
         // the deepest axis and a unit normal from a toward b.
         let mut d = cuboid(3, 1.0, [1.0, 1.0, 1.0], Vec3::new(2.2, 0.0, 0.0));
-        d.set_orientation(Quat::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), 0.7853981633974483));
+        d.set_orientation(Quat::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), std::f64::consts::FRAC_PI_4));
         let sep = pair_separation(&a, &d);
         // Corner of d reaches x = 2.2 - sqrt(2) ≈ 0.786 < 1 → penetrating.
         assert!(sep < 0.0, "rotated corner penetrates: sep = {sep}");

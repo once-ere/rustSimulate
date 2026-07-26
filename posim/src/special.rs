@@ -15,15 +15,12 @@
 //! and position. That validation is the real parser-level work these
 //! additions require — the call syntax itself already existed.
 //!
-//! # What is deliberately NOT exposed
+//! # Complex values
 //!
-//! * `solve_tridiag_c` and `solve_cyclic_tridiag_c` — these are complex
-//!   valued, and the language has no complex type. Exposing them would
-//!   need a `Value::Complex` variant plus literal syntax in the lexer,
-//!   which is a language change rather than a registration, and is
-//!   staged deliberately rather than half-done. The real-valued
-//!   `solve_tridiag` IS exposed.
-//! * `Complex64` itself, for the same reason.
+//! `Value::Complex` and the imaginary literal `3i` were added so the
+//! complex Crank–Nicolson solvers could be reached from the language.
+//! Real entries promote automatically, so a real band with a complex
+//! right-hand side works in a single call.
 
 use special_functions as sf;
 
@@ -33,6 +30,7 @@ use crate::vm::Value;
 fn tn(v: &Value) -> &'static str {
     match v {
         Value::Num(_) => "number",
+        Value::Complex(_) => "complex number",
         Value::Vec3(_) => "vector",
         Value::Quat(_) => "quaternion",
         Value::Mat3(_) => "matrix",
@@ -151,6 +149,57 @@ fn as_matrix(name: &str, pos: usize, v: &Value) -> Result<Vec<Vec<f64>>, String>
     Ok(m)
 }
 
+/// A list of complex numbers. Real entries promote, so a user can write
+/// a real band and a complex right-hand side in the same call.
+fn as_cplx_list(name: &str, pos: usize, v: &Value) -> Result<Vec<sf::complex::Complex64>, String> {
+    let items: Vec<Value> = match v {
+        Value::List(items) => items.clone(),
+        Value::Vec3(u) => vec![Value::Num(u.x), Value::Num(u.y), Value::Num(u.z)],
+        Value::Quat(q) => vec![
+            Value::Num(q.w),
+            Value::Num(q.x),
+            Value::Num(q.y),
+            Value::Num(q.z),
+        ],
+        other => {
+            return Err(format!(
+                "{name}(): argument {} must be a list of numbers, got {}",
+                pos + 1,
+                tn(other)
+            ))
+        }
+    };
+    items
+        .iter()
+        .enumerate()
+        .map(|(i, it)| match it {
+            Value::Num(x) => Ok(sf::complex::Complex64::real(*x)),
+            Value::Complex(z) => Ok(*z),
+            other => Err(format!(
+                "{name}(): argument {} element {i} must be a number, got {}",
+                pos + 1,
+                tn(other)
+            )),
+        })
+        .collect()
+}
+
+fn cplx(v: Vec<sf::complex::Complex64>) -> Value {
+    Value::List(v.into_iter().map(Value::Complex).collect())
+}
+
+fn as_cplx(name: &str, pos: usize, v: &Value) -> Result<sf::complex::Complex64, String> {
+    match v {
+        Value::Num(x) => Ok(sf::complex::Complex64::real(*x)),
+        Value::Complex(z) => Ok(*z),
+        other => Err(format!(
+            "{name}(): argument {} must be a number, got {}",
+            pos + 1,
+            tn(other)
+        )),
+    }
+}
+
 fn nums(v: Vec<f64>) -> Value {
     Value::List(v.into_iter().map(Value::Num).collect())
 }
@@ -170,8 +219,12 @@ pub fn call(name: &str, args: &[Value]) -> Option<Result<Value, String>> {
         "assoc_legendre_p" | "norm_assoc_legendre_p" | "laguerre_l_assoc" | "gegenbauer_c" => 3,
         "sph_harm" | "sph_harm_real" | "jacobi_p" => 4,
         "gauss_legendre" => 1,
+        // Angular momenta may be HALF-integers, so these take plain
+        // numbers and validate in the library rather than here.
+        "wigner_3j" | "wigner_6j" | "clebsch_gordan" => 6,
         "eigenvalues" | "jacobi_eigen" => 1,
-        "solve_tridiag" => 4,
+        "solve_tridiag" | "solve_tridiag_c" => 4,
+        "solve_cyclic_tridiag_c" => 6,
         _ => return None,
     };
     if args.len() != want {
@@ -282,6 +335,47 @@ fn dispatch(name: &str, a: &[Value]) -> Result<Value, String> {
             &as_num_list(name, 3, &a[3])?,
         )?)),
 
+        "solve_tridiag_c" => Ok(cplx(sf::tridiag::solve_tridiag_c(
+            &as_cplx_list(name, 0, &a[0])?,
+            &as_cplx_list(name, 1, &a[1])?,
+            &as_cplx_list(name, 2, &a[2])?,
+            &as_cplx_list(name, 3, &a[3])?,
+        )?)),
+        "solve_cyclic_tridiag_c" => Ok(cplx(sf::tridiag::solve_cyclic_tridiag_c(
+            &as_cplx_list(name, 0, &a[0])?,
+            &as_cplx_list(name, 1, &a[1])?,
+            &as_cplx_list(name, 2, &a[2])?,
+            as_cplx(name, 4, &a[4])?,
+            as_cplx(name, 5, &a[5])?,
+            &as_cplx_list(name, 3, &a[3])?,
+        )?)),
+
+        // ---- angular-momentum coupling ----------------------------
+        "wigner_3j" => Ok(Value::Num(sf::wigner::wigner_3j(
+            as_num(name, 0, &a[0])?,
+            as_num(name, 1, &a[1])?,
+            as_num(name, 2, &a[2])?,
+            as_num(name, 3, &a[3])?,
+            as_num(name, 4, &a[4])?,
+            as_num(name, 5, &a[5])?,
+        )?)),
+        "wigner_6j" => Ok(Value::Num(sf::wigner::wigner_6j(
+            as_num(name, 0, &a[0])?,
+            as_num(name, 1, &a[1])?,
+            as_num(name, 2, &a[2])?,
+            as_num(name, 3, &a[3])?,
+            as_num(name, 4, &a[4])?,
+            as_num(name, 5, &a[5])?,
+        )?)),
+        "clebsch_gordan" => Ok(Value::Num(sf::wigner::clebsch_gordan(
+            as_num(name, 0, &a[0])?,
+            as_num(name, 1, &a[1])?,
+            as_num(name, 2, &a[2])?,
+            as_num(name, 3, &a[3])?,
+            as_num(name, 4, &a[4])?,
+            as_num(name, 5, &a[5])?,
+        )?)),
+
         // ---- utility ----------------------------------------------
         "rel_err" => Ok(Value::Num(sf::rel_err(
             as_num(name, 0, &a[0])?,
@@ -300,6 +394,7 @@ pub const SPECIAL_NAMES: &[&str] = &[
     "bessel_j_array",
     "chebyshev_t",
     "chebyshev_u",
+    "clebsch_gordan",
     "eigenvalues",
     "gauss_legendre",
     "gegenbauer_c",
@@ -313,13 +408,17 @@ pub const SPECIAL_NAMES: &[&str] = &[
     "legendre_p_prime",
     "norm_assoc_legendre_p",
     "rel_err",
+    "solve_cyclic_tridiag_c",
     "solve_tridiag",
+    "solve_tridiag_c",
     "sph_harm",
     "sph_harm_real",
     "sph_j",
     "sph_j_prime",
     "sph_y",
     "sph_y_prime",
+    "wigner_3j",
+    "wigner_6j",
 ];
 
 #[cfg(test)]
@@ -517,6 +616,65 @@ mod tests {
         let ev = as_matrix("t", 0, &m).unwrap();
         assert_eq!(ev.len(), 4);
         assert_eq!(ev[0].len(), 4);
+    }
+
+    /// Complex values: literal, arithmetic, and the solvers they were
+    /// added for.
+    #[test]
+    fn complex_values_work_end_to_end() {
+        use sf::complex::Complex64 as C;
+        let c = |re: f64, im: f64| Value::Complex(C::new(re, im));
+        // a real band with a complex diagonal, real rhs
+        let x = call_ok(
+            "solve_tridiag_c",
+            &[
+                Value::List(vec![n(0.0), n(1.0), n(1.0)]),
+                Value::List(vec![c(0.0, 1.0), c(0.0, 1.0), c(0.0, 1.0)]),
+                Value::List(vec![n(1.0), n(1.0), n(0.0)]),
+                Value::List(vec![n(1.0), n(0.0), n(0.0)]),
+            ],
+        );
+        // verify by substitution: A x must reproduce the rhs
+        let xs: Vec<C> = match x {
+            Value::List(v) => v
+                .into_iter()
+                .map(|e| match e {
+                    Value::Complex(z) => z,
+                    Value::Num(r) => C::real(r),
+                    other => panic!("expected complex, got {other:?}"),
+                })
+                .collect(),
+            other => panic!("expected a list, got {other:?}"),
+        };
+        let d = C::new(0.0, 1.0);
+        let r0 = d * xs[0] + C::real(1.0) * xs[1];
+        let r1 = C::real(1.0) * xs[0] + d * xs[1] + C::real(1.0) * xs[2];
+        let r2 = C::real(1.0) * xs[1] + d * xs[2];
+        assert!((r0 - C::ONE).abs() < 1e-12, "row 0 residual");
+        assert!(r1.abs() < 1e-12, "row 1 residual");
+        assert!(r2.abs() < 1e-12, "row 2 residual");
+    }
+
+    /// Angular-momentum coupling reaches the language, including
+    /// half-integer arguments, which is why these take plain numbers
+    /// rather than going through `as_int`.
+    #[test]
+    fn wigner_symbols_are_reachable() {
+        // (1 1 0; 0 0 0) = -1/sqrt(3)
+        let v = as_f(call_ok("wigner_3j", &[n(1.0), n(1.0), n(0.0), n(0.0), n(0.0), n(0.0)]));
+        assert!((v + 1.0 / 3.0_f64.sqrt()).abs() < 1e-13);
+        // half-integer arguments must be ACCEPTED, not rejected as
+        // "not whole numbers" -- spins are half-integral
+        let v = as_f(call_ok(
+            "clebsch_gordan",
+            &[n(0.5), n(0.5), n(0.5), n(-0.5), n(1.0), n(0.0)],
+        ));
+        assert!((v - 1.0 / 2.0_f64.sqrt()).abs() < 1e-13);
+        // {1 1 1; 1 1 1} = 1/6
+        let v = as_f(call_ok("wigner_6j", &[n(1.0), n(1.0), n(1.0), n(1.0), n(1.0), n(1.0)]));
+        assert!((v - 1.0 / 6.0).abs() < 1e-13);
+        // a genuinely invalid spin is still an error
+        assert!(!call_err("wigner_3j", &[n(0.3), n(1.0), n(1.0), n(0.0), n(0.0), n(0.0)]).is_empty());
     }
 
     #[test]

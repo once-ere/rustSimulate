@@ -24,15 +24,10 @@ pub struct Cell {
     pub ok: bool,
 }
 
+#[derive(Default)]
 pub struct Notebook {
     pub cells: Vec<Cell>,
     pub state: SimState,
-}
-
-impl Default for Notebook {
-    fn default() -> Self {
-        Self { cells: Vec::new(), state: SimState::default() }
-    }
 }
 
 impl Notebook {

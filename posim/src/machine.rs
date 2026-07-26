@@ -279,6 +279,10 @@ fn expect_lit(c: &[char], pos: &mut usize, lit: &str, val: Json) -> Result<Json,
 pub fn value_to_json(v: &Value) -> Json {
     match v {
         Value::Num(n) => Json::Num(*n),
+        // A 2-element [re, im] array: JSON has no complex type, and a
+        // bare pair is what every consumer of this bridge already
+        // understands. Matches how `sph_harm` reports its value.
+        Value::Complex(z) => Json::Arr(vec![Json::Num(z.re), Json::Num(z.im)]),
         Value::Vec3(x) => Json::Arr(vec![Json::Num(x.x), Json::Num(x.y), Json::Num(x.z)]),
         Value::Quat(q) => Json::Arr(vec![
             Json::Num(q.w),

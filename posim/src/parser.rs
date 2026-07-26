@@ -68,7 +68,17 @@
 //! expr     := term { ("+" | "-") term } ;
 //! term     := unary { ("*" | "/") unary } ;
 //! unary    := "-" unary | atom ;
-//! atom     := NUMBER | STRING | "[" expr { "," expr } "]" | "(" expr ")"
+//! atom     := NUMBER | IMAGINARY | STRING
+//!           | "[" expr { "," expr } "]" | "(" expr ")"
+//!                                     (* IMAGINARY is a number with an
+//!                                        `i` suffix: 3i. So `2 + 3i`
+//!                                        is ordinary addition and
+//!                                        needs no complex literal
+//!                                        syntax of its own. The suffix
+//!                                        only applies when `i` is not
+//!                                        followed by another identifier
+//!                                        character, so `2intercept`
+//!                                        still lexes as it always did. *)
 //!           | IDENT "(" [ expr { "," expr } ] ")"   (* builtin or user
 //!                                                      function call   *)
 //!
@@ -83,7 +93,9 @@
 //!                hermite_h hermite_he laguerre_l laguerre_l_assoc
 //!                chebyshev_t chebyshev_u gegenbauer_c jacobi_p
 //!                bessel_j bessel_j_array gauss_legendre eigenvalues
-//!                jacobi_eigen solve_tridiag rel_err
+//!                jacobi_eigen solve_tridiag solve_tridiag_c
+//!                solve_cyclic_tridiag_c wigner_3j wigner_6j
+//!                clebsch_gordan rel_err
 //!
 //!    The genuine parse-time obligation the special functions add is
 //!    ARGUMENT DOMAIN checking, not syntax: an integer order must be a
@@ -461,7 +473,7 @@ impl Parser {
                 let port = match self.peek() {
                     Some(Token { kind: TokKind::Number(_), .. }) => {
                         let n = self.expect_number("a TCP port")?;
-                        if n < 0.0 || n > 65_535.0 || n.fract() != 0.0 {
+                        if !(0.0..=65_535.0).contains(&n) || n.fract() != 0.0 {
                             return Err("SCENE CREATE port must be an integer in 0..=65535".into());
                         }
                         n as u16
@@ -626,6 +638,11 @@ impl Parser {
         match t.kind {
             TokKind::Number(n) => {
                 prog.push(Instr::Push(Value::Num(n)));
+            }
+            TokKind::Imaginary(n) => {
+                prog.push(Instr::Push(Value::Complex(
+                    ::special_functions::complex::Complex64::new(0.0, n),
+                )));
             }
             TokKind::Str(st) => {
                 prog.push(Instr::Push(Value::Str(st)));

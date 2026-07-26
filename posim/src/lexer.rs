@@ -131,11 +131,37 @@ impl Keyword {
 }
 
 /// Token kinds fed to the parser.
+/// A number immediately followed by `i` is an IMAGINARY literal.
+///
+/// The `i` must not be followed by another identifier character, or
+/// `2in` would silently become `2i` then `n` — so `2i` is imaginary
+/// while `2intercept` stays a number beside an identifier, exactly as
+/// it did before complex numbers existed.
+fn imaginary_suffix(
+    chars: &[char],
+    i: usize,
+    len: usize,
+    num: f64,
+) -> (TokKind, usize) {
+    let j = i + len;
+    if j < chars.len()
+        && chars[j] == 'i'
+        && !(j + 1 < chars.len() && (chars[j + 1].is_alphanumeric() || chars[j + 1] == '_'))
+    {
+        (TokKind::Imaginary(num), len + 1)
+    } else {
+        (TokKind::Number(num), len)
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub enum TokKind {
     Keyword(Keyword),
     Ident(String),
     Number(f64),
+    /// An imaginary literal: a number with an `i` suffix, e.g. `3i`.
+    /// `2 + 3i` is then ordinary addition of a real and an imaginary.
+    Imaginary(f64),
     /// A double-quoted string literal (escapes: \" \\ \n).
     Str(String),
     LBracket,
@@ -166,6 +192,7 @@ impl fmt::Display for TokKind {
             TokKind::Keyword(k) => write!(f, "{k:?}"),
             TokKind::Ident(s) => write!(f, "identifier `{s}`"),
             TokKind::Number(n) => write!(f, "number {n}"),
+            TokKind::Imaginary(n) => write!(f, "imaginary {n}i"),
             TokKind::Str(st) => write!(f, "string \"{st}\""),
             TokKind::LBracket => write!(f, "`[`"),
             TokKind::RBracket => write!(f, "`]`"),
@@ -229,7 +256,8 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, String> {
             '.' if i + 1 < chars.len() && chars[i + 1].is_ascii_digit() => {
                 /* a number like .5 */
                 let (num, len) = lex_number(&chars[i..], col)?;
-                toks.push(Token { kind: TokKind::Number(num), col });
+                let (kind, len) = imaginary_suffix(&chars, i, len, num);
+                toks.push(Token { kind, col });
                 i += len;
             }
             '.' => {
@@ -289,7 +317,8 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, String> {
             }
             c if c.is_ascii_digit() => {
                 let (num, len) = lex_number(&chars[i..], col)?;
-                toks.push(Token { kind: TokKind::Number(num), col });
+                let (kind, len) = imaginary_suffix(&chars, i, len, num);
+                toks.push(Token { kind, col });
                 i += len;
             }
             c if c.is_alphabetic() || c == '_' => {

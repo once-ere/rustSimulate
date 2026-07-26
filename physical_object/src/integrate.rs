@@ -747,7 +747,10 @@ fn run_sprk(
     if t_end <= t0 {
         return Err(format!("t_end ({t_end}) must be greater than current time ({t0})"));
     }
-    if !(dt > 0.0) {
+    // Written as `<=` plus an explicit NaN check rather than `!(dt >
+    // 0.0)`: the negated form silently relies on NaN comparing false,
+    // which is correct but invisible to a reader.
+    if dt.is_nan() || dt <= 0.0 {
         return Err(format!("SPRK requires a positive fixed step dt (got {dt})"));
     }
     let nout = nout.max(1);

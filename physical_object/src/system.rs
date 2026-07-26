@@ -132,6 +132,11 @@ impl PhysicalObjectSystem {
 
     /// Collective softened gravitational accelerations
     /// (`GravitationalSystem::compute_accelerations`, verbatim math).
+    // An N-body double loop indexes `accelerations[i]` while reading
+    // `objects[j]`; clippy's suggested iterator form would need the two
+    // collections zipped, which obscures the pairwise structure this
+    // code exists to express.
+    #[allow(clippy::needless_range_loop)]
     pub fn compute_accelerations(&self) -> Vec<Vec3> {
         let n = self.objects.len();
         let mut accelerations = vec![Vec3::zeros(); n];

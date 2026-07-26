@@ -101,11 +101,11 @@ fn main() {
     let vals = eigenvalues(&ham).unwrap();
     println!("  grid: {n_grid} points on [{:.0}, {:.0}], h = {h:.5}", -l, l);
     let mut worst_fd = 0.0_f64;
-    for n in 0..6 {
+    for (n, &e) in vals.iter().enumerate().take(6) {
         let exact = n as f64 + 0.5;
-        let err = (vals[n] - exact).abs();
+        let err = (e - exact).abs();
         worst_fd = worst_fd.max(err);
-        println!("    n={n}:  E = {:.10}   exact = {exact:.1}   err = {err:.2e}", vals[n]);
+        println!("    n={n}:  E = {e:.10}   exact = {exact:.1}   err = {err:.2e}");
     }
     println!("  worst error = {worst_fd:.2e}\n");
 
@@ -115,8 +115,8 @@ fn main() {
     // is a far stronger statement than any single tolerance.
     println!("  error growth with n (should track 2n^2+2n+1):");
     let e0 = (vals[0] - 0.5).abs();
-    for n in 0..6 {
-        let ratio = (vals[n] - (n as f64 + 0.5)).abs() / e0;
+    for (n, &e) in vals.iter().enumerate().take(6) {
+        let ratio = (e - (n as f64 + 0.5)).abs() / e0;
         let predicted = (2 * n * n + 2 * n + 1) as f64;
         println!("    n={n}:  observed {ratio:6.1}x   predicted {predicted:6.1}x");
     }

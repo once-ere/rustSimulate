@@ -277,8 +277,17 @@ a confident, wrong number, and you would have no way to notice.
 | cylindrical Bessel | `bessel_j(n,x)`, `bessel_j_array(n_max,x)` → list |
 | quadrature | `gauss_legendre(n)` → `[nodes, weights]` |
 | eigenproblems | `eigenvalues(matrix)` → list, `jacobi_eigen(matrix)` → `[values, vectors]` |
-| linear algebra | `solve_tridiag(sub, diag, sup, rhs)` → list |
+| angular momentum | `wigner_3j(j1,j2,j3,m1,m2,m3)`, `wigner_6j(j1,j2,j3,j4,j5,j6)`, `clebsch_gordan(j1,m1,j2,m2,j3,m3)` |
+| linear algebra | `solve_tridiag(sub, diag, sup, rhs)` → list, `solve_tridiag_c(...)` → list, `solve_cyclic_tridiag_c(sub, diag, sup, rhs, bl, tr)` → list |
 | utility | `rel_err(a, b)` |
+
+**Angular momenta may be half-integers**, so `wigner_3j`, `wigner_6j`
+and `clebsch_gordan` take plain numbers rather than demanding whole
+ones — `clebsch_gordan(0.5, 0.5, 0.5, -0.5, 1, 0)` is exactly what you
+want to write for two spin-½ particles. A coupling that violates a
+selection rule returns **0**, which is the mathematically correct
+answer, not an error; a value that is not an angular momentum at all
+(`j = 0.3`, or a negative `j`) *is* an error.
 
 **A wrinkle worth knowing about lists.** The bracket literal is
 overloaded: `[a,b,c]` is a *vector*, `[a,b,c,d]` is a *quaternion*, and
@@ -289,13 +298,46 @@ exactly as you would expect, and `norm_assoc_legendre_p` never lectures
 you about quaternions. A 3×3 matrix value is likewise accepted directly
 wherever a matrix argument is wanted.
 
-Two functions are **not** exposed, and the reason is worth stating
-rather than leaving you to discover it: `solve_tridiag_c` and
-`solve_cyclic_tridiag_c` are complex-valued, and this language has no
-complex type. Reaching them needs a new value kind plus literal syntax
-in the lexer, which is a language change rather than a registration; it
-is staged deliberately instead of being half-done. The real-valued
-`solve_tridiag` is available now.
+### 4.2 Complex numbers
+
+A number with an `i` suffix is imaginary, so `2 + 3i` needs no complex
+literal syntax of its own — it is ordinary addition of a real and an
+imaginary:
+
+```
+In[1]:= 3i
+Out[1]= 0 + 3i
+In[2]:= 2 + 3i
+Out[2]= 2 + 3i
+In[3]:= (2 + 3i) * (2 - 3i)
+Out[3]= 13 + 0i
+In[4]:= 1 / (0 + 1i)
+Out[4]= 0 - 1i
+```
+
+`+`, `-`, `*` and `/` all accept complex operands, and reals promote
+automatically. Note `In[3]`: the result stays typed as complex and
+displays `13 + 0i` rather than collapsing to `13`. That is deliberate —
+the type you get out should not depend on whether a particular
+cancellation happened to be exact.
+
+The suffix only binds when the `i` is not followed by another identifier
+character, so `2intercept` still lexes exactly as it did before complex
+numbers existed.
+
+This is what makes the complex Crank–Nicolson solvers reachable.
+`solve_tridiag_c` and `solve_cyclic_tridiag_c` take the same arguments
+as the real solver and accept a mix — a real band with a complex
+diagonal and a real right-hand side is fine, since reals promote:
+
+```
+In[5]:= solve_tridiag_c([0, 1, 1], [1i, 1i, 1i], [1, 1, 0], [1, 0, 0])
+Out[5]= [0 - 0.6666666666666666i, 0.33333333333333337 + 0i, 0 + 0.3333333333333333i]
+```
+
+Over the machine bridge (JupyterLab), a complex value is reported as the
+two-element array `[re, im]`, matching how `sph_harm` reports its
+value — JSON has no complex type.
 
 ---
 
