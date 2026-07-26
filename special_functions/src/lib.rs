@@ -44,6 +44,8 @@
 #![allow(non_camel_case_types)]
 #![allow(non_upper_case_globals)]
 
+pub mod eigen;
+pub mod legendre;
 pub mod sph_bessel;
 
 /// Re-exports of the vendored Cephes translation, so callers have one

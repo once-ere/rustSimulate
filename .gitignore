@@ -20,3 +20,5 @@ session.posim
 *.swp
 *~
 .DS_Store
+#SolveIt 2002
+./obsolete_or_historic
