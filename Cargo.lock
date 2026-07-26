@@ -33,5 +33,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "spec_math"
+version = "0.1.6"
+
+[[package]]
+name = "special_functions"
+version = "0.1.0"
+dependencies = [
+ "spec_math",
+]
+
+[[package]]
 name = "sundials_core"
 version = "7.7.0"
