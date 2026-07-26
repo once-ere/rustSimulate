@@ -323,6 +323,43 @@ Three checks all missed it, and each miss is instructive:
    not reintroduced.
 5. Force-pushed, then re-certified from a fresh plain clone.
 
+### Residual risk — remediation is NOT complete
+
+Force-pushing made the old commits unreachable from any branch, but
+**GitHub does not garbage-collect unreachable objects on demand.**
+Verified after the rewrite, from a fresh clone:
+
+```
+git fetch origin dd8c456b4a8d3496dae1aeddcc727c1854878207   # succeeds
+git ls-tree -r --name-only dd8c456 | grep -c obsolete_or_historic
+749
+```
+
+The leaked commit is still retrievable **by direct SHA**. While the
+repository is private this is reachable only by the owner and
+collaborators, so it is contained. It would become publicly retrievable
+again the moment the repository is made public — and the SHA is not a
+secret: it was visible in the commit list for the whole window the
+repository was public, and GitHub's public events feed is archived by
+third parties.
+
+Mitigating factor: **the fork count is 0**, so no fork network holds an
+independent copy. Forks would have to be handled separately, since each
+carries its own objects.
+
+**Therefore the repository stays PRIVATE until GitHub Support has
+garbage-collected the unreachable objects.** That request has to come
+from the account owner; it cannot be done through the API or the web UI.
+Ask GitHub Support to "permanently remove unreachable Git objects and
+purge stale cached views" for `once-ere/rustSimulate`, citing the
+force-push that removed them. Only after they confirm should visibility
+be restored.
+
+A local backup of the pre-rewrite history exists as a verified
+`git bundle` and the branch `backup/pre-rewrite-dd8c456`, which was
+never pushed. Delete it once the remediation is confirmed and you no
+longer want the old history recoverable.
+
 ### The standing rule this produces
 
 **Never trust a gitignore pattern that has not been interrogated.**
