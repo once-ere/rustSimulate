@@ -31,9 +31,8 @@ implementations and freely usable. What may not ship is *that source
 code*. So the fix is to write the mathematics again, not to work around
 the licence.
 
-**No encumbered source ships in this repository.** The SolveIt
-reference trees live in `obsolete_or_historic/` and `SolveIt/`, both
-listed in `.gitignore`, and neither has ever been staged.
+**No encumbered source ships in this repository** — but see §7, because
+that was briefly untrue and the correction is part of the record.
 
 ---
 
@@ -245,3 +244,97 @@ New in Stage 1: 3 modules (`bessel`, `tridiag`, `complex`), 1 example
   diagonally dominant should not use it.
 - This is Stage 1 of the SolveIt port. It removes the licensing
   blockers; it does not by itself constitute the ported simulator.
+
+---
+
+## 7. Incident: the reference trees were published, and the remediation
+
+Recorded in full because a clean-room claim is only worth what its
+audit trail is worth, and because the failure mode is one that will
+recur in any repository that keeps encumbered reference material on
+disk.
+
+### What happened
+
+Between commits `2d59163` and `dd8c456` (all on 2026-07-26), **749 files
+of the SolveIt 2002 C/C++ sources — 56 MB — were tracked and pushed to
+the then-public `once-ere/rustSimulate`.** Among them were the three
+files named in the licensing review:
+
+- `obsolete_or_historic/SolveIt/QM/QMEvolve.h`
+- `obsolete_or_historic/SolveIt/QM/DataQM_Scatt1D.h`
+- `obsolete_or_historic/SolveIt/RigidBody/TrajectoryRecord.h`
+
+Eight tracked files matched Numerical Recipes or GSL signatures. For the
+duration, the public repository redistributed NR code (whose licence
+forbids exactly that) and GPL-3.0 GSL-derived code inside an otherwise
+permissively licensed work.
+
+### Root cause
+
+`.gitignore` contained:
+
+```
+./obsolete_or_historic
+```
+
+A gitignore pattern containing a slash is **anchored to the directory
+holding the `.gitignore`**, and a leading `./` therefore asks git to
+match a directory literally named `.`. The pattern matched nothing. It
+looked correct, it sat under a descriptive comment, and it never
+ignored a single file.
+
+The trap was then sprung by a `git add -A` that assumed the ignore rule
+was doing its job.
+
+This is the **second** gitignore defect in this project, and the same
+species as the first: the earlier export dropped 77 reference files
+because `*.out` was unanchored. Both were silent — nothing errors when
+a pattern matches the wrong set.
+
+### Why it was not caught sooner
+
+Three checks all missed it, and each miss is instructive:
+
+1. The pre-commit scan looked for NR/GSL strings **in the new source
+   files being added**, not in what the repository already tracked. It
+   was scoped to the wrong set.
+2. The fresh-clone certification ran
+   `ls -d obsolete_or_historic SolveIt || echo absent`. `ls` succeeded
+   on the first path, so the `||` branch never fired — and the success
+   output scrolled past under a heading that said the opposite. The
+   check was structurally incapable of failing loudly.
+3. No check ever asked git the direct question: *does this ignore rule
+   match this file?*
+
+### Remediation
+
+1. Repository visibility set to **private** immediately, to stop
+   ongoing exposure before anything else was attempted.
+2. Full backup taken first — a verified `git bundle` of all refs plus a
+   local `backup/pre-rewrite-dd8c456` branch.
+3. The three affected commits rewritten with
+   `git filter-branch --index-filter` to strip the tree from history
+   entirely, so the objects are unreachable rather than merely absent
+   from the tip.
+4. `.gitignore` corrected to `/obsolete_or_historic/` (leading slash to
+   anchor, trailing slash to restrict to directories), with the two
+   sibling trees added, and a comment explaining the `./` trap so it is
+   not reintroduced.
+5. Force-pushed, then re-certified from a fresh plain clone.
+
+### The standing rule this produces
+
+**Never trust a gitignore pattern that has not been interrogated.**
+Adding an ignore rule for anything sensitive is not complete until
+
+```
+git check-ignore -v <a real path under it>
+```
+
+prints the matching rule. A pattern that matches nothing is
+indistinguishable from a correct one until the moment it costs you.
+
+And the corollary for verification scripts: a check whose failure path
+is an `||` after a command that can partially succeed is not a check.
+Assert on the count, and make the failing case print loudly.

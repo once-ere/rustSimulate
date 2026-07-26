@@ -20,5 +20,15 @@ session.posim
 *.swp
 *~
 .DS_Store
-#SolveIt 2002
-./obsolete_or_historic
+# Local-only reference trees: the SolveIt 2002 C/C++/Fortran sources and
+# the 2026 C++23 upgrade. These must NEVER be committed — they carry
+# Numerical Recipes (not redistributable), GSL-derived (GPL-3.0) and
+# GIAC (GPL-2.0) code. See CLEANROOM_PROVENANCE.md.
+#
+# NOTE the leading `/`, not `./`. A pattern starting `./` is anchored and
+# matches a directory literally named `.`, so it silently ignores
+# NOTHING — that exact mistake published 749 of these files. Trailing `/`
+# restricts the match to directories.
+/obsolete_or_historic/
+/SolveIt/
+/SolveIt_2026_MFC/
