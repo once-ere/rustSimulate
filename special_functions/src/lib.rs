@@ -46,6 +46,8 @@
 
 pub mod eigen;
 pub mod legendre;
+pub mod orthopoly;
+pub mod quadrature;
 pub mod sph_bessel;
 
 /// Re-exports of the vendored Cephes translation, so callers have one

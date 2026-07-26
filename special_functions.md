@@ -202,6 +202,192 @@ reason):
 
 ---
 
-*Sections for `legendre`, `orthopoly` and `wigner` will be added as
-those modules land, in the same shape: API, intermediate example,
-expert example, implementation rationale, verification table.*
+---
+
+## 3. `legendre` — Legendre, associated Legendre, spherical harmonics
+
+The angular part of every central-potential problem. `DLMF 14`.
+
+| function | returns |
+|---|---|
+| `legendre_p(n, x)` | Pₙ(x), Bonnet recurrence |
+| `legendre_p_prime(n, x)` | Pₙ′(x), endpoints in closed form |
+| `assoc_legendre_p(l, m, x)` | Pₗᵐ(x), **unnormalised**, Condon–Shortley phase |
+| `norm_assoc_legendre_p(l, m, x)` | P̄ₗᵐ(x), **fully normalised** |
+| `sph_harm(l, m, θ, φ)` | Yₗᵐ as `(re, im)` |
+| `sph_harm_real(l, m, θ, φ)` | real spherical harmonic (orbitals) |
+
+### Intermediate — values you can check by hand
+
+```rust
+use special_functions::legendre::{legendre_p, assoc_legendre_p, sph_harm};
+use std::f64::consts::PI;
+
+assert!((legendre_p(7, 1.0)? - 1.0).abs() < 1e-14);        // P_n(1) = 1
+let x = 0.5_f64;
+assert!((assoc_legendre_p(2, 2, x)? - 3.0*(1.0-x*x)).abs() < 1e-14);  // P_2^2 = 3(1-x^2)
+let (re, im) = sph_harm(0, 0, 1.0, 2.0)?;                  // Y_0^0 = 1/sqrt(4 pi)
+assert!((re - 1.0/(4.0*PI).sqrt()).abs() < 1e-15 && im.abs() < 1e-18);
+# Ok::<(), String>(())
+```
+
+### Expert — why two families exist
+
+Overflow in `Pₗᵐ` is governed by the **order m**, not the degree ℓ —
+the seed carries `(2m−1)!!`. Measured on this implementation at x = 0.3:
+
+| (ℓ, m) | `assoc_legendre_p` | `norm_assoc_legendre_p` |
+|---|---|---|
+| (100, 50) | −3.4×10⁹⁷ | −9.8×10⁻² |
+| (200, 100) | −8.4×10²²⁷ | −2.6×10⁻¹ |
+| (170, 170) | **overflows** | 3.6×10⁻⁴ |
+| (300, 150) | **NaN** | 3.3×10⁻¹ |
+| (200, 0) | −9.8×10⁻³ | −5.5×10⁻² |
+
+The normalised form is computed *directly in the normalised basis* —
+seed written as a product of factors below one, ascent with normalised
+coefficients — so nothing ever leaves O(1). Scaling the raw value by
+`N(l,m)` afterwards would not work: the constant underflows exactly
+where `Pₗᵐ` overflows. The raw form returns `Err` naming the remedy
+rather than handing back `inf`/`NaN`.
+
+*Verified by:* Bonnet recurrence; P(±1) special values; orthogonality
+∫PₘPₙ = 2δ/(2n+1) by quadrature; the m=0 reduction; the negative-order
+relation `DLMF 14.9.3`; agreement between the two families wherever both
+are representable; spherical-harmonic orthonormality 2π∫|P̄|² = 1; and
+known Y values.
+
+---
+
+## 4. `orthopoly` — the classical orthogonal polynomials
+
+Hermite (Hₙ and Heₙ), Laguerre (Lₙ and generalised Lₙ^α), Chebyshev
+(Tₙ, Uₙ), Gegenbauer, Jacobi — all by stable three-term recurrences,
+`DLMF 18.9`.
+
+### Intermediate
+
+```rust
+use special_functions::orthopoly::{hermite_h, chebyshev_t};
+let x = 0.37_f64;
+assert!((hermite_h(2, x)? - (4.0*x*x - 2.0)).abs() < 1e-14);   // H_2 = 4x^2-2
+// T_n(cos t) = cos(n t) — the sharpest Chebyshev check there is
+let t = 0.9_f64;
+assert!((chebyshev_t(5, t.cos())? - (5.0*t).cos()).abs() < 1e-13);
+# Ok::<(), String>(())
+```
+
+### Expert — the quantum harmonic oscillator, two independent ways
+
+`examples/harmonic_oscillator.rs` (runnable) solves ĤΨ = EΨ for
+H = −½∂ₓ² + ½x² by two routes that **share no code**, then compares:
+
+* *Analytic* — ψₙ(x) = (2ⁿn!√π)^(−½) Hₙ(x)e^(−x²/2), with orthonormality
+  and energies obtained by Gauss–Legendre quadrature.
+* *Numerical* — discretise H on a grid and diagonalise with `eigen`.
+
+Measured:
+
+```
+worst |<n|n> - 1| = 7.77e-16      worst |<m|n>| = 6.95e-16
+virial energies E_n = 2<V>:  worst error 3.55e-15  (n = 0..5)
+
+finite-difference error growth        grid refinement
+  n=0  observed  1.0x  predicted  1.0x     N=100  err 7.855e-4
+  n=1            5.0x            5.0x      N=200  err 1.981e-4  (fell 3.97x)
+  n=2           13.0x           13.0x      N=400  err 4.976e-5  (fell 3.98x)
+  n=3           25.0x           25.0x
+  n=4           41.0x           41.0x    expected drop: 4x (2nd order)
+  n=5           61.0x           61.0x
+```
+
+Two things worth extracting. The analytic route is at machine
+precision — that is `orthopoly` and `quadrature` agreeing to 16 digits.
+The finite-difference error is **not noise**: it tracks `2n²+2n+1`
+exactly, because higher states oscillate faster and a 3-point stencil
+resolves them less well; and halving h drops the error 4×, the defining
+property of a second-order stencil. Asserting those *laws* is a much
+stronger test than any fixed tolerance.
+
+*Verified by:* low-order closed forms; endpoint and origin values;
+parity; recurrences across degree; T(cos t) = cos(nt); reductions
+(Gegenbauer→Chebyshev U and Legendre, Jacobi→Legendre and Chebyshev T);
+orthogonality by quadrature for four families; and the He/H convention
+relation. The suite was additionally **mutation-tested** — seven
+deliberate bugs injected, each caught by 3–6 independent tests — so it
+is demonstrably not vacuous.
+
+---
+
+## 5. `eigen` — dense real-symmetric eigenproblems
+
+`jacobi_eigen(a)` → `(eigenvalues ascending, eigenvectors)`;
+`eigenvalues(a)` when the vectors are not needed.
+
+Jacobi rather than QR, deliberately: unconditionally convergent,
+eigenvectors orthogonal by construction, more accurate for the *small*
+eigenvalues a ground state lives among, and short enough to be obviously
+correct. For n of order 10²–10³ the constant factor is irrelevant.
+
+### Intermediate
+```rust
+use special_functions::eigen::jacobi_eigen;
+let a = vec![vec![2.0, 1.0], vec![1.0, 2.0]];
+let (vals, _) = jacobi_eigen(&a).unwrap();
+assert!((vals[0] - 1.0).abs() < 1e-12 && (vals[1] - 3.0).abs() < 1e-12);
+```
+
+### Expert — a spectrum with a known closed form
+The tridiagonal Laplacian has exact eigenvalues 4sin²(kπ/2(n+1)); the
+test checks all 40 of them to 1e-10. Scaled to a box of length L it
+becomes the particle in a box, where the discrete levels approach
+n²π²/L² from **below** with relative deficit (kπh)²/12 — asserted as a
+law, within 10%.
+
+*Verified by:* diagonal input; a 2×2 closed form; A**v** = λ**v** for
+every pair; eigenvector orthonormality; trace and determinant
+invariants; the analytic tridiagonal spectrum; and rejection of empty,
+ragged, asymmetric and non-finite input.
+
+---
+
+## 6. `quadrature` — integration and root-finding
+
+`gauss_legendre(n)`, `integrate(f, a, b, n)`,
+`integrate_adaptive(f, a, b, tol)`, `brent_root(f, a, b, tol)`,
+`find_roots(f, a, b, steps, tol)`.
+
+### Intermediate
+```rust
+use special_functions::quadrature::{integrate, brent_root};
+// exact for polynomials up to degree 2n-1
+let v = integrate(|x| x*x*x, 0.0, 1.0, 3).unwrap();
+assert!((v - 0.25).abs() < 1e-14);
+// cos x = x
+let r = brent_root(|x| x.cos() - x, 0.0, 1.0, 1e-12).unwrap();
+assert!((r - 0.739085133215).abs() < 1e-9);
+```
+
+### Expert — the honest failure modes
+Two behaviours are pinned by tests rather than hidden:
+
+1. **`find_roots` cannot distinguish a pole from a root.** A pole also
+   flips the sign of f, and Brent will converge on it. Check `f` at each
+   returned value if your function can blow up — likely for eigenvalue
+   mismatch functions. Even-multiplicity roots are invisible for the
+   same structural reason.
+2. **`integrate_adaptive` errors rather than guessing.** `1/√x` on
+   [0,1] returns `Err`: the integral is finite but Simpson cannot
+   resolve the endpoint, so the honest report is failure, not a
+   plausible wrong number. Split the interval or remove the singularity.
+
+*Verified by:* degree-exactness to 2n−1 **and** the converse (not exact
+at 2n, so the bound is sharp); nodes as Legendre roots; weights summing
+to the interval width; known integrals; superlinear Brent convergence
+counted in function evaluations (bisection could not achieve it); and
+reachable non-convergence branches.
+
+---
+
+*A `wigner` module (3j, 6j, Clebsch–Gordan) is planned and will be added
+in the same shape.*
