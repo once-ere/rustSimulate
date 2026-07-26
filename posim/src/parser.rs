@@ -71,6 +71,25 @@
 //! atom     := NUMBER | STRING | "[" expr { "," expr } "]" | "(" expr ")"
 //!           | IDENT "(" [ expr { "," expr } ] ")"   (* builtin or user
 //!                                                      function call   *)
+//!
+//! (* The call production above is uniform: it already admits every
+//!    builtin, so adding a function is a REGISTRATION, not a grammar
+//!    change. Two classes of name are reachable through it:
+//!
+//!      core      dot cross norm normalize sqrt abs sin cos exp log
+//!      special   sph_j sph_y sph_j_prime sph_y_prime legendre_p
+//!                legendre_p_prime assoc_legendre_p
+//!                norm_assoc_legendre_p sph_harm sph_harm_real
+//!                hermite_h hermite_he laguerre_l laguerre_l_assoc
+//!                chebyshev_t chebyshev_u gegenbauer_c jacobi_p
+//!                bessel_j bessel_j_array gauss_legendre eigenvalues
+//!                jacobi_eigen solve_tridiag rel_err
+//!
+//!    The genuine parse-time obligation the special functions add is
+//!    ARGUMENT DOMAIN checking, not syntax: an integer order must be a
+//!    whole number. `hermite_h(2.5, 1)` is rejected rather than
+//!    truncated to `hermite_h(2, 1)`, which would return a confident
+//!    wrong answer. See `crate::special`. *)
 //!           | path
 //!           | IDENT ;                           (* parameter / LET var *)
 //! ```

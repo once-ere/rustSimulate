@@ -1,0 +1,533 @@
+//! Bridge from the posim expression language to the `special_functions`
+//! crate.
+//!
+//! The project rule is lockstep: a function is not "added" until it is
+//! callable from the language, listed in `HELP`, described in the EBNF
+//! comment in `parser.rs`, and documented in `grammar.md` / `grammar.tex`
+//! with the PDF recompiled. This module is the first of those.
+//!
+//! # Two kinds of argument checking
+//!
+//! Everything arrives from the VM as `Value::Num(f64)`, but many of
+//! these functions take an *integer order*. A silent `as i32` would turn
+//! `legendre_p(2.5, x)` into `legendre_p(2, x)` and return a confident
+//! wrong answer, so [`as_int`] rejects any non-integral value by name
+//! and position. That validation is the real parser-level work these
+//! additions require — the call syntax itself already existed.
+//!
+//! # What is deliberately NOT exposed
+//!
+//! * `solve_tridiag_c` and `solve_cyclic_tridiag_c` — these are complex
+//!   valued, and the language has no complex type. Exposing them would
+//!   need a `Value::Complex` variant plus literal syntax in the lexer,
+//!   which is a language change rather than a registration, and is
+//!   staged deliberately rather than half-done. The real-valued
+//!   `solve_tridiag` IS exposed.
+//! * `Complex64` itself, for the same reason.
+
+use special_functions as sf;
+
+use crate::vm::Value;
+
+/// Human-readable type name, for error messages.
+fn tn(v: &Value) -> &'static str {
+    match v {
+        Value::Num(_) => "number",
+        Value::Vec3(_) => "vector",
+        Value::Quat(_) => "quaternion",
+        Value::Mat3(_) => "matrix",
+        Value::List(_) => "list",
+        Value::Str(_) => "string",
+        Value::Unit => "nothing",
+    }
+}
+
+fn as_num(name: &str, pos: usize, v: &Value) -> Result<f64, String> {
+    match v {
+        Value::Num(n) => Ok(*n),
+        other => Err(format!(
+            "{name}(): argument {} must be a number, got {}",
+            pos + 1,
+            tn(other)
+        )),
+    }
+}
+
+/// An integer-valued argument. Rejects a non-integral number outright
+/// rather than truncating: `hermite_h(2.5, x)` is a mistake, and
+/// silently answering `hermite_h(2, x)` would hide it.
+fn as_int(name: &str, pos: usize, v: &Value) -> Result<i32, String> {
+    let x = as_num(name, pos, v)?;
+    if !x.is_finite() || x.fract() != 0.0 {
+        return Err(format!(
+            "{name}(): argument {} must be a whole number (an integer order), got {x}",
+            pos + 1
+        ));
+    }
+    if !(i32::MIN as f64..=i32::MAX as f64).contains(&x) {
+        return Err(format!("{name}(): argument {} is out of range: {x}", pos + 1));
+    }
+    Ok(x as i32)
+}
+
+fn as_usize(name: &str, pos: usize, v: &Value) -> Result<usize, String> {
+    let n = as_int(name, pos, v)?;
+    if n < 0 {
+        return Err(format!(
+            "{name}(): argument {} must be zero or positive, got {n}",
+            pos + 1
+        ));
+    }
+    Ok(n as usize)
+}
+
+/// A flat list of numbers.
+///
+/// The bracket literal `[...]` is OVERLOADED in this language: three
+/// entries make a vector, four make a quaternion, and any other count
+/// makes a list. That is fine for physics and surprising here, so all
+/// three shapes are accepted wherever a numeric list is wanted —
+/// otherwise `solve_tridiag([0,1,1], ...)` would be told its vector is
+/// not a list, and a 4x4 matrix row would be called a quaternion. Both
+/// are true and useless.
+///
+/// The quaternion is unpacked w-first, which is the order the user
+/// typed: `[a, b, c, d]` parses to `w=a, x=b, y=c, z=d`.
+fn as_num_list(name: &str, pos: usize, v: &Value) -> Result<Vec<f64>, String> {
+    match v {
+        Value::Vec3(u) => Ok(vec![u.x, u.y, u.z]),
+        Value::Quat(q) => Ok(vec![q.w, q.x, q.y, q.z]),
+        Value::List(items) => items
+            .iter()
+            .enumerate()
+            .map(|(i, it)| match it {
+                Value::Num(n) => Ok(*n),
+                other => Err(format!(
+                    "{name}(): argument {} element {i} must be a number, got {}",
+                    pos + 1,
+                    tn(other)
+                )),
+            })
+            .collect(),
+        other => Err(format!(
+            "{name}(): argument {} must be a list of numbers, got {}",
+            pos + 1,
+            tn(other)
+        )),
+    }
+}
+
+/// A list of equal-length lists: a dense square matrix.
+fn as_matrix(name: &str, pos: usize, v: &Value) -> Result<Vec<Vec<f64>>, String> {
+    // A 3x3 `Mat3` is the language's native matrix, so accept it
+    // directly rather than making the user unpack it into rows.
+    if let Value::Mat3(m) = v {
+        return Ok(m.0.iter().map(|r| r.to_vec()).collect());
+    }
+    let rows = match v {
+        Value::List(items) => items,
+        other => {
+            return Err(format!(
+                "{name}(): argument {} must be a list of rows, got {}",
+                pos + 1,
+                tn(other)
+            ))
+        }
+    };
+    if rows.is_empty() {
+        return Err(format!("{name}(): argument {} is an empty matrix", pos + 1));
+    }
+    let m: Vec<Vec<f64>> = rows
+        .iter()
+        .map(|r| as_num_list(name, pos, r))
+        .collect::<Result<_, _>>()?;
+    let n = m.len();
+    if let Some(bad) = m.iter().position(|r| r.len() != n) {
+        return Err(format!(
+            "{name}(): matrix must be square — it has {n} rows but row {bad} has {} entries",
+            m[bad].len()
+        ));
+    }
+    Ok(m)
+}
+
+fn nums(v: Vec<f64>) -> Value {
+    Value::List(v.into_iter().map(Value::Num).collect())
+}
+
+/// Dispatch a special-function call.
+///
+/// Returns `None` if `name` is not one of ours, so the caller can fall
+/// through to the core builtins and then to its own "unknown function"
+/// error — this module never swallows a name it does not own.
+pub fn call(name: &str, args: &[Value]) -> Option<Result<Value, String>> {
+    // Arity is checked once, here, so each arm below can index freely.
+    let want: usize = match name {
+        "rel_err" => 2,
+        "sph_j" | "sph_y" | "sph_j_prime" | "sph_y_prime" | "legendre_p" | "legendre_p_prime"
+        | "hermite_h" | "hermite_he" | "laguerre_l" | "chebyshev_t" | "chebyshev_u"
+        | "bessel_j" | "bessel_j_array" => 2,
+        "assoc_legendre_p" | "norm_assoc_legendre_p" | "laguerre_l_assoc" | "gegenbauer_c" => 3,
+        "sph_harm" | "sph_harm_real" | "jacobi_p" => 4,
+        "gauss_legendre" => 1,
+        "eigenvalues" | "jacobi_eigen" => 1,
+        "solve_tridiag" => 4,
+        _ => return None,
+    };
+    if args.len() != want {
+        return Some(Err(format!(
+            "{name}() takes {want} argument(s), got {}",
+            args.len()
+        )));
+    }
+    Some(dispatch(name, args))
+}
+
+fn dispatch(name: &str, a: &[Value]) -> Result<Value, String> {
+    // Two common shapes, to keep the arms one line each.
+    let nx = |f: fn(i32, f64) -> Result<f64, String>| -> Result<Value, String> {
+        Ok(Value::Num(f(as_int(name, 0, &a[0])?, as_num(name, 1, &a[1])?)?))
+    };
+    let lmx = |f: fn(i32, i32, f64) -> Result<f64, String>| -> Result<Value, String> {
+        Ok(Value::Num(f(
+            as_int(name, 0, &a[0])?,
+            as_int(name, 1, &a[1])?,
+            as_num(name, 2, &a[2])?,
+        )?))
+    };
+
+    match name {
+        // ---- spherical Bessel -------------------------------------
+        "sph_j" => nx(sf::sph_bessel::sph_j),
+        "sph_y" => nx(sf::sph_bessel::sph_y),
+        "sph_j_prime" => nx(sf::sph_bessel::sph_j_prime),
+        "sph_y_prime" => nx(sf::sph_bessel::sph_y_prime),
+
+        // ---- Legendre and spherical harmonics ---------------------
+        "legendre_p" => nx(sf::legendre::legendre_p),
+        "legendre_p_prime" => nx(sf::legendre::legendre_p_prime),
+        "assoc_legendre_p" => lmx(sf::legendre::assoc_legendre_p),
+        "norm_assoc_legendre_p" => lmx(sf::legendre::norm_assoc_legendre_p),
+        "sph_harm_real" => Ok(Value::Num(sf::legendre::sph_harm_real(
+            as_int(name, 0, &a[0])?,
+            as_int(name, 1, &a[1])?,
+            as_num(name, 2, &a[2])?,
+            as_num(name, 3, &a[3])?,
+        )?)),
+        // Complex-valued: returned as the two-element list [re, im],
+        // since the language has no complex type yet.
+        "sph_harm" => {
+            let (re, im) = sf::legendre::sph_harm(
+                as_int(name, 0, &a[0])?,
+                as_int(name, 1, &a[1])?,
+                as_num(name, 2, &a[2])?,
+                as_num(name, 3, &a[3])?,
+            )?;
+            Ok(nums(vec![re, im]))
+        }
+
+        // ---- classical orthogonal polynomials ---------------------
+        "hermite_h" => nx(sf::orthopoly::hermite_h),
+        "hermite_he" => nx(sf::orthopoly::hermite_he),
+        "laguerre_l" => nx(sf::orthopoly::laguerre_l),
+        "chebyshev_t" => nx(sf::orthopoly::chebyshev_t),
+        "chebyshev_u" => nx(sf::orthopoly::chebyshev_u),
+        "laguerre_l_assoc" => Ok(Value::Num(sf::orthopoly::laguerre_l_assoc(
+            as_int(name, 0, &a[0])?,
+            as_num(name, 1, &a[1])?,
+            as_num(name, 2, &a[2])?,
+        )?)),
+        "gegenbauer_c" => Ok(Value::Num(sf::orthopoly::gegenbauer_c(
+            as_int(name, 0, &a[0])?,
+            as_num(name, 1, &a[1])?,
+            as_num(name, 2, &a[2])?,
+        )?)),
+        "jacobi_p" => Ok(Value::Num(sf::orthopoly::jacobi_p(
+            as_int(name, 0, &a[0])?,
+            as_num(name, 1, &a[1])?,
+            as_num(name, 2, &a[2])?,
+            as_num(name, 3, &a[3])?,
+        )?)),
+
+        // ---- cylindrical Bessel, integer order --------------------
+        "bessel_j" => nx(sf::bessel::bessel_j),
+        "bessel_j_array" => Ok(nums(sf::bessel::bessel_j_array(
+            as_usize(name, 0, &a[0])?,
+            as_num(name, 1, &a[1])?,
+        )?)),
+
+        // ---- quadrature nodes -------------------------------------
+        // Returns [nodes, weights] — two lists, so a script can zip them.
+        "gauss_legendre" => {
+            let (x, w) = sf::quadrature::gauss_legendre(as_usize(name, 0, &a[0])?)?;
+            Ok(Value::List(vec![nums(x), nums(w)]))
+        }
+
+        // ---- eigenproblems ----------------------------------------
+        "eigenvalues" => Ok(nums(sf::eigen::eigenvalues(&as_matrix(name, 0, &a[0])?)?)),
+        // Returns [values, vectors] where vectors is a list of rows.
+        "jacobi_eigen" => {
+            let (vals, vecs) = sf::eigen::jacobi_eigen(&as_matrix(name, 0, &a[0])?)?;
+            Ok(Value::List(vec![
+                nums(vals),
+                Value::List(vecs.into_iter().map(nums).collect()),
+            ]))
+        }
+
+        // ---- linear algebra ---------------------------------------
+        "solve_tridiag" => Ok(nums(sf::tridiag::solve_tridiag(
+            &as_num_list(name, 0, &a[0])?,
+            &as_num_list(name, 1, &a[1])?,
+            &as_num_list(name, 2, &a[2])?,
+            &as_num_list(name, 3, &a[3])?,
+        )?)),
+
+        // ---- utility ----------------------------------------------
+        "rel_err" => Ok(Value::Num(sf::rel_err(
+            as_num(name, 0, &a[0])?,
+            as_num(name, 1, &a[1])?,
+        ))),
+
+        _ => unreachable!("call() already filtered the name set"),
+    }
+}
+
+/// Every name this module answers to. `vm.rs` folds this into the
+/// reserved-name list so a user function cannot shadow one.
+pub const SPECIAL_NAMES: &[&str] = &[
+    "assoc_legendre_p",
+    "bessel_j",
+    "bessel_j_array",
+    "chebyshev_t",
+    "chebyshev_u",
+    "eigenvalues",
+    "gauss_legendre",
+    "gegenbauer_c",
+    "hermite_h",
+    "hermite_he",
+    "jacobi_eigen",
+    "jacobi_p",
+    "laguerre_l",
+    "laguerre_l_assoc",
+    "legendre_p",
+    "legendre_p_prime",
+    "norm_assoc_legendre_p",
+    "rel_err",
+    "solve_tridiag",
+    "sph_harm",
+    "sph_harm_real",
+    "sph_j",
+    "sph_j_prime",
+    "sph_y",
+    "sph_y_prime",
+];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn n(x: f64) -> Value {
+        Value::Num(x)
+    }
+    fn call_ok(name: &str, args: &[Value]) -> Value {
+        call(name, args).expect("name should be ours").expect("should succeed")
+    }
+    fn call_err(name: &str, args: &[Value]) -> String {
+        call(name, args).expect("name should be ours").unwrap_err()
+    }
+    fn as_f(v: Value) -> f64 {
+        match v {
+            Value::Num(x) => x,
+            other => panic!("expected a number, got {other:?}"),
+        }
+    }
+
+    /// Every registered name must dispatch. This is the test that would
+    /// have caught the whole gap: a function in the library but absent
+    /// from the language.
+    #[test]
+    fn every_registered_name_is_reachable() {
+        for nm in SPECIAL_NAMES {
+            assert!(
+                call(nm, &[]).is_some(),
+                "`{nm}` is in SPECIAL_NAMES but call() does not own it"
+            );
+            // With zero args it must be an ARITY error, not "unknown".
+            let e = call_err(nm, &[]);
+            assert!(
+                e.contains("takes") && e.contains("argument"),
+                "`{nm}` gave an unexpected error: {e}"
+            );
+        }
+    }
+
+    /// The project rule is that a function is not "added" until it is
+    /// callable, in HELP, in the parser's EBNF comment, and in BOTH
+    /// grammar documents. That rule has been enforced by discipline,
+    /// which is to say not enforced. This enforces it: if you register
+    /// a function and forget a document, the build fails here.
+    #[test]
+    fn every_special_function_is_documented_in_lockstep() {
+        // `\_` in LaTeX, `\` nowhere else — strip backslashes so one
+        // needle works against all four texts.
+        let strip = |s: &str| s.replace('\\', "");
+        let help = strip(crate::vm::HELP_TEXT);
+        let ebnf = strip(include_str!("parser.rs"));
+        let md = strip(include_str!("../../grammar.md"));
+        let tex = strip(include_str!("../../grammar.tex"));
+
+        let mut missing = Vec::new();
+        for nm in SPECIAL_NAMES {
+            for (what, hay) in
+                [("HELP_TEXT", &help), ("parser.rs EBNF", &ebnf), ("grammar.md", &md), ("grammar.tex", &tex)]
+            {
+                if !hay.contains(nm) {
+                    missing.push(format!("`{nm}` is missing from {what}"));
+                }
+            }
+        }
+        assert!(
+            missing.is_empty(),
+            "grammar lockstep is broken:\n  {}",
+            missing.join("\n  ")
+        );
+    }
+
+    #[test]
+    fn unknown_names_fall_through() {
+        assert!(call("dot", &[]).is_none(), "must not shadow a core builtin");
+        assert!(call("nonesuch", &[]).is_none());
+    }
+
+    #[test]
+    fn values_match_the_library() {
+        // P_2(x) = (3x^2-1)/2
+        assert!((as_f(call_ok("legendre_p", &[n(2.0), n(0.5)])) - (-0.125)).abs() < 1e-14);
+        // H_3(x) = 8x^3 - 12x  ->  H_3(1) = -4
+        assert!((as_f(call_ok("hermite_h", &[n(3.0), n(1.0)])) + 4.0).abs() < 1e-13);
+        // T_n(cos t) = cos(n t)
+        let t = 0.7_f64;
+        let got = as_f(call_ok("chebyshev_t", &[n(5.0), n(t.cos())]));
+        assert!((got - (5.0 * t).cos()).abs() < 1e-13);
+        // j_0(x) = sin(x)/x
+        let got = as_f(call_ok("sph_j", &[n(0.0), n(1.3)]));
+        assert!((got - (1.3_f64).sin() / 1.3).abs() < 1e-14);
+        // J_0 at its first zero
+        assert!(as_f(call_ok("bessel_j", &[n(0.0), n(2.404_825_557_695_773)])).abs() < 1e-12);
+    }
+
+    /// A non-integral order is a mistake, and must be reported rather
+    /// than truncated into a confident wrong answer.
+    #[test]
+    fn fractional_orders_are_rejected_not_truncated() {
+        let e = call_err("hermite_h", &[n(2.5), n(1.0)]);
+        assert!(e.contains("whole number"), "got: {e}");
+        // and the truncated call would have succeeded, which is the point
+        assert!(call("hermite_h", &[n(2.0), n(1.0)]).unwrap().is_ok());
+    }
+
+    #[test]
+    fn library_errors_reach_the_user() {
+        // negative order
+        assert!(call_err("bessel_j", &[n(-1.0), n(1.0)]).contains("order"));
+        assert!(!call_err("legendre_p", &[n(-1.0), n(0.5)]).is_empty());
+        // |m| > l violates the associated Legendre selection rule
+        assert!(!call_err("assoc_legendre_p", &[n(1.0), n(3.0), n(0.5)]).is_empty());
+        // NOT an error: P_n is a polynomial, defined for ALL real x —
+        // only the orthogonality interval is [-1, 1]. P_2(5) = 37.
+        assert!((as_f(call_ok("legendre_p", &[n(2.0), n(5.0)])) - 37.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn list_and_matrix_shapes() {
+        // bessel_j_array returns n_max+1 entries
+        match call_ok("bessel_j_array", &[n(4.0), n(2.0)]) {
+            Value::List(v) => assert_eq!(v.len(), 5),
+            other => panic!("expected a list, got {other:?}"),
+        }
+        // eigenvalues of diag(1,2,3), ascending
+        let m = Value::List(vec![
+            Value::List(vec![n(1.0), n(0.0), n(0.0)]),
+            Value::List(vec![n(0.0), n(2.0), n(0.0)]),
+            Value::List(vec![n(0.0), n(0.0), n(3.0)]),
+        ]);
+        match call_ok("eigenvalues", &[m]) {
+            Value::List(v) => {
+                assert_eq!(v.len(), 3);
+                assert!((as_f(v[0].clone()) - 1.0).abs() < 1e-12);
+                assert!((as_f(v[2].clone()) - 3.0).abs() < 1e-12);
+            }
+            other => panic!("expected a list, got {other:?}"),
+        }
+        // a ragged matrix is refused by shape, not by the eigensolver
+        let ragged = Value::List(vec![
+            Value::List(vec![n(1.0), n(0.0)]),
+            Value::List(vec![n(0.0)]),
+        ]);
+        assert!(call_err("eigenvalues", &[ragged]).contains("square"));
+    }
+
+    #[test]
+    fn solve_tridiag_round_trips() {
+        // [[2,1,0],[1,2,1],[0,1,2]] x = [1,2,3]  ->  [0.5, 0, 1.5]
+        let z = |v: Vec<f64>| Value::List(v.into_iter().map(Value::Num).collect());
+        let x = call_ok(
+            "solve_tridiag",
+            &[
+                z(vec![0.0, 1.0, 1.0]),
+                z(vec![2.0, 2.0, 2.0]),
+                z(vec![1.0, 1.0, 0.0]),
+                z(vec![1.0, 2.0, 3.0]),
+            ],
+        );
+        match x {
+            Value::List(v) => {
+                assert!((as_f(v[0].clone()) - 0.5).abs() < 1e-13);
+                assert!(as_f(v[1].clone()).abs() < 1e-13);
+                assert!((as_f(v[2].clone()) - 1.5).abs() < 1e-13);
+            }
+            other => panic!("expected a list, got {other:?}"),
+        }
+    }
+
+    /// The bracket literal is overloaded (3 -> vector, 4 -> quaternion,
+    /// else list). Every shape must work as a numeric list, or a user
+    /// typing a perfectly ordinary 4x4 matrix gets told about
+    /// quaternions. Both real bugs, found by driving the actual binary.
+    #[test]
+    fn overloaded_bracket_shapes_all_work_as_lists() {
+        use physical_object::linalg::{Quat, Vec3};
+        // 3 entries -> Vec3
+        let v3 = Value::Vec3(Vec3 { x: 1.0, y: 2.0, z: 3.0 });
+        assert_eq!(as_num_list("t", 0, &v3).unwrap(), vec![1.0, 2.0, 3.0]);
+        // 4 entries -> Quat, unpacked w-first = the order typed
+        let q = Value::Quat(Quat { w: 1.0, x: 2.0, y: 3.0, z: 4.0 });
+        assert_eq!(as_num_list("t", 0, &q).unwrap(), vec![1.0, 2.0, 3.0, 4.0]);
+        // anything else -> List
+        let l = Value::List(vec![n(1.0), n(2.0)]);
+        assert_eq!(as_num_list("t", 0, &l).unwrap(), vec![1.0, 2.0]);
+        // and a 4x4 matrix built from 4-entry rows must be accepted
+        let row = |a: f64, b: f64, c: f64, d: f64| Value::Quat(Quat { w: a, x: b, y: c, z: d });
+        let m = Value::List(vec![
+            row(2.0, -1.0, 0.0, 0.0),
+            row(-1.0, 2.0, -1.0, 0.0),
+            row(0.0, -1.0, 2.0, -1.0),
+            row(0.0, 0.0, -1.0, 2.0),
+        ]);
+        let ev = as_matrix("t", 0, &m).unwrap();
+        assert_eq!(ev.len(), 4);
+        assert_eq!(ev[0].len(), 4);
+    }
+
+    #[test]
+    fn sph_harm_returns_re_and_im() {
+        match call_ok("sph_harm", &[n(1.0), n(0.0), n(0.6), n(0.0)]) {
+            Value::List(v) => {
+                assert_eq!(v.len(), 2, "expected [re, im]");
+                // Y_1^0 is real, so the imaginary part must vanish
+                assert!(as_f(v[1].clone()).abs() < 1e-14);
+            }
+            other => panic!("expected a list, got {other:?}"),
+        }
+    }
+}

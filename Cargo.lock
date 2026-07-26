@@ -30,6 +30,7 @@ name = "posim"
 version = "0.1.0"
 dependencies = [
  "physical_object",
+ "special_functions",
 ]
 
 [[package]]

@@ -20,6 +20,7 @@ mod machine;
 mod notebook;
 mod parser;
 mod scene;
+mod special;
 mod vm;
 
 fn main() {

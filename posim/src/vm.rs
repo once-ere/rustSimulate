@@ -372,6 +372,29 @@ posim command language (case-insensitive keywords):
                             sin() cos() exp() log(), pi, tau
   RESET                     clear the system
   HELP                      this text
+special functions (see grammar.md; orders must be WHOLE numbers):
+  spherical Bessel          sph_j(n,x) sph_y(n,x)
+                            sph_j_prime(n,x) sph_y_prime(n,x)
+  Legendre                  legendre_p(n,x) legendre_p_prime(n,x)
+                            assoc_legendre_p(l,m,x)
+                            norm_assoc_legendre_p(l,m,x)
+  spherical harmonics       sph_harm(l,m,theta,phi)      -> [re, im]
+                            sph_harm_real(l,m,theta,phi)
+  orthogonal polynomials    hermite_h(n,x) hermite_he(n,x)
+                            laguerre_l(n,x) laguerre_l_assoc(n,alpha,x)
+                            chebyshev_t(n,x) chebyshev_u(n,x)
+                            gegenbauer_c(n,alpha,x)
+                            jacobi_p(n,alpha,beta,x)
+  cylindrical Bessel        bessel_j(n,x)
+                            bessel_j_array(n_max,x)      -> list
+  quadrature                gauss_legendre(n)  -> [nodes, weights]
+  eigenproblems             eigenvalues(matrix)          -> list
+                            jacobi_eigen(matrix) -> [values, vectors]
+  linear algebra            solve_tridiag(sub,diag,sup,rhs) -> list
+  utility                   rel_err(a,b)
+                            a 3-element bracket is a VECTOR, so it is
+                            also accepted wherever a list is wanted; a
+                            3x3 matrix value works as a matrix argument
 rigid-body collisions (event-detected at the exact time of impact):
   COLLIDE [ON|OFF]          enable/disable (default ON; bare = status)
   CONTACTS                  list contacts of the last STEP/RUN:
@@ -1438,8 +1461,14 @@ fn binary_mul(a: Value, b: Value) -> Result<Value, String> {
 
 /// Names taken by the expression builtins — a user function may not
 /// shadow them.
-const BUILTIN_NAMES: &[&str] =
+const CORE_BUILTIN_NAMES: &[&str] =
     &["dot", "cross", "norm", "normalize", "sqrt", "abs", "sin", "cos", "exp", "log"];
+
+/// A user function may shadow neither a core builtin nor a special
+/// function. Kept as one predicate so the two lists cannot drift.
+fn is_builtin_name(n: &str) -> bool {
+    CORE_BUILTIN_NAMES.contains(&n) || crate::special::SPECIAL_NAMES.contains(&n)
+}
 
 /// Maximum user-function call depth (a plain safety net — the language
 /// has no conditionals, so recursion can never terminate anyway).
@@ -1649,7 +1678,7 @@ pub fn define_function(source: &str, state: &mut SimState) -> Result<Value, Stri
     if !valid_name {
         return Err(format!("DEF: `{fname}` is not a valid function name"));
     }
-    if BUILTIN_NAMES.contains(&fname.as_str()) {
+    if is_builtin_name(&fname) {
         return Err(format!("DEF: `{fname}` is a builtin function and cannot be redefined"));
     }
     /* the name must lex as a plain identifier — a keyword (NEW, BOX,
@@ -1697,7 +1726,7 @@ pub fn define_function(source: &str, state: &mut SimState) -> Result<Value, Stri
                     ))
                 }
             }
-            if BUILTIN_NAMES.contains(&lname.as_str()) || lname == "pi" || lname == "tau" {
+            if is_builtin_name(&lname) || lname == "pi" || lname == "tau" {
                 return Err(format!(
                     "DEF {fname}: `{pname}` is a builtin and cannot name a parameter"
                 ));
@@ -1814,7 +1843,10 @@ fn call_builtin(name: &str, mut args: Vec<Value>) -> Result<Value, String> {
             };
             Ok(Value::Num(y))
         }
-        other => Err(format!("unknown function `{other}()` — see HELP")),
+        other => match crate::special::call(other, &args) {
+            Some(r) => r,
+            None => Err(format!("unknown function `{other}()` — see HELP")),
+        },
     }
 }
 

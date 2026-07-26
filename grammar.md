@@ -249,6 +249,54 @@ Builtin functions: `dot(a, b)` (scalar product), `cross(a, b)`,
 `normalize(v)`, and scalar `sqrt abs sin cos exp log`. Constants: `pi`,
 `tau` (= 2π).
 
+### 4.1 Special functions
+
+The same call syntax reaches the `special_functions` library. Nothing
+about the grammar changes to accommodate them — the production
+`IDENT "(" [expr {"," expr}] ")"` already admits any builtin — so adding
+a function is a *registration*, not a grammar change.
+
+**Orders must be whole numbers.** Where an argument is an integer order
+(the `n`, `l`, `m` below), a fractional value is an error rather than
+being quietly truncated:
+
+```
+In[1]:= hermite_h(2.5, 1)
+Err[1]: hermite_h(): argument 1 must be a whole number (an integer order), got 2.5
+```
+
+That refusal is deliberate. Truncating to `hermite_h(2, 1)` would return
+a confident, wrong number, and you would have no way to notice.
+
+| family | functions |
+|---|---|
+| spherical Bessel | `sph_j(n,x)`, `sph_y(n,x)`, `sph_j_prime(n,x)`, `sph_y_prime(n,x)` |
+| Legendre | `legendre_p(n,x)`, `legendre_p_prime(n,x)`, `assoc_legendre_p(l,m,x)`, `norm_assoc_legendre_p(l,m,x)` |
+| spherical harmonics | `sph_harm(l,m,theta,phi)` → `[re, im]`, `sph_harm_real(l,m,theta,phi)` |
+| orthogonal polynomials | `hermite_h(n,x)`, `hermite_he(n,x)`, `laguerre_l(n,x)`, `laguerre_l_assoc(n,alpha,x)`, `chebyshev_t(n,x)`, `chebyshev_u(n,x)`, `gegenbauer_c(n,alpha,x)`, `jacobi_p(n,alpha,beta,x)` |
+| cylindrical Bessel | `bessel_j(n,x)`, `bessel_j_array(n_max,x)` → list |
+| quadrature | `gauss_legendre(n)` → `[nodes, weights]` |
+| eigenproblems | `eigenvalues(matrix)` → list, `jacobi_eigen(matrix)` → `[values, vectors]` |
+| linear algebra | `solve_tridiag(sub, diag, sup, rhs)` → list |
+| utility | `rel_err(a, b)` |
+
+**A wrinkle worth knowing about lists.** The bracket literal is
+overloaded: `[a,b,c]` is a *vector*, `[a,b,c,d]` is a *quaternion*, and
+any other length is a list. That is convenient for physics and would be
+a nuisance here, so all three shapes are accepted anywhere a numeric
+list is expected — a 4×4 matrix whose rows are 4-element brackets works
+exactly as you would expect, and `norm_assoc_legendre_p` never lectures
+you about quaternions. A 3×3 matrix value is likewise accepted directly
+wherever a matrix argument is wanted.
+
+Two functions are **not** exposed, and the reason is worth stating
+rather than leaving you to discover it: `solve_tridiag_c` and
+`solve_cyclic_tridiag_c` are complex-valued, and this language has no
+complex type. Reaching them needs a new value kind plus literal syntax
+in the lexer, which is a language change rather than a registration; it
+is staged deliberately instead of being half-done. The real-valued
+`solve_tridiag` is available now.
+
 ---
 
 ## 5. Command semantics (what each command does)
@@ -904,7 +952,7 @@ write. When the program ends, the value on top of the stack becomes
 
 ---
 
-## 9. Fourteen worked examples
+## 9. Fifteen worked examples
 
 All transcripts below are genuine program output (interactive sessions
 are shown as they appear when typed by hand).
@@ -1510,6 +1558,81 @@ off-center impact: conserved to ~10⁻¹³ per component (`Out[11]` vs
 action–reaction impulse pair at one shared contact point. Contrast
 Example 13: there the infinitely massive walls absorbed momentum; here,
 with no walls, E, P *and* L all hold at solver precision.
+
+---
+
+### Example 15 — a particle in a box, solved inside the language
+
+The special functions are not decoration: with `eigenvalues` you can set
+up and solve a small quantum problem in the notebook itself.
+
+Take a particle in an infinite square well of width \(L = 1\) with
+\(\hbar = m = 1\). Discretise \(-\tfrac12 \psi'' = E\psi\) on 4
+interior points, spacing \(h = 0.2\). The second-derivative stencil
+puts \(1/h^2\) on the diagonal and \(-1/2h^2\) beside it, so the
+Hamiltonian is a 4×4 tridiagonal matrix you can type out. The exact
+answer is \(E_n = n^2\pi^2/2\), so \(E_1 = \pi^2/2\).
+
+```
+In[1]:= let h = 0.2
+Out[1]= h set
+In[2]:= let k = 1 / (h * h)
+Out[2]= k set
+In[3]:= eigenvalues([[k, -0.5*k, 0, 0], [-0.5*k, k, -0.5*k, 0], [0, -0.5*k, k, -0.5*k], [0, 0, -0.5*k, k]])
+Out[3]= [4.774575140626312, 17.274575140626325, 32.72542485937371, 45.225424859373675]
+In[4]:= pi * pi / 2
+Out[4]= 4.934802200544679
+```
+
+The ground state comes out at 4.7746 against an exact 4.9348 — **3.2 %
+low**. That is not a bug, and it is worth understanding rather than
+tightening a tolerance until it goes away. A 3-point stencil on 4 points
+is a *coarse* grid, and its eigenvalues have the closed form
+\(k\bigl(1 - \cos(n\pi/5)\bigr)\) with \(k = 1/h^2 = 25\) — which
+reproduces all four numbers above exactly (\(25(1-\cos 36°) = 4.7746\)).
+The discretisation error is real, known, and
+second order in \(h\): refine the grid and it falls off as \(h^2\).
+
+Note the row shapes. Each row here has four entries, so it lexes as a
+*quaternion* rather than a list — the bracket literal is overloaded (see
+§4.1). It works anyway, because every bracket shape is accepted where a
+numeric list is wanted. You should not have to think about quaternions
+to type a matrix.
+
+The rest of the family is there to be checked against its own
+identities, which is the honest way to use a special-function library
+you did not write:
+
+```
+In[5]:= let t = 0.7
+Out[5]= t set
+In[6]:= chebyshev_t(5, cos(t)) - cos(5 * t)
+Out[6]= -0.00000000000000011102230246251565
+In[7]:= sph_j(0, 1.3) - sin(1.3) / 1.3
+Out[7]= 0
+In[8]:= legendre_p(3, 0.4) - 0.5 * (5 * 0.4 * 0.4 * 0.4 - 3 * 0.4)
+Out[8]= 0.00000000000000011102230246251565
+In[9]:= bessel_j_array(4, 2)
+Out[9]= [0.22389077914123567, 0.5767248077568734, 0.35283402861563773, 0.12894324947440208, 0.03399571980756844]
+```
+
+`In[6]` is \(T_n(\cos\theta) = \cos n\theta\); `In[7]` is
+\(j_0(x) = \sin x / x\); `In[8]` is \(P_3(x) = (5x^3-3x)/2\). All
+three land at zero or one part in \(10^{16}\) — a single rounding
+step. `In[9]` returns the whole table \(J_0 \ldots J_4\) in one call,
+which is what a Bessel-expanded propagator actually needs.
+
+Finally, the thing the library refuses to do:
+
+```
+In[10]:= hermite_h(2.5, 1)
+Err[10]: hermite_h(): argument 1 must be a whole number (an integer order), got 2.5
+```
+
+There is no Hermite polynomial of order 2.5. The alternative — silently
+computing \(H_2\) — would hand you a plausible number with no
+indication anything went wrong, and you would carry it through the rest
+of the calculation.
 
 ---
 
