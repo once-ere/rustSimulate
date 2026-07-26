@@ -44,6 +44,9 @@
 #![allow(non_camel_case_types)]
 #![allow(non_upper_case_globals)]
 
+pub mod bessel;
+pub mod complex;
+pub mod tridiag;
 pub mod eigen;
 pub mod legendre;
 pub mod orthopoly;

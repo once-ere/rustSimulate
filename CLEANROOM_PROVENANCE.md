@@ -1,0 +1,247 @@
+# Clean-room reimplementation record — Stage 1
+
+**Date:** 2026-07-26
+**Scope:** replacing the licence-encumbered numerical routines found in
+the SolveIt C++ sources with independently written Rust, so that
+`rustSimulate` can carry the physics without carrying the licences.
+
+This document exists so the claim "clean room" can be *audited* rather
+than merely asserted.
+
+---
+
+## 1. What was encumbered, and why it matters
+
+The review of the SolveIt 2002 C/C++/Fortran sources and the 2026 C++23
+upgrade found four licensing problems, all on live quantum-mechanics
+code paths:
+
+| routine | where | origin | licence position |
+|---|---|---|---|
+| `bessj0`, `bessj1`, `bessj` | `QMEvolve.h`, `DataQM_Scatt1D.h` | *Numerical Recipes* | **Not redistributable.** The NR licence permits use in your own programs but forbids redistribution of the source. |
+| `zbrent` | `TrajectoryRecord.h` | *Numerical Recipes* | Same. |
+| tridiagonal solver, cyclic tridiagonal solver | QM propagator | line-for-line GSL | **GPL-3.0.** Copying it into this repo would place the whole work under GPL-3.0. |
+| GIAC (expression evaluation) | user-typed potentials | GIAC | **GPL-2.0.** Same infection problem. |
+
+The important distinction: **the algorithms are not encumbered — the
+expressions of them are.** Miller's downward recurrence, the Thomas
+algorithm, Sherman–Morrison and Brent's method are all standard
+textbook mathematics, published decades before any of these
+implementations and freely usable. What may not ship is *that source
+code*. So the fix is to write the mathematics again, not to work around
+the licence.
+
+**No encumbered source ships in this repository.** The SolveIt
+reference trees live in `obsolete_or_historic/` and `SolveIt/`, both
+listed in `.gitignore`, and neither has ever been staged.
+
+---
+
+## 2. Method
+
+For each replacement I worked from the *mathematical statement* of the
+algorithm — the recurrence relation, the elimination scheme, the
+normalisation identity — citing DLMF equation numbers and Abramowitz &
+Stegun (1964, a US Government work in the public domain, and therefore
+safe to quote formulas from).
+
+Concretely, and this is the part that makes the claim checkable:
+
+> **I did not open `QMEvolve.h`, `DataQM_Scatt1D.h`, or
+> `TrajectoryRecord.h` while writing any of these modules.** The only
+> information carried across was the *list of routine names and what
+> each is for*, taken from the licensing review — which is a functional
+> specification, not an expression.
+
+Two design choices were made specifically to keep the boundary clean:
+
+1. **No rational-approximation coefficient tables.** The NR/Cephes-style
+   `bessj0` works from tabulated minimax polynomial coefficients. Those
+   coefficient tables are exactly the kind of thing that would look
+   copied if it were copied. The implementation here uses the
+   normalisation-sum approach instead, which requires **no magic
+   constants at all** — every number in the file is either a loop bound
+   or a scaling threshold with a stated reason.
+2. **Different interface shape.** `bessel_j_array` returns the whole
+   table in one pass because that is what the physics wants; it is not
+   a signature-for-signature port of `bessj(n, x)`.
+
+---
+
+## 3. The replacements
+
+### 3.1 `special_functions::bessel` — replaces `bessj0`, `bessj1`, `bessj`
+
+| | |
+|---|---|
+| **file** | `special_functions/src/bessel.rs` |
+| **public API** | `bessel_j_array(n_max, x) -> Result<Vec<f64>, String>`, `bessel_j(n, x) -> Result<f64, String>` |
+| **algorithm** | Miller's downward recurrence |
+| **citations** | recurrence `J_{n-1} + J_{n+1} = (2n/x) J_n` — DLMF 10.6.1 (<https://dlmf.nist.gov/10.6.E1>), A&S 9.1.27; normalisation `J_0 + 2(J_2 + J_4 + …) = 1` — DLMF 10.12.4 (<https://dlmf.nist.gov/10.12.E4>), A&S 9.1.46; parity `J_n(-x) = (-1)^n J_n(x)` — A&S 9.1.35 |
+
+Why downward: `J_n(x)` decays super-exponentially once `n > x`, so the
+upward recurrence amplifies round-off into the (growing) `Y_n` solution
+and destroys the answer. Recurring downward from an artificial seed
+does the opposite — the contamination decays — and the arbitrary seed
+is removed at the end by imposing the normalisation identity.
+
+**A defect found and fixed during testing.** The first version chose the
+seed order as `n_max + 20 + (2√x + x/2)`. At `x = 45` that is only 70,
+barely above `x` itself, and `J_n(45)` has not yet begun to decay at
+`n = 70` — so the recurrence had not converged and `J_0(45)` was correct
+to only ~9 digits (ours `1.15818670747e-1` vs Cephes `1.15818670673e-1`).
+The cross-check against the vendored Cephes caught it. The seed is now
+`n_max + 30 + (1.5x + 12√x)`, and the measurement that motivated the
+change is recorded in a comment in the source so nobody tightens it
+back.
+
+**Verification** (6 tests):
+- cross-validation against the independently written vendored Cephes
+  `jv` at `x ∈ {0.1, 0.7, 1, 2.5, 5, 9, 20, 45}` for `n = 0..15`, to
+  1e-10 relative — *two entirely different algorithms agreeing is the
+  strongest evidence available*;
+- the normalisation identity holds on the **output** to 1e-12 (not a
+  tautology: it is imposed on the unnormalised values, so its survival
+  confirms the scaling step);
+- the three-term recurrence is satisfied to 1e-12 for `n = 1..24`;
+- `J_0(0) = 1`, `J_n(0) = 0`, parity, and the first zero of `J_0` at
+  2.404825557695773;
+- `J_30(1) ≈ 1e-49` — positive and correctly tiny, the exact regime
+  where upward recurrence fails;
+- invalid input (negative order, NaN, ∞) returns `Err`.
+
+### 3.2 `special_functions::tridiag` — replaces both GSL-derived solvers
+
+| | |
+|---|---|
+| **file** | `special_functions/src/tridiag.rs` |
+| **public API** | `solve_tridiag` (real), `solve_tridiag_c` (complex), `solve_cyclic_tridiag_c` (periodic, complex) |
+| **algorithm** | Thomas algorithm (Gaussian elimination specialised to a tridiagonal band: one forward sweep, one back substitution); Sherman–Morrison rank-one correction for the cyclic case |
+
+The cyclic case writes the periodic matrix as `A' + u vᵀ` with `A'`
+tridiagonal, solves twice against `A'`, and combines as
+`x = y − z (v·y)/(1 + v·z)`.
+
+Both solvers are complex-valued because the Crank–Nicolson operator
+`1 + iH dt/2` is complex; the real entry point converts and delegates
+rather than duplicating the sweep.
+
+**Stability, stated honestly.** The Thomas algorithm does no pivoting,
+so it is not unconditionally stable. It *is* stable for diagonally
+dominant systems, which the Crank–Nicolson operator is by construction
+(the leading `1` keeps the diagonal away from zero). A pivot that
+collapses is returned as an `Err` naming the row, never divided
+through silently.
+
+**A defect found during testing — in the test, not the code.** The
+hand-written expected solution for a 3×3 system was wrong; the solver
+was right. The corrected value is derived in a comment at the assertion
+(`x = [0.5, 0, 1.5]`, verified by substitution). The residual test
+`‖Ax − b‖ → 0` had been passing throughout and is the check that
+actually verifies the routine — fixed expected-value constants are the
+weaker instrument, and this is the fourth time in this project that a
+hand-computed constant, not the numerics, was the error.
+
+**Verification** (6 tests + 2 doctests):
+- residual `‖Ax − b‖ < 1e-11` on a 60×60 complex system with varying
+  bands;
+- cyclic residual `< 1e-10` on a 40×40 periodic system;
+- the cyclic solver reproduces the plain one when the corners vanish;
+- **Crank–Nicolson unitarity**: a free-particle packet propagated 25
+  steps with periodic boundaries conserves its norm to `< 1e-10`;
+- invalid input — empty, length mismatch, zero pivot, NaN, and `n < 3`
+  for the cyclic form — all return `Err`.
+
+### 3.3 `special_functions::quadrature::brent_root` — replaces `zbrent`
+
+Already in the tree from the earlier milestone. Brent's method
+(bisection + secant + inverse quadratic interpolation with the standard
+safeguards), written from the method description. 24 unit tests plus
+doctests; mutation-tested to confirm the suite is non-vacuous.
+
+### 3.4 GIAC — no replacement needed
+
+GIAC was doing symbolic evaluation of user-typed potentials. `posim`
+already has its own lexer → parser → stack-machine expression
+evaluator, written for this project from the start, which covers that
+use. Nothing to port.
+
+### 3.5 `special_functions::complex` — supporting type
+
+`Complex64` (`special_functions/src/complex.rs`), written from the
+definitions. Needed because the propagator is complex and the project
+takes no external dependencies. Deliberately minimal: arithmetic,
+conjugate, modulus, argument, `exp`, `from_polar`, `inv`. Verified
+against arithmetic identities, `z·z̄ = |z|²`, `i² = −1`, Euler's
+identity, `|e^{it}| = 1`, and `e^{a+b} = e^a e^b`.
+
+---
+
+## 4. End-to-end evidence
+
+Unit tests prove the pieces; this proves they do the job they were
+written for. `special_functions/examples/scatter_1d.rs` reproduces the
+`DataQM_Scatt1D` scenario — a Gaussian packet scattering off a
+rectangular barrier — using only clean-room code.
+
+Setup: ħ = m = 1, 3999 grid points on [−100, 100] at dx = 0.05, dt =
+0.005 for 6000 steps (to t = 30), barrier V₀ = 2.5 of width 1, packet
+k₀ = 2 (E₀ = 2.0), σ = 2, launched at x₀ = −25.
+
+| quantity | measured |
+|---|---|
+| reflected `R` | 0.670188 |
+| transmitted `T` | 0.329812 |
+| still inside the barrier | 5.6e-7 |
+| `R + T + inside` | 1.00000000000147 |
+| analytic `T` at the central energy E₀ | 0.316660 |
+| analytic `T` averaged over &#124;φ(k)&#124;² | 0.330650 |
+| **relative difference** | **0.254 %** |
+| **worst norm drift, 6000 steps** | **1.47e-12** |
+
+Two remarks on reading this table.
+
+**The norm drift is the sharp test.** The Cayley operator is unitary
+for *any* time step — that is exact mathematics, not an asymptotic
+statement — so drift cannot be blamed on dt. 1.47e-12 accumulated over
+6000 solves is the tridiagonal routine behaving correctly; a wrong
+solver shows up here immediately and unmistakably.
+
+**The momentum averaging is not cosmetic.** The packet's energy spread
+straddles the barrier top (E₀ = 2.0 against V₀ = 2.5, with σ = 2 giving
+Δk = 0.25), so the transmission varies strongly across the packet.
+Averaging the analytic coefficient over |φ(k)|² moves the prediction
+from 0.3167 to 0.3307 and the agreement from 4.1 % to 0.25 % — the
+simulation is right and the naive single-energy comparison would have
+been the thing that was wrong.
+
+---
+
+## 5. State of the tree
+
+| | |
+|---|---|
+| workspace tests | **230 passed, 0 failed** (was 212 before Stage 1) |
+| build warnings | **0** |
+| `unsafe` in `special_functions` | none — `#![forbid(unsafe_code)]` at the crate root |
+| external dependencies | none |
+| encumbered source in the repo | **none** |
+
+New in Stage 1: 3 modules (`bessel`, `tridiag`, `complex`), 1 example
+(`scatter_1d`), 18 tests.
+
+---
+
+## 6. What is not claimed
+
+- These are replacements for the *specific* routines the review flagged,
+  not a general-purpose linear algebra or Bessel library.
+- `bessel_j_array` covers integer order and real argument. `Y_n`, `I_n`,
+  `K_n` and complex arguments come from the vendored Cephes or remain
+  future work; complex-argument Bessel is still the deferred
+  milestone-2 item.
+- The Thomas algorithm's lack of pivoting is a real limitation, stated
+  in the module documentation rather than hidden. Systems that are not
+  diagonally dominant should not use it.
+- This is Stage 1 of the SolveIt port. It removes the licensing
+  blockers; it does not by itself constitute the ported simulator.

@@ -23,9 +23,18 @@ public-domain US Government work, or written in our own notation. See
 |---|---|---|
 | `sph_bessel` — spherical Bessel jₙ, yₙ, derivatives | **native** | ✅ implemented, 7 tests + cross-validation |
 | gamma, erf, Ei/Si/Ci, incomplete γ/B, Airy, cylindrical Bessel, elliptic, Jacobi, ζ | vendored Cephes | ✅ available, 11 identity tests |
-| `legendre` — Pₙ, Pₗᵐ, spherical harmonics | native | **planned** |
-| `orthopoly` — Hermite, Laguerre, Chebyshev, Gegenbauer, Jacobi | native | **planned** |
+| `legendre` — Pₙ, Pₗᵐ, normalised P̄ₗᵐ, Yₗᵐ | **native** | ✅ implemented, tests + overflow policy |
+| `orthopoly` — Hermite, Laguerre, Chebyshev, Gegenbauer, Jacobi | **native** | ✅ implemented, 24 tests, mutation-tested |
+| `eigen` — cyclic Jacobi symmetric eigensolver | **native** | ✅ implemented |
+| `quadrature` — Gauss–Legendre, adaptive Simpson, Brent roots | **native** | ✅ implemented, 24 tests + 5 doctests |
+| `complex` — `Complex64` | **native** | ✅ implemented (Stage 1) |
+| `tridiag` — Thomas + Sherman–Morrison, real and complex | **native** | ✅ implemented (Stage 1), clean-room |
+| `bessel` — integer-order Jₙ table | **native** | ✅ implemented (Stage 1), clean-room |
 | `wigner` — 3j, 6j, Clebsch–Gordan | native | **planned** |
+
+Modules marked *clean-room* replace licence-encumbered routines from the
+SolveIt C++ sources; see [CLEANROOM_PROVENANCE.md](CLEANROOM_PROVENANCE.md)
+for the audit record.
 
 ---
 
@@ -386,6 +395,173 @@ at 2n, so the bound is sharp); nodes as Legendre roots; weights summing
 to the interval width; known integrals; superlinear Brent convergence
 counted in function evaluations (bisection could not achieve it); and
 reachable non-convergence branches.
+
+---
+
+## 7. `complex` — `Complex64`
+
+Quantum wavefunctions are complex, and the project takes no external
+dependencies, so the type is written here from the definitions:
+arithmetic, `conj`, `abs`, `norm_sqr`, `arg`, `exp`, `from_polar`,
+`inv`. Deliberately minimal — it exists to serve the propagator, not to
+be a numeric tower.
+
+### Intermediate
+```rust
+use special_functions::complex::Complex64 as C;
+let a = C::new(3.0, -4.0);
+assert_eq!(a.abs(), 5.0);                   // 3-4-5 triangle
+assert_eq!(C::I * C::I, C::real(-1.0));     // i^2 = -1
+// Euler: e^{i*pi} = -1
+let z = (C::I * std::f64::consts::PI).exp();
+assert!((z.re + 1.0).abs() < 1e-15 && z.im.abs() < 1e-15);
+```
+
+### Expert — why `norm_sqr` is separate from `abs`
+`abs` costs a `hypot`; a probability density `|ψ|²` does not need one,
+and a propagation loop evaluates it at every grid point at every step.
+Keeping the squared modulus as its own operation is not micro-tuning —
+it is also *more accurate*, since `hypot` then squaring round-trips
+through a square root for no reason.
+
+*Verified by:* arithmetic identities, `z·z̄ = |z|²`, `z/z = 1`, `i² = −1`,
+Euler's identity, `|e^{it}| = 1` across several `t`, and `e^{a+b} = eᵃeᵇ`.
+
+---
+
+## 8. `tridiag` — tridiagonal and cyclic tridiagonal solvers
+
+**Clean-room replacement for the GSL-derived (GPL-3.0) solvers in the
+SolveIt QM propagator.**
+
+Discretising `i ∂ψ/∂t = Hψ` in the Cayley form
+`(1 + iH dt/2) ψⁿ⁺¹ = (1 − iH dt/2) ψⁿ` leaves a tridiagonal system to
+solve every step; periodic boundaries make it cyclic.
+
+### API
+```rust
+solve_tridiag(sub, diag, sup, rhs)                        -> Result<Vec<f64>, String>
+solve_tridiag_c(sub, diag, sup, rhs)                      -> Result<Vec<Complex64>, String>
+solve_cyclic_tridiag_c(sub, diag, sup, bl, tr, rhs)       -> Result<Vec<Complex64>, String>
+```
+`sub[i]` multiplies `x[i-1]`, `diag[i]` multiplies `x[i]`, `sup[i]`
+multiplies `x[i+1]`; all three have length `n`, with `sub[0]` and
+`sup[n-1]` unused. For the cyclic form `bl` is the entry at row `n−1`,
+column `0` and `tr` the one at row `0`, column `n−1`.
+
+### Intermediate
+```rust
+use special_functions::tridiag::solve_tridiag;
+// [[2,1,0],[1,2,1],[0,1,2]] x = [1,2,3]
+let x = solve_tridiag(&[0.0,1.0,1.0], &[2.0,2.0,2.0], &[1.0,1.0,0.0], &[1.0,2.0,3.0])?;
+// x1 = 1-2x0 and x2 = 1+x0 reduce row 2 to -2x0+3 = 2, so x = [0.5, 0, 1.5]
+assert!((x[0]-0.5).abs() < 1e-14);
+assert!((x[2]-1.5).abs() < 1e-14);
+# Ok::<(), String>(())
+```
+
+### Expert — one Crank–Nicolson step, and why unitarity is the test
+```rust
+use special_functions::complex::Complex64 as C;
+use special_functions::tridiag::solve_tridiag_c;
+let (n, dx, dt) = (400usize, 0.05_f64, 0.01_f64);
+let k = 0.5 / (dx*dx);                 // H = -1/2 d^2/dx^2, free particle
+let half = C::I * (dt/2.0);
+let sub  = vec![half * C::real(-k); n];
+let sup  = vec![half * C::real(-k); n];
+let diag = vec![C::ONE + half * C::real(2.0*k); n];
+// build rhs = (1 - iH dt/2) psi, then:
+// let psi_next = solve_tridiag_c(&sub, &diag, &sup, &rhs)?;
+```
+The Cayley operator is **unitary for any `dt`** — that is exact
+mathematics, not an asymptotic statement. So if the norm of `ψ` drifts,
+the time step is not to blame: the *solver* is wrong. That makes norm
+conservation the sharpest available test of this module, far sharper
+than any residual tolerance, and it is what the test suite and the
+`scatter_1d` example both assert.
+
+Run the full scattering demonstration:
+```
+cargo run -p special_functions --release --example scatter_1d
+```
+It propagates 6000 steps and conserves the norm to **1.5e-12**, with the
+transmitted fraction matching the momentum-averaged analytic barrier
+coefficient to **0.25 %**.
+
+### The limitation, stated plainly
+The Thomas algorithm performs **no pivoting**, so it is not
+unconditionally stable. It is stable for diagonally dominant systems —
+which the Crank–Nicolson operator is by construction, since the leading
+`1` holds the diagonal away from zero. For anything else, do not use it.
+A pivot that collapses returns `Err` naming the row rather than dividing
+through and producing plausible garbage.
+
+*Verified by:* residual `‖Ax−b‖` on 60×60 complex and 40×40 cyclic
+systems; the cyclic solver reducing to the plain one when the corners
+vanish; end-to-end Crank–Nicolson norm conservation; and `Err` on empty
+input, length mismatch, zero pivot, non-finite entries, and `n < 3` for
+the cyclic form.
+
+---
+
+## 9. `bessel` — integer-order Jₙ, whole table in one pass
+
+**Clean-room replacement for the *Numerical Recipes* `bessj0`, `bessj1`
+and `bessj`** (not redistributable).
+
+A Bessel-expanded propagator needs the entire set `J₀(λ) … J_N(λ)` at a
+single argument. Computing them one at a time throws away the structure;
+the downward recurrence produces all of them in one sweep.
+
+### API
+```rust
+bessel_j_array(n_max: usize, x: f64) -> Result<Vec<f64>, String>   // J_0 .. J_{n_max}
+bessel_j(n: i32, x: f64)            -> Result<f64, String>
+```
+
+### Intermediate
+```rust
+use special_functions::bessel::{bessel_j, bessel_j_array};
+let z = bessel_j_array(4, 0.0)?;
+assert_eq!(z[0], 1.0);                        // J_0(0) = 1
+assert!(z[1..].iter().all(|&v| v == 0.0));    // J_n(0) = 0
+// parity: J_1 odd, J_0 even
+assert!((bessel_j(1, -1.4)? + bessel_j(1, 1.4)?).abs() < 1e-14);
+assert!((bessel_j(0, -1.4)? - bessel_j(0, 1.4)?).abs() < 1e-14);
+// first zero of J_0
+assert!(bessel_j(0, 2.404_825_557_695_773)?.abs() < 1e-12);
+# Ok::<(), String>(())
+```
+
+### Expert — why downward, and why no coefficient tables
+`Jₙ(x)` decays super-exponentially once `n > x`; `Yₙ(x)` grows. The
+upward recurrence therefore amplifies round-off into the growing
+solution and destroys the answer — `J₃₀(1) ≈ 1e-49` is unreachable that
+way. **Miller's algorithm** recurs *downward* from an artificial seed far
+above the wanted order, so the contamination decays instead, and removes
+the arbitrary seed at the end by imposing
+
+    J₀(x) + 2[J₂(x) + J₄(x) + …] = 1     (DLMF 10.12.4, A&S 9.1.46)
+
+This choice is also what makes the module defensible as clean-room work:
+the recurrence needs **no tabulated minimax coefficients at all**. Every
+constant in the file is a loop bound or a documented scaling threshold.
+
+**The seed order matters, and getting it wrong is quiet.** The first
+version started at `n_max + 20 + (2√x + x/2)`. At `x = 45` that is 70 —
+barely above `x`, where `Jₙ(45)` has not begun to decay — so the
+recurrence had not converged and `J₀(45)` was right to only ~9 digits.
+Nothing crashed; the answer was simply slightly wrong. The cross-check
+against the vendored Cephes caught it, and the seed is now
+`n_max + 30 + (1.5x + 12√x)`.
+
+*Verified by:* cross-validation against the independently written
+vendored Cephes `jv` for `n = 0..15` at eight arguments up to `x = 45`
+(two unrelated algorithms agreeing); the normalisation identity holding
+on the **output**, which is not a tautology since it is imposed on the
+unnormalised values; the three-term recurrence to 1e-12; exact values,
+parity, and the first zero of `J₀`; `J₃₀(1)` correctly ≈ 1e-49; and
+`Err` on negative order, NaN and ∞.
 
 ---
 
