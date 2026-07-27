@@ -229,6 +229,7 @@ pub fn call(name: &str, args: &[Value]) -> Option<Result<Value, String>> {
         // is why the language needed Value::Complex before they could
         // exist at all.
         "bessel_j_z" | "bessel_i_z" | "bessel_y_z" | "bessel_k_z" => 2,
+        "bessel_j_nu" | "bessel_i_nu" | "bessel_y_nu" | "bessel_k_nu" => 2,
         "solve_cyclic_tridiag_c" => 6,
         _ => return None,
     };
@@ -332,6 +333,26 @@ fn dispatch(name: &str, a: &[Value]) -> Result<Value, String> {
             as_cplx(name, 1, &a[1])?,
         )?)),
 
+        // ---- Bessel, real non-integer order, complex argument -----
+        // Order is a plain number here, not an integer: that is the
+        // whole point of these four.
+        "bessel_j_nu" => Ok(Value::Complex(sf::bessel_complex::bessel_j_nu(
+            as_num(name, 0, &a[0])?,
+            as_cplx(name, 1, &a[1])?,
+        )?)),
+        "bessel_i_nu" => Ok(Value::Complex(sf::bessel_complex::bessel_i_nu(
+            as_num(name, 0, &a[0])?,
+            as_cplx(name, 1, &a[1])?,
+        )?)),
+        "bessel_y_nu" => Ok(Value::Complex(sf::bessel_complex::bessel_y_nu(
+            as_num(name, 0, &a[0])?,
+            as_cplx(name, 1, &a[1])?,
+        )?)),
+        "bessel_k_nu" => Ok(Value::Complex(sf::bessel_complex::bessel_k_nu(
+            as_num(name, 0, &a[0])?,
+            as_cplx(name, 1, &a[1])?,
+        )?)),
+
         // ---- quadrature nodes -------------------------------------
         // Returns [nodes, weights] — two lists, so a script can zip them.
         "gauss_legendre" => {
@@ -424,11 +445,15 @@ fn dispatch(name: &str, a: &[Value]) -> Result<Value, String> {
 /// reserved-name list so a user function cannot shadow one.
 pub const SPECIAL_NAMES: &[&str] = &[
     "assoc_legendre_p",
+    "bessel_i_nu",
     "bessel_i_z",
     "bessel_j",
+    "bessel_k_nu",
     "bessel_k_z",
     "bessel_j_array",
+    "bessel_j_nu",
     "bessel_j_z",
+    "bessel_y_nu",
     "bessel_y_z",
     "chebyshev_t",
     "chebyshev_u",
@@ -529,6 +554,64 @@ mod tests {
             "grammar lockstep is broken:\n  {}",
             missing.join("\n  ")
         );
+    }
+
+    /// Non-integer order, reachable from the language. Checked against
+    /// the half-integer closed forms, which are elementary and hold for
+    /// complex `z`, plus the two Wronskians.
+    #[test]
+    fn non_integer_order_bessel_is_reachable() {
+        use sf::complex::Complex64 as Cx;
+        let z = |re: f64, im: f64| Value::Complex(Cx::new(re, im));
+        let get = |v: Value| match v {
+            Value::Complex(c) => c,
+            Value::Num(r) => Cx::real(r),
+            other => panic!("expected complex, got {other:?}"),
+        };
+        // J_{1/2}(z) = sqrt(2/(pi z)) sin z, for complex z.
+        let zz = Cx::new(1.4, 0.7);
+        let got = get(call_ok("bessel_j_nu", &[n(0.5), z(zz.re, zz.im)]));
+        let csin = ((Cx::I * zz).exp() - (Cx::I * zz * -1.0).exp()) / (Cx::I * 2.0);
+        let want = (Cx::real(2.0 / std::f64::consts::PI) * zz.inv()).powf(0.5) * csin;
+        assert!((got - want).abs() < 1e-12, "J_1/2: {got:?} vs {want:?}");
+
+        // K_{1/2}(z) = sqrt(pi/(2z)) exp(-z).
+        let got = get(call_ok("bessel_k_nu", &[n(0.5), z(zz.re, zz.im)]));
+        let want =
+            (Cx::real(std::f64::consts::PI * 0.5) * zz.inv()).powf(0.5) * (zz * -1.0).exp();
+        assert!((got - want).abs() < 1e-12, "K_1/2: {got:?} vs {want:?}");
+
+        // J-Y Wronskian at a genuinely non-integer order.
+        let nu = 1.3;
+        let jn = get(call_ok("bessel_j_nu", &[n(nu), z(zz.re, zz.im)]));
+        let j1 = get(call_ok("bessel_j_nu", &[n(nu + 1.0), z(zz.re, zz.im)]));
+        let yn = get(call_ok("bessel_y_nu", &[n(nu), z(zz.re, zz.im)]));
+        let y1 = get(call_ok("bessel_y_nu", &[n(nu + 1.0), z(zz.re, zz.im)]));
+        let w = j1 * yn - jn * y1;
+        let want = zz.inv() * (2.0 / std::f64::consts::PI);
+        assert!((w - want).abs() < 1e-12, "J-Y Wronskian: {w:?} vs {want:?}");
+
+        // I-K Wronskian.
+        let iv = get(call_ok("bessel_i_nu", &[n(nu), z(zz.re, zz.im)]));
+        let i1 = get(call_ok("bessel_i_nu", &[n(nu + 1.0), z(zz.re, zz.im)]));
+        let kv = get(call_ok("bessel_k_nu", &[n(nu), z(zz.re, zz.im)]));
+        let k1 = get(call_ok("bessel_k_nu", &[n(nu + 1.0), z(zz.re, zz.im)]));
+        let w = iv * k1 + i1 * kv;
+        assert!((w - zz.inv()).abs() < 1e-12, "I-K Wronskian: {w:?}");
+
+        // A whole order is accepted here — unlike the _z forms, which
+        // reject a fractional one — and agrees with the _z routine.
+        let a = get(call_ok("bessel_y_nu", &[n(2.0), z(zz.re, zz.im)]));
+        let b = get(call_ok("bessel_y_z", &[n(2.0), z(zz.re, zz.im)]));
+        assert!((a - b).abs() < 1e-12, "whole order: {a:?} vs {b:?}");
+        assert!(call_err("bessel_j_z", &[n(1.5), z(1.0, 1.0)]).contains("whole number"));
+        // ... and the fractional order that the _z form refuses is
+        // simply evaluated here (call_ok panics if it errors).
+        let _ = call_ok("bessel_j_nu", &[n(1.5), z(1.0, 1.0)]);
+
+        // Singular points still report errors.
+        assert!(!call_err("bessel_y_nu", &[n(0.5), z(0.0, 0.0)]).is_empty());
+        assert!(!call_err("bessel_k_nu", &[n(0.5), z(0.0, 0.0)]).is_empty());
     }
 
     #[test]

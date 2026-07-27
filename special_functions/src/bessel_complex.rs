@@ -73,6 +73,7 @@
 //! and `I_n` are entire and have no such restriction.
 
 use crate::complex::Complex64 as C;
+use spec_math::cephes64::rgamma;
 
 /// `J_0(z) ... J_{n_max}(z)` in one pass, for complex `z`.
 ///
@@ -363,6 +364,199 @@ pub fn bessel_k_c(n: i32, z: C) -> Result<C, String> {
     let j = bessel_j_c(n, iz)?;
     let y = bessel_y_c(n, iz)?;
     Ok((j + C::I * y) * i_pow(n + 1) * (std::f64::consts::PI * 0.5))
+}
+
+// ---------------------------------------------------------------------
+// Non-integer order
+// ---------------------------------------------------------------------
+//
+// For non-integer `nu` the whole family collapses to two ascending
+// series plus two reflection formulas, which is much simpler than the
+// integer case — the integer case is hard precisely BECAUSE those
+// reflections degenerate to 0/0 there.
+//
+//   J_nu(z) = (z/2)^nu sum_k (-1)^k (z^2/4)^k / (k! Gamma(nu+k+1))
+//   I_nu(z) = (z/2)^nu sum_k         (z^2/4)^k / (k! Gamma(nu+k+1))
+//   Y_nu(z) = [J_nu(z) cos(nu pi) - J_{-nu}(z)] / sin(nu pi)
+//   K_nu(z) = (pi/2) [I_{-nu}(z) - I_nu(z)] / sin(nu pi)
+//
+// `1/Gamma` is taken from the vendored reciprocal gamma rather than
+// dividing by `Gamma`: it is ZERO at the poles, which is exactly the
+// value the series needs when `nu + k + 1` lands on a non-positive
+// integer, whereas `1/Gamma(pole)` would be `1/inf` and, worse, an
+// intermediate `inf` if the gamma overflowed first (`Gamma` leaves f64
+// range past about 171, and large order is otherwise free here).
+//
+// ACCURACY. An ascending series is a different animal from the Miller
+// recurrence used at integer order, and it fails in a different place —
+// so the integer-order advice does NOT transfer. The largest term is of
+// size `exp(|z|)`, so the cancellation is the ratio of that to the
+// answer:
+//
+//     relative error  ~  1e-16 * exp(L)
+//         L = |z| - |Im z|   for J and Y   (worst on the real axis)
+//         L = |z| + Re z     for I and K   (worst on the POSITIVE real
+//                                           axis, exact on the negative)
+//
+// Measured and pinned: `documented_accuracy_bounds_hold` asserts
+// `1e-14 * exp(L)` across both families out to `|z| = 70`, and
+// `examples/bessel_nu_accuracy.rs` prints the whole surface. Large
+// order costs nothing — at `nu = 150` the order recurrence still closes
+// to 1e-13 — because nothing cancels once `nu >> |z|`.
+//
+// Past those ranges, prefer the integer-order routines where the order
+// permits. Uniform asymptotics for large `|z|` at non-integer order are
+// NOT implemented.
+
+/// How close to an integer `nu` must be before the reflection formulas
+/// are treated as degenerate. At `sin(nu pi) ~ 1e-9` the reflection has
+/// already lost nine digits, so the integer routines are better long
+/// before `nu` is exactly whole.
+const NEAR_INTEGER: f64 = 1e-9;
+
+/// The shared ascending series. `alternating` selects `J` (true) or `I`.
+fn nu_series(nu: f64, z: C, alternating: bool) -> Result<C, String> {
+    if !nu.is_finite() {
+        return Err(format!("bessel: the order must be finite, got {nu}"));
+    }
+    if !z.is_finite() {
+        return Err(format!("bessel: z must be finite, got {z:?}"));
+    }
+    if z.abs() == 0.0 {
+        // z^nu is 0 for nu > 0, 1 for nu = 0, singular for nu < 0
+        return if nu > 0.0 {
+            Ok(C::ZERO)
+        } else if nu == 0.0 {
+            Ok(C::ONE)
+        } else {
+            Err("bessel: singular at z = 0 for negative order".to_string())
+        };
+    }
+
+    let half = z * 0.5;
+    let q = half * half;
+    let step = if alternating { q * -1.0 } else { q };
+
+    let mut sum = C::ZERO;
+    let mut term_pow = C::ONE; // (+/- z^2/4)^k
+    let mut fact_k = 1.0f64;
+    for k in 0..400 {
+        let coeff = rgamma(nu + k as f64 + 1.0) / fact_k;
+        let add = term_pow * coeff;
+        sum = sum + add;
+        if k > 6 && add.abs() <= 1e-18 * sum.abs().max(1e-300) {
+            break;
+        }
+        term_pow = term_pow * step;
+        fact_k *= (k + 1) as f64;
+    }
+    let pref = half.powf(nu);
+    let out = pref * sum;
+    if !out.is_finite() {
+        return Err(format!(
+            "bessel: the series overflowed for nu = {nu}, z = {z:?}"
+        ));
+    }
+    Ok(out)
+}
+
+/// `J_nu(z)` for **real order** `nu` (integer or not) and complex `z`.
+///
+/// Evaluated by the ascending series (DLMF 10.2.2). **Accuracy falls as
+/// `1e-16 exp(|z| - |Im z|)`** — worst on the real axis, essentially
+/// exact up the imaginary one; see the module comment.
+///
+/// # Errors
+/// A non-finite order or argument, a negative order at `z = 0`, or an
+/// overflow in the series.
+///
+/// # Examples
+/// ```
+/// use special_functions::bessel_complex::bessel_j_nu;
+/// use special_functions::complex::Complex64 as C;
+/// // J_{1/2}(z) = sqrt(2/(pi z)) sin z, exactly — for complex z too.
+/// let z = C::new(1.3, 0.6);
+/// let got = bessel_j_nu(0.5, z).unwrap();
+/// let want = (C::real(2.0 / std::f64::consts::PI) * z.inv()).powf(0.5)
+///     * ((C::I * z).exp() - (C::I * z * -1.0).exp()) / (C::I * 2.0);
+/// assert!((got - want).abs() < 1e-12);
+/// ```
+pub fn bessel_j_nu(nu: f64, z: C) -> Result<C, String> {
+    nu_series(nu, z, true)
+}
+
+/// `I_nu(z)` for real order and complex `z`.
+///
+/// Ascending series (DLMF 10.25.2). **Accuracy falls as
+/// `1e-16 exp(|z| - Re z)`** — exact along the positive real axis,
+/// worst along the negative one, the mirror image of [`bessel_j_nu`].
+///
+/// # Errors
+/// As [`bessel_j_nu`].
+pub fn bessel_i_nu(nu: f64, z: C) -> Result<C, String> {
+    nu_series(nu, z, false)
+}
+
+/// `Y_nu(z)` for real order and complex `z`.
+///
+/// Non-integer order uses the reflection
+/// `Y_nu = [J_nu cos(nu pi) - J_{-nu}] / sin(nu pi)` (DLMF 10.2.3).
+/// **Near an integer that formula is 0/0**, so orders within
+/// `1e-9` of a whole number are handed to the integer implementation,
+/// which uses the logarithmic series instead. The switch is not a
+/// convenience: at `sin(nu pi) ~ 1e-9` the reflection has already lost
+/// nine digits to cancellation.
+///
+/// **Accuracy** is that of [`bessel_j_nu`], which it is built from.
+///
+/// # Errors
+/// As [`bessel_j_nu`]; also `z = 0`, where `Y` is singular.
+pub fn bessel_y_nu(nu: f64, z: C) -> Result<C, String> {
+    let nearest = nu.round();
+    if (nu - nearest).abs() < NEAR_INTEGER {
+        if nearest < 0.0 {
+            // Y_{-n} = (-1)^n Y_n
+            let n = (-nearest) as i32;
+            let y = bessel_y_c(n, z)?;
+            return Ok(if n % 2 == 0 { y } else { y * -1.0 });
+        }
+        return bessel_y_c(nearest as i32, z);
+    }
+    if z.abs() == 0.0 {
+        return Err("bessel_y_nu: Y is singular at z = 0".to_string());
+    }
+    let (s, c) = (nu * std::f64::consts::PI).sin_cos();
+    let jp = bessel_j_nu(nu, z)?;
+    let jm = bessel_j_nu(-nu, z)?;
+    Ok((jp * c - jm) * (1.0 / s))
+}
+
+/// `K_nu(z)` for real order and complex `z`.
+///
+/// Non-integer order uses `K_nu = (pi/2)[I_{-nu} - I_nu]/sin(nu pi)`
+/// (DLMF 10.27.4), with the same near-integer handover as
+/// [`bessel_y_nu`] and for the same reason.
+///
+/// **Accuracy falls as `1e-16 exp(|z| + Re z)`** — the two `I` series
+/// are each of size `exp(Re z)` and their leading parts cancel, which
+/// is what makes `K` decay in the first place. Worst on the positive
+/// real axis, exact on the negative one.
+///
+/// # Errors
+/// As [`bessel_y_nu`].
+pub fn bessel_k_nu(nu: f64, z: C) -> Result<C, String> {
+    let nearest = nu.round();
+    if (nu - nearest).abs() < NEAR_INTEGER {
+        // K_{-n} = K_n
+        return bessel_k_c(nearest.abs() as i32, z);
+    }
+    if z.abs() == 0.0 {
+        return Err("bessel_k_nu: K is singular at z = 0".to_string());
+    }
+    let s = (nu * std::f64::consts::PI).sin();
+    let ip = bessel_i_nu(nu, z)?;
+    let im = bessel_i_nu(-nu, z)?;
+    Ok((im - ip) * (std::f64::consts::PI / (2.0 * s)))
 }
 
 #[cfg(test)]
@@ -795,5 +989,275 @@ mod tests {
         assert!(bessel_k_c(0, C::ZERO).is_err(), "K at z = 0");
         assert!(bessel_y_c(-1, C::ONE).is_err(), "negative order");
         assert!(bessel_k_c(-1, C::ONE).is_err(), "negative order");
+    }
+
+    // -----------------------------------------------------------------
+    // Non-integer order
+    // -----------------------------------------------------------------
+
+    /// Half-integer order has a closed form in elementary functions, and
+    /// it holds for COMPLEX z, so it tests the series where nothing else
+    /// can reach: `J_{1/2}(z) = sqrt(2/(pi z)) sin z`,
+    /// `J_{-1/2}(z) = sqrt(2/(pi z)) cos z`.
+    ///
+    /// Note this is not a table lookup — `sin` and `cos` of a complex
+    /// argument are built here from `exp`, which shares no code with the
+    /// Bessel series.
+    #[test]
+    fn half_integer_closed_forms() {
+        let csin = |z: C| ((C::I * z).exp() - (C::I * z * -1.0).exp()) / (C::I * 2.0);
+        let ccos = |z: C| ((C::I * z).exp() + (C::I * z * -1.0).exp()) * 0.5;
+        for &(re, im) in &[
+            (0.4, 0.0),
+            (2.0, 0.0),
+            (7.5, 0.0),
+            (1.3, 0.6),
+            (3.0, -2.0),
+            (5.0, 4.0),
+            (-2.5, 1.0),
+        ] {
+            let z = C::new(re, im);
+            let pref = (C::real(2.0 / std::f64::consts::PI) * z.inv()).powf(0.5);
+            let got = bessel_j_nu(0.5, z).unwrap();
+            let want = pref * csin(z);
+            assert!(close(got, want, 1e-12), "J_1/2({z:?}): {got:?} vs {want:?}");
+
+            let got = bessel_j_nu(-0.5, z).unwrap();
+            let want = pref * ccos(z);
+            assert!(close(got, want, 1e-12), "J_-1/2({z:?}): {got:?} vs {want:?}");
+        }
+    }
+
+    /// `K_{1/2}(z) = sqrt(pi/(2z)) exp(-z)` (DLMF 10.39.2). This one goes
+    /// through the reflection formula and both `I` series, so it checks
+    /// the whole `K` path at once.
+    #[test]
+    fn k_half_integer_closed_form() {
+        for &(re, im) in &[(0.5, 0.0), (2.0, 0.0), (6.0, 0.0), (1.5, 1.0), (3.0, -2.5)] {
+            let z = C::new(re, im);
+            let got = bessel_k_nu(0.5, z).unwrap();
+            let want = (C::real(std::f64::consts::PI * 0.5) * z.inv()).powf(0.5) * (z * -1.0).exp();
+            assert!(close(got, want, 1e-11), "K_1/2({z:?}): {got:?} vs {want:?}");
+            // K_{-nu} = K_nu, and here that runs a completely different
+            // pair of series, so it is a real check rather than a tautology.
+            let neg = bessel_k_nu(-0.5, z).unwrap();
+            assert!(close(neg, got, 1e-11), "K_-1/2 != K_1/2 at {z:?}");
+        }
+    }
+
+    /// The Wronskian `J_{nu+1} Y_nu - J_nu Y_{nu+1} = 2/(pi z)`
+    /// (DLMF 10.5.2) holds for every order, integer or not. The right
+    /// side is elementary, so this is an ABSOLUTE check on `Y_nu` — it
+    /// cannot be satisfied by a consistently wrong pair.
+    #[test]
+    fn j_y_wronskian_at_non_integer_order() {
+        for &nu in &[0.25, 0.5, 1.3, 2.7, 4.4, -0.75] {
+            for &(re, im) in &[(0.6, 0.0), (2.0, 0.0), (5.0, 0.0), (1.2, 0.8), (3.0, -1.5)] {
+                let z = C::new(re, im);
+                let w = bessel_j_nu(nu + 1.0, z).unwrap() * bessel_y_nu(nu, z).unwrap()
+                    - bessel_j_nu(nu, z).unwrap() * bessel_y_nu(nu + 1.0, z).unwrap();
+                let want = z.inv() * (2.0 / std::f64::consts::PI);
+                assert!(
+                    close(w, want, 1e-10),
+                    "J-Y Wronskian nu={nu} z={z:?}: {w:?} vs {want:?}"
+                );
+            }
+        }
+    }
+
+    /// `I_nu K_{nu+1} + I_{nu+1} K_nu = 1/z` (DLMF 10.28.2), again for
+    /// general order and again with an elementary right-hand side.
+    #[test]
+    fn i_k_wronskian_at_non_integer_order() {
+        for &nu in &[0.25, 0.5, 1.3, 2.7, -0.4] {
+            for &(re, im) in &[(0.6, 0.0), (2.0, 0.0), (5.0, 0.0), (1.2, 0.8), (3.0, -1.5)] {
+                let z = C::new(re, im);
+                let w = bessel_i_nu(nu, z).unwrap() * bessel_k_nu(nu + 1.0, z).unwrap()
+                    + bessel_i_nu(nu + 1.0, z).unwrap() * bessel_k_nu(nu, z).unwrap();
+                assert!(
+                    close(w, z.inv(), 1e-10),
+                    "I-K Wronskian nu={nu} z={z:?}: {w:?} vs {:?}",
+                    z.inv()
+                );
+            }
+        }
+    }
+
+    /// The three-term recurrence in ORDER, `C_{nu-1} + C_{nu+1} =
+    /// (2 nu / z) C_nu` for J and Y, and `I_{nu-1} - I_{nu+1} =
+    /// (2 nu / z) I_nu` for I (DLMF 10.6.1, 10.29.1). Each value comes
+    /// from its own independent series evaluation, so agreement is not
+    /// built in.
+    #[test]
+    fn order_recurrence() {
+        for &nu in &[0.3, 1.6, 3.2, 5.8] {
+            for &(re, im) in &[(1.0, 0.0), (4.0, 0.0), (2.0, 1.5), (0.7, -0.9)] {
+                let z = C::new(re, im);
+                let f = z.inv() * (2.0 * nu);
+                let lhs = bessel_j_nu(nu - 1.0, z).unwrap() + bessel_j_nu(nu + 1.0, z).unwrap();
+                assert!(close(lhs, bessel_j_nu(nu, z).unwrap() * f, 1e-11), "J rec nu={nu}");
+                let lhs = bessel_y_nu(nu - 1.0, z).unwrap() + bessel_y_nu(nu + 1.0, z).unwrap();
+                assert!(close(lhs, bessel_y_nu(nu, z).unwrap() * f, 1e-9), "Y rec nu={nu}");
+                let lhs = bessel_i_nu(nu - 1.0, z).unwrap() - bessel_i_nu(nu + 1.0, z).unwrap();
+                assert!(close(lhs, bessel_i_nu(nu, z).unwrap() * f, 1e-11), "I rec nu={nu}");
+            }
+        }
+    }
+
+    /// At integer order the general routine must reproduce the integer
+    /// routines, which were written earlier from entirely different
+    /// formulas (Miller recurrence for J, the logarithmic series for Y).
+    #[test]
+    fn integer_order_agrees_with_the_integer_routines() {
+        for n in 0..6 {
+            for &(re, im) in &[(0.8, 0.0), (3.0, 0.0), (6.0, 0.0), (2.0, 1.0), (1.5, -2.0)] {
+                let z = C::new(re, im);
+                let j = bessel_j_array_c(n, z).unwrap()[n];
+                assert!(close(bessel_j_nu(n as f64, z).unwrap(), j, 1e-11), "J_{n}({z:?})");
+                let y = bessel_y_c(n as i32, z).unwrap();
+                assert!(close(bessel_y_nu(n as f64, z).unwrap(), y, 1e-11), "Y_{n}({z:?})");
+                let k = bessel_k_c(n as i32, z).unwrap();
+                assert!(close(bessel_k_nu(n as f64, z).unwrap(), k, 1e-10), "K_{n}({z:?})");
+            }
+        }
+    }
+
+    /// The near-integer handover is the one place the design could hide a
+    /// discontinuity: below the threshold `Y_nu` is the logarithmic
+    /// integer series, above it the reflection formula. Approaching an
+    /// integer from just outside the threshold must land on the integer
+    /// value. This tests the reflection formula against a completely
+    /// independent implementation, in the regime where the reflection is
+    /// worst conditioned.
+    #[test]
+    fn near_integer_handover_is_continuous() {
+        for n in 0..4 {
+            for &(re, im) in &[(1.4, 0.0), (3.5, 0.0), (2.0, 1.0)] {
+                let z = C::new(re, im);
+                let exact = bessel_y_c(n, z).unwrap();
+                // 1e-7 is a hundred times the handover threshold, so this
+                // genuinely goes through the reflection formula.
+                let off = bessel_y_nu(n as f64 + 1e-7, z).unwrap();
+                assert!(
+                    close(off, exact, 1e-5),
+                    "Y_{n}+1e-7 at {z:?}: reflection {off:?} vs integer series {exact:?}"
+                );
+                let exact = bessel_k_c(n, z).unwrap();
+                let off = bessel_k_nu(n as f64 + 1e-7, z).unwrap();
+                assert!(close(off, exact, 1e-5), "K_{n}+1e-7 at {z:?}");
+            }
+        }
+    }
+
+    /// On the real axis, non-integer order can be checked against the
+    /// vendored Cephes `jv`, which takes a real order and is a wholly
+    /// separate implementation (continued fractions and asymptotics, not
+    /// an ascending series).
+    #[test]
+    fn non_integer_order_matches_cephes_on_the_real_axis() {
+        for &nu in &[0.25, 0.5, 1.3, 2.7, 4.4, 7.1] {
+            for &x in &[0.3, 1.0, 3.0, 6.0, 11.0] {
+                let ours = bessel_j_nu(nu, C::real(x)).unwrap();
+                let ceph = jv(nu, x);
+                assert!(ours.im.abs() < 1e-14, "J_{nu}({x}) should be real");
+                assert!(
+                    rel_err(ours.re, ceph) < 1e-9 || (ours.re - ceph).abs() < 1e-14,
+                    "J_{nu}({x}): ours {} vs cephes {ceph}",
+                    ours.re
+                );
+            }
+        }
+    }
+
+    /// `J_{-n}` for whole `n` must be `(-1)^n J_n` — the series gets this
+    /// for free only because `1/Gamma` vanishes at the poles, so it is a
+    /// direct test of that design choice.
+    #[test]
+    fn negative_whole_order_uses_the_gamma_poles() {
+        for n in 1..6 {
+            let z = C::new(2.3, -1.1);
+            let neg = bessel_j_nu(-(n as f64), z).unwrap();
+            let pos = bessel_j_nu(n as f64, z).unwrap();
+            let want = if n % 2 == 0 { pos } else { pos * -1.0 };
+            assert!(close(neg, want, 1e-12), "J_-{n} vs (-1)^n J_{n}");
+            // I_{-n} = I_n, no sign.
+            let neg = bessel_i_nu(-(n as f64), z).unwrap();
+            let pos = bessel_i_nu(n as f64, z).unwrap();
+            assert!(close(neg, pos, 1e-12), "I_-{n} vs I_{n}");
+        }
+    }
+
+    /// Negative-order `Y` and `K` reflection: `Y_{-n} = (-1)^n Y_n` and
+    /// `K_{-nu} = K_nu`, both exercised through the near-integer branch.
+    #[test]
+    fn negative_order_reflections() {
+        let z = C::new(1.7, 0.9);
+        for n in 1..5 {
+            let want = bessel_y_c(n, z).unwrap();
+            let want = if n % 2 == 0 { want } else { want * -1.0 };
+            assert!(close(bessel_y_nu(-(n as f64), z).unwrap(), want, 1e-11), "Y_-{n}");
+            let want = bessel_k_c(n, z).unwrap();
+            assert!(close(bessel_k_nu(-(n as f64), z).unwrap(), want, 1e-11), "K_-{n}");
+        }
+    }
+
+    /// The accuracy bounds the documentation states are a claim, so they
+    /// are pinned here. `L` is the loss exponent:
+    /// `|z| - |Im z|` for J and Y, `|z| + Re z` for I and K — the log of
+    /// the ratio between the largest term of the series and the answer.
+    /// See `examples/bessel_nu_accuracy.rs` for the derivation and the
+    /// full measured surface.
+    #[test]
+    fn documented_accuracy_bounds_hold() {
+        let csin = |z: C| ((C::I * z).exp() - (C::I * z * -1.0).exp()) / (C::I * 2.0);
+        // The model says the relative error is about `1e-16 * exp(L)`.
+        // Pinning it with two decimal digits of slack tests the LAW —
+        // a bucketed tolerance would only test whichever radii happened
+        // to be sampled, and the first draft of this test did exactly
+        // that and tripped on its own bucket edges at L = 10 and L = 30.
+        let bound = |l: f64| 1e-14 * l.exp();
+        for &r in &[1.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 40.0, 50.0, 70.0] {
+            for &a in &[0.0, 0.5, 1.0, 1.5, 2.0, 3.0] {
+                let z = C::from_polar(r, a);
+
+                let l = r - z.im.abs();
+                if l <= 30.0 {
+                    let got = bessel_j_nu(0.5, z).unwrap();
+                    let want =
+                        (C::real(2.0 / std::f64::consts::PI) * z.inv()).powf(0.5) * csin(z);
+                    let e = (got - want).abs() / want.abs();
+                    assert!(
+                        e <= bound(l),
+                        "J_1/2 at r={r} arg={a} (L={l:.1}): {e:.1e} exceeds {:.0e}",
+                        bound(l)
+                    );
+                }
+
+                let l = r + z.re;
+                if l <= 30.0 {
+                    let got = bessel_k_nu(0.5, z).unwrap();
+                    let want = (C::real(std::f64::consts::PI * 0.5) * z.inv()).powf(0.5)
+                        * (z * -1.0).exp();
+                    let e = (got - want).abs() / want.abs();
+                    assert!(
+                        e <= bound(l),
+                        "K_1/2 at r={r} arg={a} (L={l:.1}): {e:.1e} exceeds {:.0e}",
+                        bound(l)
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn non_integer_order_edge_cases() {
+        // J_nu(0) = 0 for nu > 0, 1 for nu = 0, singular for nu < 0.
+        assert_eq!(bessel_j_nu(1.5, C::ZERO).unwrap(), C::ZERO);
+        assert_eq!(bessel_j_nu(0.0, C::ZERO).unwrap(), C::ONE);
+        assert!(bessel_j_nu(-0.5, C::ZERO).is_err(), "J_-1/2 at 0");
+        assert!(bessel_y_nu(0.5, C::ZERO).is_err(), "Y at 0");
+        assert!(bessel_k_nu(0.5, C::ZERO).is_err(), "K at 0");
+        assert!(bessel_j_nu(f64::NAN, C::ONE).is_err(), "NaN order");
+        assert!(bessel_j_nu(1.5, C::new(f64::INFINITY, 0.0)).is_err(), "infinite z");
     }
 }

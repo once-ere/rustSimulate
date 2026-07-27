@@ -64,6 +64,24 @@ impl Complex64 {
         Self::new(self.abs().ln(), self.arg())
     }
 
+    /// `z^p` for a real exponent, as `exp(p ln z)` — so it inherits
+    /// `ln`'s branch cut along the negative real axis.
+    ///
+    /// `0^p` is `0` for positive `p` and infinite otherwise, which is
+    /// the limit rather than the NaN the naive `exp(p * ln 0)` gives.
+    pub fn powf(self, p: f64) -> Self {
+        if self.re == 0.0 && self.im == 0.0 {
+            return if p > 0.0 {
+                Self::ZERO
+            } else if p == 0.0 {
+                Self::ONE
+            } else {
+                Self::new(f64::INFINITY, 0.0)
+            };
+        }
+        (self.ln() * p).exp()
+    }
+
     /// `e^{i*theta}` — the common case in a propagator.
     pub fn from_polar(r: f64, theta: f64) -> Self {
         Self::new(r * theta.cos(), r * theta.sin())
@@ -169,6 +187,29 @@ mod tests {
         // i^2 = -1
         let ii = Complex64::I * Complex64::I;
         assert_eq!(ii, Complex64::new(-1.0, 0.0));
+    }
+
+    /// Real powers must agree with elementary cases and compose.
+    #[test]
+    fn real_powers() {
+        let z = Complex64::new(1.3, -0.7);
+        // z^1 = z, z^0 = 1
+        assert!((z.powf(1.0) - z).abs() < 1e-14);
+        assert!((z.powf(0.0) - Complex64::ONE).abs() < 1e-14);
+        // z^2 = z*z
+        assert!((z.powf(2.0) - z * z).abs() < 1e-13);
+        // z^0.5 squared is z again
+        let r = z.powf(0.5);
+        assert!((r * r - z).abs() < 1e-13, "sqrt(z)^2 = {:?}", r * r);
+        // z^-1 = 1/z
+        assert!((z.powf(-1.0) - z.inv()).abs() < 1e-13);
+        // a positive real base behaves like the real power
+        let p = Complex64::real(3.0).powf(1.7);
+        assert!((p.re - 3.0_f64.powf(1.7)).abs() < 1e-12 && p.im.abs() < 1e-12);
+        // 0^p: the limit, not NaN
+        assert_eq!(Complex64::ZERO.powf(2.0), Complex64::ZERO);
+        assert_eq!(Complex64::ZERO.powf(0.0), Complex64::ONE);
+        assert!(Complex64::ZERO.powf(-1.0).re.is_infinite());
     }
 
     /// `ln` must invert `exp`, and must survive magnitudes where a

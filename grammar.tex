@@ -330,6 +330,9 @@ cylindrical Bessel & \code{bessel\_j(n,x)},
 cylindrical Bessel, \textbf{complex argument} &
   \code{bessel\_j\_z(n,z)}, \code{bessel\_i\_z(n,z)},
   \code{bessel\_y\_z(n,z)}, \code{bessel\_k\_z(n,z)}\\
+cylindrical Bessel, \textbf{any real order} &
+  \code{bessel\_j\_nu(nu,z)}, \code{bessel\_i\_nu(nu,z)},
+  \code{bessel\_y\_nu(nu,z)}, \code{bessel\_k\_nu(nu,z)}\\
 quadrature & \code{gauss\_legendre(n)} $\to$ \code{[nodes, weights]}\\
 eigenproblems & \code{eigenvalues(matrix)} $\to$ list,
   \code{jacobi\_eigen(matrix)} $\to$ \code{[values, vectors]}\\
@@ -409,6 +412,110 @@ Both inherit the branch cut of $\ln$ along the negative real axis, where
 they jump by $4iJ_n$ --- crossing changes $\arg$ by $2\pi$, and the
 $(2/\pi)\ln(z/2)J$ term turns that into $(2/\pi)(2\pi i)J$. Both are
 singular at $z=0$ and report an error there.
+
+\subsubsection*{Non-integer order}
+
+The \code{\_z} family insists on a whole order. The \code{\_nu} family
+does not: \code{bessel\_j\_nu(1.3, 2 + 1i)} is $J_{1.3}(2+i)$, and
+half-integer orders --- the ones spherical Bessel functions are made of
+--- are the common case. Order stays \textbf{real}; complex \emph{order}
+is not implemented.
+
+Non-integer order needs no recurrence at all, because the two formulas
+that are hardest at integer order become the easy ones here:
+\[
+  Y_\nu(z) = \frac{J_\nu(z)\cos\nu\pi - J_{-\nu}(z)}{\sin\nu\pi},
+  \qquad
+  K_\nu(z) = \frac{\pi}{2}\,
+    \frac{I_{-\nu}(z) - I_\nu(z)}{\sin\nu\pi}.
+\]
+Both have $\sin\nu\pi$ downstairs, which is exactly why they are useless
+at whole $\nu$ and exactly why $Y_n$ needed its own logarithmic series.
+So the whole family reduces to \textbf{one ascending series} (DLMF
+10.2.2 for $J$, 10.25.2 for $I$) evaluated at $\pm\nu$, and the
+reflections do the rest. Orders within $10^{-9}$ of a whole number are
+handed to the \code{\_z} routines --- not as a convenience but because
+by then the reflection has already lost nine digits to cancellation.
+\code{bessel\_y\_nu(2, z)} gives the right answer; it is
+\code{bessel\_y\_z(2, z)} underneath.
+
+The series divides by $\Gamma(\nu+k+1)$ using the \textbf{reciprocal}
+gamma, which is \emph{zero} at the poles. That is what makes
+$J_{-n}(z) = (-1)^nJ_n(z)$ come out for free at whole $n$, and it keeps
+very large orders in range where $\Gamma$ itself would overflow past
+about $171$.
+
+\textbf{Accuracy is governed by a different law from the \code{\_z}
+family}, and it is important not to carry the \code{\_z} advice over.
+The largest term of the series is of size $e^{|z|}$, so what is lost is
+the ratio of that to the answer:
+\[
+  \text{relative error} \;\sim\; 10^{-16}e^{L},\qquad
+  L = \begin{cases}
+    |z| - |\operatorname{Im}z| & \text{for } J_\nu,\; Y_\nu\\
+    |z| + \operatorname{Re}z   & \text{for } I_\nu,\; K_\nu
+  \end{cases}
+\]
+
+\begin{center}
+\begin{tabular}{l|ccccc}
+$L$ & 0 & 10 & 20 & 30 & $>35$\\
+\hline
+relative error & 1e-16 & 1e-12 & 1e-8 & 1e-4 & nothing left\\
+\end{tabular}
+\end{center}
+
+$J$ and $Y$ are therefore at their \textbf{worst on the real axis} and
+at machine precision straight up the imaginary one --- good to $|z|=70$
+there. $I$ and $K$ are the mirror image: worst on the \textbf{positive}
+real axis, exact along the negative. On the real axis that means $|z|$
+up to about $30$ for $J$ and $Y$ but only $15$ for $I$ and $K$, since
+$K$ is a \emph{difference} of two $I$s whose leading parts cancel ---
+that cancellation is what $K$ \emph{is}, not a defect of the method.
+
+Large \textbf{order} costs nothing: at $\nu = 150$ the order recurrence
+still closes to $10^{-13}$, because nothing cancels once $\nu$ exceeds
+$|z|$.
+
+Measured, not asserted:
+\begin{lstlisting}
+cargo run -p special_functions --release --example bessel_nu_accuracy
+\end{lstlisting}
+prints the full error surface against the closed forms
+$J_{1/2}(z)=\sqrt{2/\pi z}\,\sin z$ and
+$K_{1/2}(z)=\sqrt{\pi/2z}\,e^{-z}$, which hold for complex $z$ and
+share no code with the series. The bound $10^{-14}e^{L}$ is pinned by
+the test suite at every point of that surface. Beyond it, use the
+integer-order routines where the order allows --- they are Miller
+recurrence and reach much further along the real axis. Uniform
+asymptotics for large $|z|$ at non-integer order are \textbf{not}
+implemented.
+
+\begin{lstlisting}
+In[1]:= bessel_j_nu(0.5, 2)
+Out[1]= 0.5130161365618277 + 0i
+In[2]:= sqrt(2/(pi*2))*sin(2)
+Out[2]= 0.5130161365618278
+In[3]:= bessel_j_nu(-0.5, 2)
+Out[3]= -0.2347857104062484 + 0i
+In[4]:= sqrt(2/(pi*2))*cos(2)
+Out[4]= -0.2347857104062485
+In[5]:= bessel_j_nu(1.3, 2 + 1i)
+Out[5]= 0.7246607223671551 + 0.08999135538552433i
+In[6]:= bessel_y_nu(2, 1.6 + 0.9i)
+Out[6]= -0.6563546517741834 + 0.4094584881356723i
+In[7]:= bessel_y_z(2, 1.6 + 0.9i)
+Out[7]= -0.6563546517741834 + 0.4094584881356723i
+In[8]:= bessel_j_z(1.5, 2)
+Err[8]: bessel_j_z(): argument 1 must be a whole number (an integer order), got 1.5
+\end{lstlisting}
+
+\code{Out[1]}/\code{Out[2]} and \code{Out[3]}/\code{Out[4]} are the two
+half-integer closed forms agreeing to the last digit, computed two
+entirely different ways. \code{Out[6]} and \code{Out[7]} are
+byte-identical, which is the whole-order handover doing what it claims.
+\code{In[8]} is the contrast: the \code{\_z} form still refuses a
+fractional order rather than truncating it.
 
 \textbf{A wrinkle worth knowing about lists.} The bracket literal is
 overloaded: \code{[a,b,c]} is a \emph{vector}, \code{[a,b,c,d]} is a

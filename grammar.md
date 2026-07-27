@@ -276,6 +276,7 @@ a confident, wrong number, and you would have no way to notice.
 | orthogonal polynomials | `hermite_h(n,x)`, `hermite_he(n,x)`, `laguerre_l(n,x)`, `laguerre_l_assoc(n,alpha,x)`, `chebyshev_t(n,x)`, `chebyshev_u(n,x)`, `gegenbauer_c(n,alpha,x)`, `jacobi_p(n,alpha,beta,x)` |
 | cylindrical Bessel | `bessel_j(n,x)`, `bessel_j_array(n_max,x)` → list |
 | cylindrical Bessel, **complex argument** | `bessel_j_z(n,z)`, `bessel_i_z(n,z)`, `bessel_y_z(n,z)`, `bessel_k_z(n,z)` |
+| cylindrical Bessel, **any real order** | `bessel_j_nu(nu,z)`, `bessel_i_nu(nu,z)`, `bessel_y_nu(nu,z)`, `bessel_k_nu(nu,z)` |
 | quadrature | `gauss_legendre(n)` → `[nodes, weights]` |
 | eigenproblems | `eigenvalues(matrix)` → list, `jacobi_eigen(matrix)` → `[values, vectors]` |
 | angular momentum | `wigner_3j(j1,j2,j3,m1,m2,m3)`, `wigner_6j(j1,j2,j3,j4,j5,j6)`, `wigner_9j(a,b,c,d,e,f,g,h,i)`, `clebsch_gordan(j1,m1,j2,m2,j3,m3)` |
@@ -348,6 +349,102 @@ are discontinuous across it, while `J_n` and `I_n` are entire. The jump
 is `4i J_n`: crossing takes `arg` from `+π` to `−π`, a change of `2π`, and
 the `(2/π) ln(z/2) J` term turns that into `(2/π)(2πi)J`. Both are
 singular at `z = 0` and report an error there rather than an infinity.
+
+#### Non-integer order
+
+The `_z` family above insists on a whole order. The `_nu` family does
+not: `bessel_j_nu(1.3, 2 + 1i)` is `J_{1.3}(2 + i)`, and half-integer
+orders — the ones spherical Bessel functions are made of — are the
+common case. Order stays **real**; complex *order* is not implemented.
+
+Non-integer order needs no recurrence at all, because the two formulas
+that are hardest at integer order become the easy ones here:
+
+```
+Y_nu(z) = [J_nu(z) cos(nu pi) - J_{-nu}(z)] / sin(nu pi)
+K_nu(z) = (pi/2) [I_{-nu}(z) - I_nu(z)] / sin(nu pi)
+```
+
+Both have `sin(nu pi)` downstairs, which is exactly why they are useless
+at whole `nu` and exactly why `Y_n` needed its own logarithmic series.
+So the whole family reduces to **one ascending series** (DLMF 10.2.2 for
+`J`, 10.25.2 for `I`) evaluated at `±nu`, and the reflections do the
+rest. Orders within `1e-9` of a whole number are handed to the `_z`
+routines — not as a convenience but because by then the reflection has
+already lost nine digits to cancellation. You can call `bessel_y_nu(2, z)`
+and get the right answer; it is `bessel_y_z(2, z)` underneath.
+
+The series divides by `Gamma(nu+k+1)` using the **reciprocal** gamma,
+which is *zero* at the poles. That is what makes `J_{-n}(z) = (-1)^n J_n(z)`
+come out for free at whole `n`, and it keeps very large orders in range
+where `Gamma` itself would overflow past about 171.
+
+**Accuracy is governed by a different law from the `_z` family**, and it
+is important not to carry the `_z` advice over. The largest term of the
+series is of size `exp(|z|)`, so what is lost is the ratio of that to
+the answer:
+
+```
+relative error ~ 1e-16 * exp(L)
+
+    L = |z| - |Im z|    for bessel_j_nu and bessel_y_nu
+    L = |z| + Re z      for bessel_i_nu and bessel_k_nu
+```
+
+| L | 0 | 10 | 20 | 30 | >35 |
+|---|---|---|---|---|---|
+| relative error | 1e-16 | 1e-12 | 1e-8 | 1e-4 | nothing left |
+
+`J` and `Y` are therefore at their **worst on the real axis** and at
+machine precision straight up the imaginary one — good to `|z| = 70`
+there. `I` and `K` are the mirror image: worst on the **positive** real
+axis, exact along the negative. On the real axis that means `|z|` up to
+about 30 for `J` and `Y` but only 15 for `I` and `K`, since `K` is a
+*difference* of two `I`s whose leading parts cancel — that cancellation
+is what `K` is, not a defect of the method.
+
+Large **order** costs nothing: at `nu = 150` the order recurrence still
+closes to 1e-13, because nothing cancels once `nu` exceeds `|z|`.
+
+Measured, not asserted:
+
+```
+cargo run -p special_functions --release --example bessel_nu_accuracy
+```
+
+prints the full error surface against the closed forms
+`J_{1/2}(z) = sqrt(2/(pi z)) sin z` and `K_{1/2}(z) = sqrt(pi/(2z)) exp(-z)`,
+which hold for complex `z` and share no code with the series. The bound
+`1e-14 * exp(L)` is pinned by the test suite at every point of that
+surface. Beyond it, use the integer-order routines where the order
+allows — they are Miller recurrence and reach much further along the
+real axis. Uniform asymptotics for large `|z|` at non-integer order are
+**not** implemented.
+
+```
+In[1]:= bessel_j_nu(0.5, 2)
+Out[1]= 0.5130161365618277 + 0i
+In[2]:= sqrt(2/(pi*2))*sin(2)
+Out[2]= 0.5130161365618278
+In[3]:= bessel_j_nu(-0.5, 2)
+Out[3]= -0.2347857104062484 + 0i
+In[4]:= sqrt(2/(pi*2))*cos(2)
+Out[4]= -0.2347857104062485
+In[5]:= bessel_j_nu(1.3, 2 + 1i)
+Out[5]= 0.7246607223671551 + 0.08999135538552433i
+In[6]:= bessel_y_nu(2, 1.6 + 0.9i)
+Out[6]= -0.6563546517741834 + 0.4094584881356723i
+In[7]:= bessel_y_z(2, 1.6 + 0.9i)
+Out[7]= -0.6563546517741834 + 0.4094584881356723i
+In[8]:= bessel_j_z(1.5, 2)
+Err[8]: bessel_j_z(): argument 1 must be a whole number (an integer order), got 1.5
+```
+
+`Out[1]`/`Out[2]` and `Out[3]`/`Out[4]` are the two half-integer closed
+forms agreeing to the last digit, computed two entirely different ways.
+`Out[6]` and `Out[7]` are byte-identical, which is the whole-order
+handover doing what it claims. `In[8]` is the contrast: the `_z` form
+still refuses a fractional order rather than truncating it.
 
 **A wrinkle worth knowing about lists.** The bracket literal is
 overloaded: `[a,b,c]` is a *vector*, `[a,b,c,d]` is a *quaternion*, and

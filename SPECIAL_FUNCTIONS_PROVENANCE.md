@@ -49,7 +49,7 @@ and the matrix below states plainly what is absent.
 | 7 | Error Functions, Dawson, Fresnel | partial | **vendored**: erf, erfc + inverses, Dawson, Fresnel |
 | 8 | Incomplete Gamma and Related | partial | **vendored**: incomplete gamma/beta + inverses |
 | 9 | Airy and Related | partial | **vendored**: Ai, Bi and derivatives, real argument only |
-| 10 | Bessel Functions | partial | **vendored** cylindrical Jᵥ Yᵥ Iᵥ Kᵥ (real arg); **native** spherical jₙ yₙ and derivatives; **native** integer-order Jₙ whole-table; **native Jₙ, Yₙ, Iₙ, Kₙ for COMPLEX argument** |
+| 10 | Bessel Functions | partial | **vendored** cylindrical Jᵥ Yᵥ Iᵥ Kᵥ (real arg); **native** spherical jₙ yₙ and derivatives; **native** integer-order Jₙ whole-table; **native Jₙ, Yₙ, Iₙ, Kₙ for COMPLEX argument**; **native J_ν, Y_ν, I_ν, K_ν for real NON-INTEGER order at complex argument** |
 | 11 | Struve and Related | **none** | — |
 | 12 | Parabolic Cylinder | **none** | — |
 | 13 | Confluent Hypergeometric | **none** | — |
@@ -138,6 +138,7 @@ record is separate and detailed:
 | `orthopoly` | native | three-term recurrences; Clenshaw for series | DLMF 18.9, A&S 22.7 |
 | `wigner` | native | Racah single-sum for 3-j and 6-j, all factorials in logarithms; 9-j as a single sum over 6-j | DLMF 34.2.4, 34.4.1, 34.6.1; Edmonds 1957 §3.6 |
 | `bessel` | native, **clean-room** | Miller downward recurrence, scale fixed by `J₀+2(J₂+J₄+…)=1` | DLMF 10.6.1, 10.12.4; A&S 9.1.27, 9.1.46 |
+| `bessel_complex` (non-integer order) | native | One ascending series for J and one for I, evaluated at ±ν; Y and K then follow from the reflection formulas, which are singular at whole ν and so are handed to the integer routines within 1e-9 of one. `1/Γ` is taken from the vendored reciprocal gamma, which is **zero** at the poles — that is what makes `J_{−n} = (−1)ⁿJₙ` fall out, and it keeps ν ≳ 171 in range where Γ itself would overflow | DLMF 10.2.2, 10.2.3, 10.25.2, 10.27.4 |
 | `bessel_complex` | native | Jₙ/Iₙ by the same Miller recurrence (both it and the normalisation are identities in `z`); Yₙ by the ascending series with the log and digamma terms, then **upward** recurrence — the stable direction for Y and the opposite of J's; Kₙ by identity from Jₙ + iYₙ | DLMF 10.6.1, 10.8.1, 10.27.6, 10.27.8, 10.35.1 |
 | `tridiag` | native, **clean-room** | Thomas algorithm; Sherman–Morrison for the cyclic case | textbook |
 | `eigen` | native | cyclic Jacobi, ≤100 sweeps | textbook |
@@ -217,6 +218,7 @@ recorded here because it shaped the suite:
 | `sph_bessel` | ≤1e-14 against closed forms | Miller recurrence; the upward direction is *proved unstable* by a test rather than merely asserted |
 | `legendre` | ≤1e-13 | `assoc_legendre_p` **overflows f64** and returns `Err`; the driver is the ORDER m, via the (2m−1)!! seed — not ℓ, as an earlier draft of the docs wrongly claimed. `norm_assoc_legendre_p` stays O(1) and is the fix |
 | `orthopoly` | ≤1e-13 | worst at high degree with large argument, as the recurrences predict |
+| `bessel_complex` (non-integer order) | ~1e-16·e^L, where L = \|z\|−\|Im z\| for J and Y and L = \|z\|+Re z for I and K | **weakest regime:** J and Y on the real axis, I and K on the *positive* real axis — the two families fail in opposite directions and the integer-order advice does not transfer. Machine precision up the imaginary axis to \|z\|=70. Large **order** is free (1e-13 at ν=150). The bound 1e-14·e^L is pinned by `documented_accuracy_bounds_hold`; the surface is printed by `examples/bessel_nu_accuracy.rs`, measured against the half-integer closed forms |
 | `bessel_complex` | 1e-16 on the real axis, 1e-13 at \|Im z\|=8, 1e-6 at \|Im z\|=25 | **weakest regime:** large \|Im z\|, by cancellation in the normalising sum (terms grow like e^\|Im z\| while their sum is 1). Measured, not asserted — see `examples/bessel_complex_accuracy.rs` |
 | `bessel` | ≤1e-10 vs Cephes | **weakest regime:** the seed order must sit well above x. At `x = 45` an under-sized seed gave only ~9 correct digits — caught by the cross-check, fixed, and the measurement recorded in the source |
 | `wigner` | ≤1e-12 on orthogonality sums | **weakest regime:** large j, where the alternating Racah sum cancels catastrophically. This is a property of the formula, not the implementation, and it is stated in the module docs |
@@ -241,9 +243,15 @@ Unit tests prove the pieces; three examples prove they do the job:
 
 ### What is NOT covered
 
-- Complex arguments for the vendored Bessel family (chapter 10). The
-  AMOS/TOMS 644 route needs `num-complex`, so it is deferred.
-- 9-j symbols (chapter 34).
+- **Complex order** for the Bessel family. Order is real throughout;
+  `bessel_j_nu(1.3, z)` is supported, `bessel_j_nu(1 + 2i, z)` is not.
+- **Uniform asymptotics for large |z| at non-integer order.** The
+  ascending series is the only method here, so the ranges in §5 are
+  hard limits rather than performance advice. Where the order happens
+  to be whole, the integer-order Miller routines reach much further
+  along the real axis.
+- Hankel functions H⁽¹⁾, H⁽²⁾ as named entry points — they are
+  `J ± iY` and so are constructible, but not registered.
 - Accuracy at very large j in `wigner`, as above.
 - The twenty chapters marked **none** in §1.
 
@@ -287,8 +295,9 @@ quadrature, the orthogonal polynomial families — is present and
 demonstrated end to end.
 
 **Cons.** Coverage is ~40 % of chapters and less than that of content.
-Complex-argument Bessel, 9-j symbols, and every one of the twenty
-untouched chapters are absent. `wigner` degrades at large j and
+Every one of the twenty untouched chapters is absent, as are complex
+*order* and large-|z| asymptotics within chapter 10. `wigner` degrades
+at large j and
 `assoc_legendre_p` overflows at large order — both documented, neither
 fixed. The vendored dependency has an unresolved LICENSE-file question
 upstream. Two-dimensional quantum problems will need a different

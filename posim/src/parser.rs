@@ -164,7 +164,8 @@
 //!                hermite_h hermite_he laguerre_l laguerre_l_assoc
 //!                chebyshev_t chebyshev_u gegenbauer_c jacobi_p
 //!                bessel_j bessel_j_array bessel_j_z bessel_i_z
-//!                bessel_y_z bessel_k_z
+//!                bessel_y_z bessel_k_z bessel_j_nu bessel_i_nu
+//!                bessel_y_nu bessel_k_nu
 //!                gauss_legendre eigenvalues
 //!                jacobi_eigen solve_tridiag solve_tridiag_c
 //!                solve_cyclic_tridiag_c wigner_3j wigner_6j

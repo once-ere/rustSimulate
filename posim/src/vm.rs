@@ -557,6 +557,14 @@ special functions (see grammar.md; orders must be WHOLE numbers):
                             real axis and are singular at z = 0)
                             (accuracy falls with |Im z|: ~1e-13 at 8,
                             ~1e-8 at 18, ~1e-6 at 25 — see grammar.md)
+                            bessel_j_nu(nu,z)  REAL non-integer order
+                            bessel_i_nu(nu,z)  modified, any real order
+                            bessel_y_nu(nu,z)  second kind, any order
+                            bessel_k_nu(nu,z)  modified second kind
+                            (the _nu forms accept whole orders too and
+                            hand those to the _z forms; they use an
+                            ascending series, so keep |z| <~ 15 for J
+                            and Y, and Re z <~ 12 for I and K)
   quadrature                gauss_legendre(n)  -> [nodes, weights]
   eigenproblems             eigenvalues(matrix)          -> list
                             jacobi_eigen(matrix) -> [values, vectors]
