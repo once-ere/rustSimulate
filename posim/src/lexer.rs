@@ -180,6 +180,14 @@ pub enum TokKind {
     Minus,
     Star,
     Slash,
+    /* comparisons — they yield 1 for true and 0 for false, since this
+     * language has numbers but no boolean type */
+    Lt,
+    Le,
+    Gt,
+    Ge,
+    EqEq,
+    Ne,
 }
 
 /// A token plus its 1-based source column.
@@ -210,6 +218,12 @@ impl fmt::Display for TokKind {
             TokKind::Minus => write!(f, "`-`"),
             TokKind::Star => write!(f, "`*`"),
             TokKind::Slash => write!(f, "`/`"),
+            TokKind::Lt => write!(f, "`<`"),
+            TokKind::Le => write!(f, "`<=`"),
+            TokKind::Gt => write!(f, "`>`"),
+            TokKind::Ge => write!(f, "`>=`"),
+            TokKind::EqEq => write!(f, "`==`"),
+            TokKind::Ne => write!(f, "`!=`"),
         }
     }
 }
@@ -267,9 +281,35 @@ pub fn tokenize(line: &str) -> Result<Vec<Token>, String> {
                 toks.push(Token { kind: TokKind::Dot, col });
                 i += 1;
             }
+            /* `==` must be tried before the single `=`, which is
+             * assignment in SET and in NEW initialiser lists */
+            '=' if i + 1 < chars.len() && chars[i + 1] == '=' => {
+                toks.push(Token { kind: TokKind::EqEq, col });
+                i += 2;
+            }
             '=' => {
                 toks.push(Token { kind: TokKind::Equals, col });
                 i += 1;
+            }
+            '<' if i + 1 < chars.len() && chars[i + 1] == '=' => {
+                toks.push(Token { kind: TokKind::Le, col });
+                i += 2;
+            }
+            '<' => {
+                toks.push(Token { kind: TokKind::Lt, col });
+                i += 1;
+            }
+            '>' if i + 1 < chars.len() && chars[i + 1] == '=' => {
+                toks.push(Token { kind: TokKind::Ge, col });
+                i += 2;
+            }
+            '>' => {
+                toks.push(Token { kind: TokKind::Gt, col });
+                i += 1;
+            }
+            '!' if i + 1 < chars.len() && chars[i + 1] == '=' => {
+                toks.push(Token { kind: TokKind::Ne, col });
+                i += 2;
             }
             '+' => {
                 toks.push(Token { kind: TokKind::Plus, col });

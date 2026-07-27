@@ -65,7 +65,18 @@
 //!                                                  contactK.field,
 //!                                                  name.field for
 //!                                                  AS-registered names *)
-//! expr     := term { ("+" | "-") term } ;
+//! expr     := sum { ("<" | "<=" | ">" | ">=" | "==" | "!=") sum } ;
+//!                                     (* comparisons yield 1 or 0;
+//!                                        LOWEST precedence, so
+//!                                        `x + 1 > 2` is `(x+1) > 2`.
+//!                                        There is no boolean type, and
+//!                                        that is deliberate: 1/0 makes
+//!                                        `(x > a) * (x < b)` an
+//!                                        indicator function, which is
+//!                                        how a piecewise potential is
+//!                                        written. `=` remains
+//!                                        assignment; `==` is equality. *)
+//! sum      := term { ("+" | "-") term } ;
 //! term     := unary { ("*" | "/") unary } ;
 //! qmcmd    := [ "STATUS" ]
 //!           | "GRID" expr expr expr
@@ -79,7 +90,9 @@
 //!           | "STEP" expr | "RUN" expr [ "STEPS" expr ]
 //!           | "NORM" | "ENERGY" | "POSITION" | "MOMENTUM"
 //!           | "PROB" expr expr
-//!           | "DENSITY" | "RESET" ;
+//!           | "ABSORB" ( "OFF" | expr expr [ expr ] )
+//!           | "DENSITY" | "RESET"
+//!           | "ANIMATE" STRING expr [ "FRAMES" expr ] ;
 //!
 //! (* The QM subcommand word is read as an IDENT-or-keyword rather than
 //!    being lexed as a keyword of its own, because `run`, `step`,
@@ -133,7 +146,7 @@
 //! ```
 
 use crate::lexer::{tokenize, Keyword, TokKind, Token};
-use crate::vm::{Instr, MethodSpec, NameArg, Path, PathRoot, ShapeKind, Value};
+use crate::vm::{CmpOp, Instr, MethodSpec, NameArg, Path, PathRoot, ShapeKind, Value};
 
 pub struct Parser {
     toks: Vec<Token>,
@@ -655,13 +668,25 @@ impl Parser {
             "potential" => {
                 use crate::qm::PotentialSpec;
                 let name = self.expect_field()?;
+                // `barrier` and `well` are built-in shapes, but they are
+                // also perfectly reasonable names for a user's own
+                // potential — and now that comparison operators exist,
+                // writing one as a DEF is the natural thing to do. So
+                // the two are told apart by whether ARGUMENTS FOLLOW:
+                //
+                //   qm potential barrier            -> the DEF'd barrier(x)
+                //   qm potential barrier 2.5 0 1    -> the built-in shape
+                //
+                // A bare name is always a user function, which is the
+                // reading that respects what the user actually wrote.
+                let bare = self.peek().is_none();
                 match name.as_str() {
                     "zero" | "free" => QmCmd::Potential(PotentialSpec::Zero),
-                    "barrier" => {
+                    "barrier" if !bare => {
                         args(self, 3, &mut prog)?;
                         QmCmd::Potential(PotentialSpec::Barrier)
                     }
-                    "well" => {
+                    "well" if !bare => {
                         args(self, 3, &mut prog)?;
                         QmCmd::Potential(PotentialSpec::Well)
                     }
@@ -716,6 +741,63 @@ impl Parser {
                 QmCmd::Prob
             }
             "density" => QmCmd::Density,
+            "animate" => {
+                let path = match self.next() {
+                    Some(Token { kind: TokKind::Str(p), .. }) => p,
+                    Some(t) => {
+                        return Err(format!(
+                            "parse error at column {}: QM ANIMATE needs a quoted file path, \
+                             found {}",
+                            t.col, t.kind
+                        ))
+                    }
+                    None => {
+                        return Err(
+                            "QM ANIMATE: expected a quoted file path, e.g. \"scatter.html\""
+                                .to_string(),
+                        )
+                    }
+                };
+                self.expr(&mut prog)?;
+                let has_frames = matches!(
+                    self.peek(),
+                    Some(Token { kind: TokKind::Ident(w), .. }) if w.eq_ignore_ascii_case("frames")
+                );
+                if has_frames {
+                    self.pos += 1;
+                    self.expr(&mut prog)?;
+                } else {
+                    prog.push(Instr::Push(Value::Num(120.0)));
+                }
+                QmCmd::Animate(path)
+            }
+            "absorb" => {
+                // `QM ABSORB OFF` removes it; otherwise width, strength
+                // and an optional ramp exponent (2 is the measured
+                // optimum — see quantum/examples/absorber_tuning.rs).
+                let off = matches!(
+                    self.peek(),
+                    Some(Token { kind: TokKind::Keyword(Keyword::Off), .. })
+                ) || matches!(
+                    self.peek(),
+                    Some(Token { kind: TokKind::Ident(w), .. }) if w.eq_ignore_ascii_case("off")
+                );
+                if off {
+                    self.pos += 1;
+                    QmCmd::AbsorbOff
+                } else {
+                    args(self, 2, &mut prog)?;
+                    if self.peek().is_some() {
+                        if let Some(Token { kind: TokKind::Comma, .. }) = self.peek() {
+                            self.pos += 1;
+                        }
+                        self.expr(&mut prog)?;
+                    } else {
+                        prog.push(Instr::Push(Value::Num(2.0)));
+                    }
+                    QmCmd::Absorb
+                }
+            }
             "reset" => QmCmd::Reset,
             other => {
                 return Err(format!(
@@ -729,7 +811,32 @@ impl Parser {
         Ok(prog)
     }
 
+    /// The lowest precedence level: comparisons.
+    ///
+    /// Below `+`/`-`, so `x + 1 > 2` groups as `(x + 1) > 2`, which is
+    /// what anyone writing a piecewise potential expects. Left
+    /// associative, so `a < b < c` means `(a < b) < c` — legal, and
+    /// almost certainly not what you meant; the documentation says so.
     fn expr(&mut self, prog: &mut Vec<Instr>) -> Result<(), String> {
+        self.sum(prog)?;
+        loop {
+            let op = match self.peek().map(|t| t.kind.clone()) {
+                Some(TokKind::Lt) => CmpOp::Lt,
+                Some(TokKind::Le) => CmpOp::Le,
+                Some(TokKind::Gt) => CmpOp::Gt,
+                Some(TokKind::Ge) => CmpOp::Ge,
+                Some(TokKind::EqEq) => CmpOp::Eq,
+                Some(TokKind::Ne) => CmpOp::Ne,
+                _ => break,
+            };
+            self.pos += 1;
+            self.sum(prog)?;
+            prog.push(Instr::Cmp(op));
+        }
+        Ok(())
+    }
+
+    fn sum(&mut self, prog: &mut Vec<Instr>) -> Result<(), String> {
         self.term(prog)?;
         loop {
             match self.peek().map(|t| t.kind.clone()) {

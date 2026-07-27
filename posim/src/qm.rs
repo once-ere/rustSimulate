@@ -63,8 +63,16 @@ pub enum QmCmd {
     Prob,
     /// The probability density, as a list.
     Density,
+    /// Attach absorbing edges. Pops power, strength, width.
+    Absorb,
+    /// Remove them.
+    AbsorbOff,
     /// Forget the whole quantum problem.
     Reset,
+    /// Propagate while capturing |psi|^2, and write a self-contained
+    /// HTML animation to the given path. Pops the frame count, then the
+    /// total time.
+    Animate(String),
 }
 
 /// How a potential is specified.
@@ -92,6 +100,8 @@ pub enum PotentialSpec {
 pub struct QmState {
     pub grid: Option<Grid>,
     pub potential: Option<Vec<f64>>,
+    /// Absorbing edges: (width, strength, power), if enabled.
+    pub absorber: Option<(f64, f64, f64)>,
     /// The function name the potential came from, for the status line.
     pub potential_name: Option<String>,
     pub mass: f64,
@@ -110,6 +120,7 @@ impl Default for QmState {
         Self {
             grid: None,
             potential: None,
+            absorber: None,
             potential_name: None,
             mass: 1.0,
             hbar: 1.0,
@@ -131,7 +142,11 @@ impl QmState {
             .potential
             .clone()
             .ok_or("QM: no potential — use `QM POTENTIAL <function>` (or `QM POTENTIAL zero`)")?;
-        Hamiltonian::new(grid, v, self.mass, self.hbar)
+        let ham = Hamiltonian::new(grid, v, self.mass, self.hbar)?;
+        match self.absorber {
+            Some((w, st, p)) => ham.with_absorber(w, st, p),
+            None => Ok(ham),
+        }
     }
 
     fn wavefunction(&self) -> Result<&Wavefunction, String> {
@@ -191,6 +206,12 @@ pub fn exec_qm(
                 None => s.push_str("  potential (unset — QM POTENTIAL <function>)\n"),
             }
             s.push_str(&format!("  mass      {}\n  hbar      {}\n", q.mass, q.hbar));
+            match q.absorber {
+                Some((w, st, p)) => s.push_str(&format!(
+                    "  absorber  width {w}, strength {st}, power {p} (norm decays by design)\n"
+                )),
+                None => s.push_str("  absorber  off — the walls REFLECT\n"),
+            }
             match &q.psi {
                 Some(w) => s.push_str(&format!(
                     "  psi       set, norm = {:.12}, t = {}\n",
@@ -444,11 +465,269 @@ pub fn exec_qm(
             Ok(String::new())
         }
 
+        QmCmd::Animate(path) => {
+            let frames = pop_count(stack, "the frame count")?;
+            let total = pop_num(stack)?;
+            if frames < 2 {
+                return Err("QM ANIMATE: ask for at least 2 frames".to_string());
+            }
+            if !total.is_finite() || total <= 0.0 {
+                return Err(format!("QM ANIMATE: the total time must be positive, got {total}"));
+            }
+            let ham = state.qm.hamiltonian()?;
+            let mut w = state.qm.wavefunction()?.clone();
+            let grid = ham.grid.clone();
+
+            // A frame per capture; each capture advances by total/frames.
+            // The inner step count keeps dt small enough that the
+            // animation is smooth AND the physics is resolved.
+            let per_frame = 20usize;
+            let dt = total / (frames * per_frame) as f64;
+            let prop = Propagator::new(ham.clone(), dt)?;
+
+            // Downsample along x so the file stays small; the eye cannot
+            // use 2000 points across a plot anyway.
+            let stride = (grid.n / 600).max(1);
+            let xs: Vec<f64> = (0..grid.n).step_by(stride).map(|i| grid.x(i)).collect();
+            let vs: Vec<f64> = ham
+                .potential
+                .iter()
+                .enumerate()
+                .filter(|(i, _)| i % stride == 0)
+                .map(|(_, v)| *v)
+                .collect();
+
+            let mut series: Vec<Vec<f64>> = Vec::with_capacity(frames);
+            let mut times: Vec<f64> = Vec::with_capacity(frames);
+            let mut n0 = w.norm();
+            let mut worst_drift = 0.0_f64;
+            for f in 0..frames {
+                if f > 0 {
+                    prop.run(&mut w, per_frame)?;
+                }
+                let nn = w.norm();
+                worst_drift = worst_drift.max((nn / n0 - 1.0).abs());
+                n0 = if f == 0 { nn } else { n0 };
+                let d = w.density();
+                series.push((0..grid.n).step_by(stride).map(|i| d[i]).collect());
+                times.push(state.qm.time + dt * (f * per_frame) as f64);
+            }
+            state.qm.time += total;
+            state.qm.psi = Some(w);
+
+            let num = |v: &[f64]| {
+                v.iter()
+                    .map(|x| format!("{x:.6}"))
+                    .collect::<Vec<_>>()
+                    .join(",")
+            };
+            let frames_js = series
+                .iter()
+                .map(|f| format!("[{}]", num(f)))
+                .collect::<Vec<_>>()
+                .join(",\n");
+            let label = state
+                .qm
+                .potential_name
+                .clone()
+                .unwrap_or_else(|| "unnamed".to_string());
+            let html = render_html(
+                &num(&xs),
+                &num(&vs),
+                &frames_js,
+                &num(&times),
+                &label,
+                grid.x_min,
+                grid.x_max,
+            );
+            std::fs::write(path, &html)
+                .map_err(|e| format!("QM ANIMATE: cannot write `{path}`: {e}"))?;
+            Ok(format!(
+                "wrote {path} — {frames} frames over t = {total} (dt = {dt:.6}, \
+                 {} points per frame), worst norm drift {worst_drift:.3e}. \
+                 Open it in a browser.",
+                xs.len()
+            ))
+        }
+
+        QmCmd::Absorb => {
+            let power = pop_num(stack)?;
+            let strength = pop_num(stack)?;
+            let width = pop_num(stack)?;
+            // Validate NOW against the current grid rather than at the
+            // next propagation, so a bad number is reported where it
+            // was typed.
+            if let Some(g) = state.qm.grid.clone() {
+                let probe = Hamiltonian::new(g, vec![0.0; state.qm.grid.as_ref().unwrap().n], 1.0, 1.0)?;
+                probe.with_absorber(width, strength, power)?;
+            }
+            state.qm.absorber = Some((width, strength, power));
+            state.qm.invalidate();
+            Ok(format!(
+                "absorbing edges: width {width}, strength {strength}, power {power}. \
+                 Propagation is NO LONGER unitary — the norm decays, which is the absorber \
+                 working. QM STATES is unavailable while this is on."
+            ))
+        }
+
+        QmCmd::AbsorbOff => {
+            state.qm.absorber = None;
+            state.qm.invalidate();
+            Ok("absorbing edges removed — the walls reflect again".to_string())
+        }
+
         QmCmd::Reset => {
             state.qm = QmState::default();
             Ok("quantum state cleared".to_string())
         }
     }
+}
+
+/// Render the self-contained animation page.
+///
+/// Everything is inlined — no scripts, styles or fonts fetched from
+/// anywhere — so the file works from `file://`, survives being emailed,
+/// and cannot phone home.
+#[allow(clippy::too_many_arguments)]
+fn render_html(
+    xs: &str,
+    vs: &str,
+    frames: &str,
+    times: &str,
+    label: &str,
+    x_min: f64,
+    x_max: f64,
+) -> String {
+    format!(
+        r##"<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>posim — 1-D quantum scattering</title>
+<style>
+ :root {{ color-scheme: light dark; }}
+ body {{ margin:0; font:14px/1.5 ui-sans-serif,system-ui,sans-serif;
+        background:#0e1116; color:#e6e6e6; }}
+ header {{ padding:14px 18px; border-bottom:1px solid #263042; }}
+ h1 {{ margin:0; font-size:16px; font-weight:600; }}
+ .sub {{ color:#8b98ad; font-size:12px; margin-top:3px; }}
+ #wrap {{ padding:14px 18px; }}
+ canvas {{ width:100%; height:auto; display:block; background:#11151c;
+           border:1px solid #263042; border-radius:6px; }}
+ .row {{ display:flex; gap:12px; align-items:center; margin-top:12px; flex-wrap:wrap; }}
+ button {{ background:#1b2330; color:#e6e6e6; border:1px solid #33405a;
+           border-radius:5px; padding:6px 14px; cursor:pointer; font:inherit; }}
+ button:hover {{ background:#243149; }}
+ input[type=range] {{ flex:1; min-width:200px; }}
+ .stat {{ font-variant-numeric:tabular-nums; color:#9fb3d0; }}
+ .key {{ display:flex; gap:16px; margin-top:8px; font-size:12px; color:#8b98ad; }}
+ .sw {{ display:inline-block; width:22px; height:3px; vertical-align:middle;
+        margin-right:5px; border-radius:2px; }}
+</style></head><body>
+<header>
+  <h1>1-D quantum scattering — |&psi;(x,t)|&sup2;</h1>
+  <div class="sub">potential: <b>{label}</b> &middot; domain [{x_min}, {x_max}] &middot;
+  generated by posim</div>
+</header>
+<div id="wrap">
+  <canvas id="c" width="1200" height="460"></canvas>
+  <div class="row">
+    <button id="play">Pause</button>
+    <button id="rew">Restart</button>
+    <input type="range" id="scrub" min="0" value="0">
+    <span class="stat" id="stat"></span>
+  </div>
+  <div class="key">
+    <span><i class="sw" style="background:#4ea3ff"></i>|&psi;|&sup2;</span>
+    <span><i class="sw" style="background:#ff7a59"></i>V(x), scaled</span>
+    <span><i class="sw" style="background:#3ddc97"></i>transmitted region</span>
+  </div>
+</div>
+<script>
+const X = [{xs}], V = [{vs}], T = [{times}];
+const F = [
+{frames}
+];
+const c = document.getElementById('c'), g = c.getContext('2d');
+const scrub = document.getElementById('scrub');
+scrub.max = F.length - 1;
+let i = 0, playing = true;
+
+const xmin = Math.min(...X), xmax = Math.max(...X);
+let ymax = 0; for (const f of F) for (const v of f) if (v > ymax) ymax = v;
+ymax *= 1.08;
+const vmax = Math.max(...V.map(Math.abs)) || 1;
+// The barrier sits where V > 0; anything to its right counts as
+// transmitted. Found from the potential itself so the readout stays
+// correct for whatever potential was used.
+let vRight = xmin; for (let k = 0; k < X.length; k++) if (V[k] > 0) vRight = Math.max(vRight, X[k]);
+
+const PAD = {{l: 58, r: 16, t: 14, b: 34}};
+function px(x) {{ return PAD.l + (x - xmin) / (xmax - xmin) * (c.width - PAD.l - PAD.r); }}
+function py(y) {{ return c.height - PAD.b - y / ymax * (c.height - PAD.t - PAD.b); }}
+
+function frameStats(f) {{
+  // trapezoid over the transmitted half
+  let tot = 0, tr = 0;
+  for (let k = 1; k < X.length; k++) {{
+    const dx = X[k] - X[k-1], a = (f[k] + f[k-1]) / 2;
+    tot += a * dx;
+    if (X[k] > vRight) tr += a * dx;
+  }}
+  return {{tot, tr}};
+}}
+
+function draw() {{
+  const f = F[i];
+  g.clearRect(0, 0, c.width, c.height);
+  // axes
+  g.strokeStyle = '#263042'; g.lineWidth = 1;
+  g.beginPath(); g.moveTo(PAD.l, py(0)); g.lineTo(c.width - PAD.r, py(0)); g.stroke();
+  // transmitted region shading
+  g.fillStyle = 'rgba(61,220,151,.07)';
+  g.fillRect(px(vRight), PAD.t, c.width - PAD.r - px(vRight), c.height - PAD.t - PAD.b);
+  // potential, scaled to the top third
+  g.strokeStyle = '#ff7a59'; g.lineWidth = 1.6; g.beginPath();
+  for (let k = 0; k < X.length; k++) {{
+    const y = c.height - PAD.b - (V[k] / vmax) * (c.height - PAD.t - PAD.b) * 0.30;
+    k ? g.lineTo(px(X[k]), y) : g.moveTo(px(X[k]), y);
+  }}
+  g.stroke();
+  // |psi|^2, filled
+  g.beginPath(); g.moveTo(px(X[0]), py(0));
+  for (let k = 0; k < X.length; k++) g.lineTo(px(X[k]), py(f[k]));
+  g.lineTo(px(X[X.length-1]), py(0)); g.closePath();
+  g.fillStyle = 'rgba(78,163,255,.22)'; g.fill();
+  g.strokeStyle = '#4ea3ff'; g.lineWidth = 1.8; g.stroke();
+  // x labels
+  g.fillStyle = '#8b98ad'; g.font = '12px ui-sans-serif,system-ui,sans-serif';
+  g.textAlign = 'center';
+  for (let n = 0; n <= 4; n++) {{
+    const x = xmin + (xmax - xmin) * n / 4;
+    g.fillText(x.toFixed(0), px(x), c.height - 12);
+  }}
+  g.textAlign = 'left'; g.fillText('|psi|^2', 8, PAD.t + 10);
+  const s = frameStats(f);
+  document.getElementById('stat').textContent =
+    `t = ${{T[i].toFixed(2)}}   frame ${{i+1}}/${{F.length}}   ` +
+    `norm = ${{s.tot.toFixed(6)}}   transmitted = ${{s.tr.toFixed(6)}}`;
+  scrub.value = i;
+}}
+
+let last = 0;
+function loop(ts) {{
+  if (playing && ts - last > 45) {{ i = (i + 1) % F.length; last = ts; draw(); }}
+  requestAnimationFrame(loop);
+}}
+document.getElementById('play').onclick = e => {{
+  playing = !playing; e.target.textContent = playing ? 'Pause' : 'Play';
+}};
+document.getElementById('rew').onclick = () => {{ i = 0; draw(); }};
+scrub.oninput = e => {{ i = +e.target.value; playing = false;
+  document.getElementById('play').textContent = 'Play'; draw(); }};
+draw(); requestAnimationFrame(loop);
+</script></body></html>
+"##
+    )
 }
 
 #[cfg(test)]
@@ -644,6 +923,86 @@ mod tests {
         execute_line("qm grid -10 10 50", &mut st).unwrap();
         let e = execute_line("qm potential barrier 5 0 0.01", &mut st).unwrap_err();
         assert!(e.contains("narrower than the grid spacing"), "got: {e}");
+    }
+
+    /// Comparison operators make a piecewise potential writable as an
+    /// ordinary user function — the thing that was impossible before.
+    #[test]
+    fn a_barrier_can_be_written_as_a_user_function() {
+        let mut st = SimState::default();
+        for l in [
+            "def barrier(x) { 2.5 * (x > 0) * (x < 1) }",
+            "qm grid -40 40 800",
+            "qm potential barrier",
+        ] {
+            execute_line(l, &mut st).unwrap_or_else(|e| panic!("`{l}`: {e}"));
+        }
+        let v = st.qm.potential.as_ref().unwrap();
+        let g = st.qm.grid.as_ref().unwrap();
+        for (i, &vi) in v.iter().enumerate() {
+            let x = g.x(i);
+            let want = if x > 0.0 && x < 1.0 { 2.5 } else { 0.0 };
+            assert!((vi - want).abs() < 1e-12, "V({x}) = {vi}, want {want}");
+        }
+    }
+
+    /// A bare name is the USER's function; a name with arguments is the
+    /// built-in shape. Without this rule a user's `barrier` would be
+    /// shadowed by the built-in of the same name.
+    #[test]
+    fn a_user_function_is_not_shadowed_by_the_builtin_shape() {
+        let mut st = SimState::default();
+        execute_line("def barrier(x) { 7 * (x > 2) * (x < 3) }", &mut st).unwrap();
+        execute_line("qm grid -10 10 400", &mut st).unwrap();
+        execute_line("qm potential barrier", &mut st).unwrap();
+        let hi = st.qm.potential.as_ref().unwrap().iter().cloned().fold(0.0_f64, f64::max);
+        assert!((hi - 7.0).abs() < 1e-12, "the user's barrier should peak at 7, got {hi}");
+        // with arguments it is the built-in shape instead
+        execute_line("qm potential barrier 1.5, -1, 1", &mut st).unwrap();
+        let hi = st.qm.potential.as_ref().unwrap().iter().cloned().fold(0.0_f64, f64::max);
+        assert!((hi - 1.5).abs() < 1e-12, "the built-in should peak at 1.5, got {hi}");
+    }
+
+    /// The absorber must buy domain size without changing the answer:
+    /// a short absorbing domain and a long reflection-free one must
+    /// agree on the transmission.
+    #[test]
+    fn an_absorbing_short_domain_agrees_with_a_long_one() {
+        let long = run(&[
+            "def barrier(x) { 2.5 * (x > 0) * (x < 1) }",
+            "qm grid -100 100 2000",
+            "qm potential barrier",
+            "qm packet -25 2 2",
+            "qm run 20 steps 2000",
+            "qm prob 1 30",
+        ]);
+        let short = run(&[
+            "def barrier(x) { 2.5 * (x > 0) * (x < 1) }",
+            "qm grid -45 45 1350",
+            "qm potential barrier",
+            "qm absorb 15 3",
+            "qm packet -25 2 2",
+            "qm run 20 steps 2000",
+            "qm prob 1 30",
+        ]);
+        let t_long: f64 = long.1[5].trim().parse().unwrap();
+        let t_short: f64 = short.1[6].trim().parse().unwrap();
+        let rel = (t_short - t_long).abs() / t_long;
+        assert!(rel < 0.01, "T short {t_short} vs long {t_long} ({:.3}% apart)", 100.0 * rel);
+    }
+
+    /// An absorbing Hamiltonian is non-Hermitian, so bound states must
+    /// be refused; turning the absorber off restores them.
+    #[test]
+    fn absorber_blocks_bound_states_and_off_restores_them() {
+        let mut st = SimState::default();
+        for l in ["qm grid -10 10 150", "qm potential zero", "qm absorb 3 2"] {
+            execute_line(l, &mut st).unwrap();
+        }
+        let e = execute_line("qm states 2", &mut st).unwrap_err();
+        assert!(e.contains("Hermitian"), "got: {e}");
+        execute_line("qm absorb off", &mut st).unwrap();
+        assert!(execute_line("qm states 2", &mut st).is_ok());
     }
 
     /// Every ordering mistake gets a message naming the fix.

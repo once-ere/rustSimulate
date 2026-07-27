@@ -298,7 +298,47 @@ exactly as you would expect, and `norm_assoc_legendre_p` never lectures
 you about quaternions. A 3×3 matrix value is likewise accepted directly
 wherever a matrix argument is wanted.
 
-### 4.2 Complex numbers
+### 4.2 Comparisons
+
+`<`, `<=`, `>`, `>=`, `==`, `!=` compare two numbers and yield **1 for
+true, 0 for false**. There is no boolean type, and that is the point:
+
+```
+In[1]:= 3 < 5
+Out[1]= 1
+In[2]:= (0.5 > 0) * (0.5 < 1)
+Out[2]= 1
+In[3]:= (2 > 0) * (2 < 1)
+Out[3]= 0
+```
+
+`(x > a) * (x < b)` is an **indicator function** for the interval
+`(a, b)`. Multiply it by a height and you have a rectangular barrier;
+add two and you have a double barrier. This is how a piecewise potential
+is written — see §5.10 and Example 17.
+
+Comparisons sit at the **lowest** precedence, below `+` and `-`, so
+`x + 1 > 2` groups as `(x + 1) > 2`. They are left associative, so
+`a < b < c` means `(a < b) < c`: legal, and almost certainly not what
+you meant.
+
+`=` is still assignment (`SET`, `LET`, initialiser lists); `==` is
+equality. Ordering is defined for numbers only; `==` and `!=` also
+accept two vectors or two quaternions, because asking whether two
+positions coincide is reasonable while ordering them is not.
+
+**NaN compares false to everything, including itself**, so `x != x` is
+the idiomatic NaN test:
+
+```
+In[4]:= 0/0 != 0/0
+Out[4]= 1
+```
+
+That is not special-cased — it falls out of IEEE-754 and is worth
+knowing rather than being surprised by.
+
+### 4.3 Complex numbers
 
 A number with an `i` suffix is imaginary, so `2 + 3i` needs no complex
 literal syntax of its own — it is ordinary addition of a real and an
@@ -898,6 +938,9 @@ command.
 | `QM NORM`, `QM ENERGY`, `QM POSITION`, `QM MOMENTUM` | observables |
 | `QM PROB <a> <b>` | probability of being found in `[a, b]` |
 | `QM DENSITY` | `\|psi\|²` as a list |
+| `QM ABSORB <width> <strength> [<power>]` | absorbing edges; `power` defaults to 2 |
+| `QM ABSORB OFF` | back to reflecting walls |
+| `QM ANIMATE "<file>" <t> [FRAMES <n>]` | write a self-contained HTML animation |
 | `QM RESET` | forget the quantum problem |
 
 Four things are worth knowing before you start, because each will
@@ -925,6 +968,38 @@ comparison operators, so a piecewise potential cannot be written as a
 `DEF` at all — and a square barrier is *the* canonical 1-D problem. They
 are a deliberate workaround for a language limitation, not a preference
 for built-ins. Any smooth potential should be a `DEF`.
+
+#### Absorbing edges
+
+The reflecting walls are the main practical limit on a scattering run:
+the domain must be long enough that nothing reaches them, and that cost
+grows with the time you want to simulate. `QM ABSORB` fixes that with a
+**complex absorbing potential** — the Hamiltonian becomes `H - i W(x)`
+with `W ≥ 0` ramping up smoothly over `width` at each edge, so
+probability arriving there is *drained* instead of bounced.
+
+Three consequences follow, and all three are reported rather than left
+to be discovered:
+
+* **Propagation is no longer unitary.** The norm decays. That is the
+  absorber working, not a solver defect, so the drift figure printed by
+  `QM RUN` stops being a health check while it is on.
+* **`QM STATES` is refused.** `H - iW` is not Hermitian, and a symmetric
+  eigensolver fed a non-Hermitian matrix returns confident nonsense.
+  Turn the absorber off to get bound states back.
+* **The tuning is real.** Too weak and the packet reaches the wall and
+  reflects off *that*; too strong and it reflects off the absorber's own
+  leading edge, because a steep change in the potential is a mirror
+  whether it is real or imaginary. The useful window is wide — over an
+  order of magnitude in strength — but it is not infinite.
+  `cargo run -p quantum --release --example absorber_tuning` measures the
+  whole surface; for `k0 ≈ 3` the optimum is near `width 18, strength 3`,
+  giving about `1e-9` reflection against a plain wall's `1.0`.
+
+A worked comparison: the barrier problem below gives `T = 0.327563` on a
+200-wide reflecting domain, and `T = 0.327690` on a **90-wide** domain
+with `QM ABSORB 15 3` — agreement to 4 parts in 10 000 for less than
+half the grid.
 
 Bound states are found by diagonalising a dense `n x n` matrix with the
 cyclic Jacobi method, which is `O(n³)`: comfortable to a few hundred
@@ -1053,7 +1128,7 @@ write. When the program ends, the value on top of the stack becomes
 
 ---
 
-## 9. Sixteen worked examples
+## 9. Seventeen worked examples
 
 All transcripts below are genuine program output (interactive sessions
 are shown as they appear when typed by hand).
@@ -1815,6 +1890,107 @@ calculation diagonalises a dense matrix and costs \(O(n^3)\);
 scattering used 2000 because propagation is \(O(n)\) per step and can
 afford the resolution. Choosing both to be the same would waste one or
 starve the other.
+
+---
+
+### Example 17 — tunnelling, with the barrier as a user function
+
+Comparison operators exist so that a piecewise potential can be an
+ordinary function. This is the canonical 1-D quantum problem written
+that way, and it is the notebook
+[dynamic_notebooks/tunneling.posim](dynamic_notebooks/tunneling.posim).
+
+```
+In[1]:= def barrier(x) { 2.5 * (x > 0) * (x < 1) }
+Out[1]= function barrier(1 parameter(s)) defined — 1 body line(s)
+In[2]:= barrier(-1)
+Out[2]= 0
+In[3]:= barrier(0.5)
+Out[3]= 2.5
+In[4]:= barrier(2)
+Out[4]= 0
+```
+
+`(x > 0) * (x < 1)` is 1 inside the interval and 0 outside — an
+indicator function built from arithmetic on truth values.
+
+A packet of central energy \(E_0 = k_0^2/2 = 2\) is fired at a barrier
+of height 2.5, *above* its energy:
+
+```
+In[5]:= qm grid -100 100 2000
+Out[5]= grid [-100, 100] with 2000 interior points, h = 0.099950 (potential and psi cleared)
+In[6]:= qm potential barrier
+Out[6]= potential `barrier` sampled at 2000 points, V in [0, 2.5] (psi cleared)
+In[7]:= qm packet -25 2 2
+Out[7]= psi = Gaussian packet at x0 = -25, sigma = 2, k0 = 2, t = 0
+In[10]:= qm run 30 steps 3000
+Out[10]= t = 30 (3000 step(s) of dt = 0.01), <E> = 2.023971780446, norm drift = 3.018e-13
+In[11]:= qm prob 1 100
+Out[11]= 0.327563019391693
+In[12]:= qm prob -100 0
+Out[12]= 0.672436408645103
+```
+
+**33 % crossed a barrier it had no classical right to cross**, and the
+two channels account for all but 1e-6 of the probability.
+
+Note `qm potential barrier` picked the *user's* function, not the
+built-in shape of the same name. A bare name is always yours; the
+built-in needs arguments (`qm potential barrier 2.5, 0, 1`).
+
+### Watching it happen
+
+```
+In[14]:= qm animate "scatter.html" 32 frames 140
+Out[14]= wrote scatter.html — 140 frames over t = 32 (dt = 0.011429, 667 points per frame), worst norm drift 5.822e-13. Open it in a browser.
+```
+
+A self-contained page — nothing fetched from the network — showing
+|psi|² against x with the potential overlaid, play/pause, a scrub bar,
+and a live norm and transmitted readout computed in the browser. Its
+final transmitted value is 0.327562 against the notebook's 0.327563:
+two independent implementations of the same integral.
+
+### The same answer on half the domain
+
+The domain above is 200 wide because the walls reflect. With absorbing
+edges it need not be:
+
+```
+In[15]:= qm grid -45 45 1350
+In[17]:= qm absorb 15 3
+Out[17]= absorbing edges: width 15, strength 3, power 2. Propagation is NO LONGER unitary — the norm decays, which is the absorber working. QM STATES is unavailable while this is on.
+In[19]:= qm run 20 steps 2000
+Out[19]= t = 20 (2000 step(s) of dt = 0.01), <E> = 2.027672292154, norm drift = 1.056e-4
+In[20]:= qm prob 1 30
+Out[20]= 0.327689667523621
+```
+
+0.327690 against 0.327563 — four parts in ten thousand, on a domain
+**less than half the size**. That is what the absorber buys.
+
+### A double barrier, and an honest negative result
+
+```
+In[24]:= def double(x) { 2.5 * ((x > 0) * (x < 1) + (x > 3) * (x < 4)) }
+In[31]:= qm prob 4 100
+Out[31]= 0.271498902829932
+```
+
+Two barriers with a gap form a resonant cavity — the mechanism behind
+the resonant tunnelling diode. At this energy it transmits **0.2715,
+less than the single barrier's 0.3276**, with about 0.8 % of the
+probability left sitting in the gap. That trapped fraction *is* the
+cavity; but resonant enhancement only occurs at its quasi-bound
+energies, and those peaks are narrower than this packet's momentum
+spread (σ = 2 gives Δk = 0.25), which averages straight over them.
+
+A scan over k₀ from 1.4 to 2.9 rises monotonically — 0.017, 0.101,
+0.271, 0.308, 0.420, 0.722 — with no peak. See
+[TUNNELING_RESULTS.md](TUNNELING_RESULTS.md) for the full run log,
+including the narrower-packet scan and why the negative result is
+recorded rather than tuned away.
 
 ---
 

@@ -13,6 +13,30 @@ use ::special_functions::complex::Complex64;
 use ::physical_object::physical_object::physical_object;
 use ::physical_object::PhysicalObjectSystem;
 
+/// The six comparison operators.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CmpOp {
+    Lt,
+    Le,
+    Gt,
+    Ge,
+    Eq,
+    Ne,
+}
+
+impl CmpOp {
+    pub fn symbol(self) -> &'static str {
+        match self {
+            CmpOp::Lt => "<",
+            CmpOp::Le => "<=",
+            CmpOp::Gt => ">",
+            CmpOp::Ge => ">=",
+            CmpOp::Eq => "==",
+            CmpOp::Ne => "!=",
+        }
+    }
+}
+
 /// Runtime values on the operand stack.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Value {
@@ -246,6 +270,11 @@ pub enum Instr {
     /// Graphical scene window command (see [`SceneCmd`]).
     Scene(SceneCmd),
     Qm(crate::qm::QmCmd),
+    /// Comparisons. Each pops two values and pushes 1.0 or 0.0 — the
+    /// language has numbers and no boolean type, and 1/0 is what makes
+    /// an indicator function like `(x > a) * (x < b)` work as a
+    /// piecewise potential.
+    Cmp(CmpOp),
     /// `COLLIDE [ON|OFF]` — `None` reports the current status.
     Collide(Option<bool>),
     /// `CONTACTS` — list the contacts of the last STEP/RUN.
@@ -388,6 +417,10 @@ posim command language (case-insensitive keywords):
                             sin() cos() exp() log(), pi, tau
                             complex: 3i is imaginary, so 2 + 3i is a
                             complex number; + - * / all accept them
+                            comparisons: < <= > >= == != give 1 or 0,
+                            so (x > a) * (x < b) is an indicator
+                            function — that is how you write a
+                            piecewise potential
   RESET                     clear the system
   HELP                      this text
 one-dimensional quantum mechanics (see grammar.md):
@@ -408,7 +441,19 @@ one-dimensional quantum mechanics (see grammar.md):
                             Crank-Nicolson propagation (unitary)
   QM NORM | QM ENERGY | QM POSITION | QM MOMENTUM
   QM PROB <a> <b>           probability in [a, b]
+  QM ABSORB <width> <strength> [<power>]
+                            absorbing edges (complex absorbing
+                            potential): the walls stop reflecting, so a
+                            much shorter domain gives the same answer.
+                            Propagation is then NOT unitary — the norm
+                            decays by design — and QM STATES is refused
+                            because H is no longer Hermitian.
+                            power defaults to 2, the measured optimum
+  QM ABSORB OFF             back to reflecting walls
   QM DENSITY                |psi|^2 as a list
+  QM ANIMATE \"<file>\" <t> [FRAMES <n>]
+                            propagate and write a self-contained HTML
+                            animation of |psi|^2; open it in a browser
   QM RESET                  forget the quantum problem
                             NOTE: separate negative arguments with
                             commas — `well 5 -2 2` reads `5 - 2` as
@@ -1051,6 +1096,11 @@ fn exec_one(instr: &Instr, state: &mut SimState, stack: &mut Vec<Value>) -> Resu
             let out = exec_scene(cmd, state, stack)?;
             stack.push(Value::Str(out));
         }
+        Instr::Cmp(op) => {
+            let b = pop(stack)?;
+            let a = pop(stack)?;
+            stack.push(Value::Num(compare(*op, a, b)?));
+        }
         Instr::Qm(cmd) => {
             let out = crate::qm::exec_qm(cmd, state, stack)?;
             /* QM DENSITY pushes its own list value; everything else
@@ -1501,6 +1551,43 @@ fn as_c(v: &Value) -> Option<Complex64> {
         Value::Num(x) => Some(Complex64::real(*x)),
         Value::Complex(z) => Some(*z),
         _ => None,
+    }
+}
+
+/// Numeric comparison, yielding 1.0 or 0.0.
+///
+/// Only numbers are ordered here. `==`/`!=` additionally accept two
+/// vectors or two quaternions, because asking whether two positions
+/// coincide is a reasonable thing to want; ordering them is not.
+///
+/// NaN compares false to everything, INCLUDING itself, so `x != x` is
+/// the idiomatic NaN test and is deliberately not special-cased.
+fn compare(op: CmpOp, a: Value, b: Value) -> Result<f64, String> {
+    let t = |b: bool| if b { 1.0 } else { 0.0 };
+    match (&a, &b) {
+        (Value::Num(x), Value::Num(y)) => Ok(match op {
+            CmpOp::Lt => t(x < y),
+            CmpOp::Le => t(x <= y),
+            CmpOp::Gt => t(x > y),
+            CmpOp::Ge => t(x >= y),
+            CmpOp::Eq => t(x == y),
+            CmpOp::Ne => t(x != y),
+        }),
+        (Value::Vec3(x), Value::Vec3(y)) if matches!(op, CmpOp::Eq | CmpOp::Ne) => {
+            let same = x == y;
+            Ok(t(if matches!(op, CmpOp::Eq) { same } else { !same }))
+        }
+        (Value::Quat(x), Value::Quat(y)) if matches!(op, CmpOp::Eq | CmpOp::Ne) => {
+            let same = x == y;
+            Ok(t(if matches!(op, CmpOp::Eq) { same } else { !same }))
+        }
+        _ => Err(format!(
+            "cannot compare {} {} {} (ordering is defined for numbers; `==` and `!=` also \
+             accept two vectors or two quaternions)",
+            type_name(&a),
+            op.symbol(),
+            type_name(&b)
+        )),
     }
 }
 
@@ -2476,6 +2563,40 @@ pub fn execute_line(line: &str, state: &mut SimState) -> Result<Value, String> {
 
 #[cfg(test)]
 mod tests {
+
+    /// Comparison operators yield 1/0, which is what lets
+    /// `(x > a) * (x < b)` act as an indicator function.
+    #[test]
+    fn comparison_operators() {
+        let mut st = SimState::default();
+        let n = |l: &str, st: &mut SimState| match execute_line(l, st).unwrap() {
+            Value::Num(v) => v,
+            other => panic!("`{l}` gave {other}"),
+        };
+        assert_eq!(n("3 < 5", &mut st), 1.0);
+        assert_eq!(n("3 > 5", &mut st), 0.0);
+        assert_eq!(n("3 <= 3", &mut st), 1.0);
+        assert_eq!(n("3 >= 4", &mut st), 0.0);
+        assert_eq!(n("2 == 2", &mut st), 1.0);
+        assert_eq!(n("2 != 2", &mut st), 0.0);
+        // lower precedence than + and -, so this is (1+1) > 1
+        assert_eq!(n("1 + 1 > 1", &mut st), 1.0);
+        // indicator function
+        assert_eq!(n("(0.5 > 0) * (0.5 < 1)", &mut st), 1.0);
+        assert_eq!(n("(2 > 0) * (2 < 1)", &mut st), 0.0);
+        // NaN compares false to everything, including itself — so
+        // `x != x` is the NaN test, and is deliberately not special-cased
+        assert_eq!(n("0/0 != 0/0", &mut st), 1.0);
+        assert_eq!(n("0/0 == 0/0", &mut st), 0.0);
+        // `=` is still assignment, not comparison
+        assert!(execute_line("let q = 3", &mut st).is_ok());
+        assert_eq!(n("q == 3", &mut st), 1.0);
+        // vectors: equality yes, ordering no
+        assert_eq!(n("[1,2,3] == [1,2,3]", &mut st), 1.0);
+        assert_eq!(n("[1,2,3] != [1,2,4]", &mut st), 1.0);
+        assert!(execute_line("[1,2,3] < [1,2,4]", &mut st).is_err(), "ordering vectors");
+        assert!(execute_line("1 < \"a\"", &mut st).is_err(), "comparing a string");
+    }
     use super::*;
 
     #[test]

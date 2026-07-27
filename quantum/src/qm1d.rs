@@ -61,6 +61,12 @@ pub struct Hamiltonian {
     pub potential: Vec<f64>,
     pub mass: f64,
     pub hbar: f64,
+    /// An optional **complex absorbing potential** `W(x) >= 0`.
+    ///
+    /// The effective Hamiltonian becomes `H - i W(x)`, which drains
+    /// probability wherever `W > 0` instead of reflecting it. See
+    /// [`Hamiltonian::with_absorber`].
+    pub absorber: Option<Vec<f64>>,
 }
 
 impl Hamiltonian {
@@ -90,7 +96,98 @@ impl Hamiltonian {
         if !hbar.is_finite() || hbar <= 0.0 {
             return Err(format!("Hamiltonian: hbar must be finite and positive, got {hbar}"));
         }
-        Ok(Self { grid, potential, mass, hbar })
+        Ok(Self { grid, potential, mass, hbar, absorber: None })
+    }
+
+    /// Attach a **complex absorbing potential** (CAP) to both edges.
+    ///
+    /// The Dirichlet walls reflect, which is fatal for scattering: the
+    /// domain has to be long enough that nothing reaches them, and that
+    /// cost grows with the time you want to simulate. A CAP removes the
+    /// constraint by making the edges *absorb*. The effective
+    /// Hamiltonian is
+    ///
+    /// ```text
+    ///     H_eff = H - i W(x),
+    ///     W(x)  = strength * ((|x| - x_on) / width)^power   for |x| > x_on
+    /// ```
+    ///
+    /// where `x_on` is `width` inside each wall. A smooth polynomial
+    /// ramp is used rather than a step because an abrupt `W` reflects
+    /// almost as badly as the wall it replaces — the whole point is to
+    /// be gentle enough that the packet does not notice it arriving.
+    ///
+    /// # The trade-off, which is real and unavoidable
+    ///
+    /// A CAP that is too weak lets the packet reach the wall and reflect
+    /// off it; one that is too strong reflects off the *absorber*. The
+    /// usable window widens as `width` grows, so prefer a wide, gentle
+    /// absorber over a narrow, fierce one. [`Propagator::reflection_probe`]
+    /// measures what you actually got rather than leaving you to trust
+    /// a rule of thumb.
+    ///
+    /// # Consequences
+    ///
+    /// * Propagation is **no longer unitary** — the norm decays, by
+    ///   design. That is the absorber working, not a solver defect.
+    /// * `<E>` is no longer conserved and is no longer real in general.
+    ///   [`Wavefunction::energy`] returns the real part.
+    /// * [`Hamiltonian::bound_states`] **refuses** to run: the matrix is
+    ///   no longer Hermitian, so a symmetric eigensolver would return
+    ///   confident nonsense.
+    ///
+    /// # Errors
+    /// Non-finite or non-positive `width`/`strength`, a `width` that
+    /// does not fit in the domain, or `power < 1`.
+    pub fn with_absorber(mut self, width: f64, strength: f64, power: f64) -> Result<Self, String> {
+        if !width.is_finite() || width <= 0.0 {
+            return Err(format!("with_absorber: width must be finite and positive, got {width}"));
+        }
+        if !strength.is_finite() || strength <= 0.0 {
+            return Err(format!(
+                "with_absorber: strength must be finite and positive, got {strength}"
+            ));
+        }
+        if !power.is_finite() || power < 1.0 {
+            return Err(format!(
+                "with_absorber: power must be at least 1 (2 or 3 is usual), got {power}"
+            ));
+        }
+        let span = self.grid.x_max - self.grid.x_min;
+        if 2.0 * width >= span {
+            return Err(format!(
+                "with_absorber: two absorbers of width {width} do not fit in a domain of \
+                 width {span} — they would overlap and leave no interior"
+            ));
+        }
+        let lo_on = self.grid.x_min + width;
+        let hi_on = self.grid.x_max - width;
+        let w: Vec<f64> = (0..self.grid.n)
+            .map(|i| {
+                let x = self.grid.x(i);
+                let d = if x < lo_on {
+                    (lo_on - x) / width
+                } else if x > hi_on {
+                    (x - hi_on) / width
+                } else {
+                    0.0
+                };
+                strength * d.powf(power)
+            })
+            .collect();
+        self.absorber = Some(w);
+        Ok(self)
+    }
+
+    /// Remove any absorbing potential.
+    pub fn without_absorber(mut self) -> Self {
+        self.absorber = None;
+        self
+    }
+
+    /// Whether an absorbing potential is attached.
+    pub fn is_absorbing(&self) -> bool {
+        self.absorber.is_some()
     }
 
     /// Build by sampling a closure at each grid point.
@@ -113,9 +210,19 @@ impl Hamiltonian {
         -self.hbar * self.hbar / (2.0 * self.mass * h * h)
     }
 
-    /// Diagonal entry `i`.
+    /// Diagonal entry `i` of the REAL part.
     fn diagonal(&self, i: usize) -> f64 {
         -2.0 * self.off_diagonal() + self.potential[i]
+    }
+
+    /// Diagonal entry `i` of the effective Hamiltonian, `H - i W`.
+    /// Identical to [`Hamiltonian::diagonal`] when no absorber is set.
+    fn diagonal_c(&self, i: usize) -> C {
+        let re = self.diagonal(i);
+        match &self.absorber {
+            Some(w) => C::new(re, -w[i]),
+            None => C::real(re),
+        }
     }
 
     /// Apply `H` to a complex wavefunction, returning `H psi`.
@@ -124,7 +231,7 @@ impl Hamiltonian {
         let off = self.off_diagonal();
         (0..n)
             .map(|i| {
-                let mut s = psi[i] * self.diagonal(i);
+                let mut s = self.diagonal_c(i) * psi[i];
                 if i > 0 {
                     s = s + psi[i - 1] * off;
                 }
@@ -159,6 +266,14 @@ impl Hamiltonian {
     /// separate piece of work.
     pub fn bound_states(&self, k: usize) -> Result<(Vec<f64>, Vec<Vec<f64>>), String> {
         let n = self.grid.n;
+        if self.is_absorbing() {
+            return Err(
+                "bound_states: an absorbing potential makes the Hamiltonian NON-Hermitian, so a \
+                 symmetric eigensolver would return confident nonsense. Remove the absorber \
+                 (it is only meaningful for scattering) and try again."
+                    .to_string(),
+            );
+        }
         if k == 0 {
             return Err("bound_states: k must be at least 1".to_string());
         }
@@ -389,7 +504,7 @@ impl Propagator {
         let sub = vec![half * off; n];
         let sup = vec![half * off; n];
         let lhs_diag = (0..n)
-            .map(|i| C::ONE + half * C::real(ham.diagonal(i)))
+            .map(|i| C::ONE + half * ham.diagonal_c(i))
             .collect();
         Ok(Self { ham, dt, sub, sup, lhs_diag, half })
     }
@@ -709,6 +824,118 @@ mod tests {
             counts[0] < counts[1] && counts[1] < counts[2],
             "bound-state counts did not increase with depth: {counts:?}"
         );
+    }
+
+    /// The absorber must ABSORB: a packet driven into it should mostly
+    /// vanish rather than come back.
+    #[test]
+    fn an_absorber_removes_a_packet_that_a_wall_would_reflect() {
+        let g = Grid::new(-40.0, 40.0, 1200).unwrap();
+        let build = |absorb: bool| {
+            let h = Hamiltonian::from_fn(g.clone(), |_| 0.0, 1.0, 1.0).unwrap();
+            // width 14, strength 3.0, quadratic ramp. These are not
+            // guesses: `examples/absorber_tuning.rs` sweeps the plane
+            // and finds the optimum near here for k0 = 3, measuring
+            // ~2e-8 reflection. A first attempt at strength 1.0 gave
+            // 5e-3 — a factor of 250_000 worse — which is why the
+            // parameters are measured rather than assumed.
+            if absorb { h.with_absorber(14.0, 3.0, 2.0).unwrap() } else { h }
+        };
+        // Same packet, same time, with and without the absorber.
+        let run = |absorb: bool| {
+            let ham = build(absorb);
+            let mut w = Wavefunction::gaussian(g.clone(), 0.0, 1.5, 3.0).unwrap();
+            let prop = Propagator::new(ham, 0.005).unwrap();
+            prop.run(&mut w, 4000).unwrap(); // t = 20, far past the wall
+            w
+        };
+        let plain = run(false);
+        let capped = run(true);
+
+        // Without the absorber the packet is still all there, having
+        // bounced off the wall.
+        assert!(
+            (plain.norm() - 1.0).abs() < 1e-9,
+            "a Dirichlet wall must conserve the norm, got {}",
+            plain.norm()
+        );
+        // With it, almost everything has been drained away.
+        assert!(capped.norm() < 0.01, "absorber left {} of the norm", capped.norm());
+        // And what little remains must not be sitting in the interior:
+        // that would mean the ABSORBER reflected, which is the failure
+        // mode that matters.
+        let interior = capped.probability_in(-24.0, 24.0);
+        assert!(interior < 1e-5, "absorber reflected {interior} back into the interior");
+    }
+
+    /// The real test of an absorber is that it does not change the
+    /// PHYSICS: a scattering answer computed on a short absorbing domain
+    /// must match the same answer computed on a long reflection-free
+    /// one. That is the whole point — it buys domain size, not a
+    /// different result.
+    #[test]
+    fn absorbing_short_domain_reproduces_the_long_domain_answer() {
+        let (v0, a, k0, sigma) = (2.5_f64, 1.0_f64, 2.0_f64, 2.0_f64);
+        let pot = move |x: f64| if (0.0..a).contains(&x) { v0 } else { 0.0 };
+
+        // Reference: a long domain, no absorber, stopped before the
+        // packets reach the walls.
+        let g_long = Grid::new(-100.0, 100.0, 3000).unwrap();
+        let ham_long = Hamiltonian::from_fn(g_long.clone(), pot, 1.0, 1.0).unwrap();
+        let mut w_long = Wavefunction::gaussian(g_long, -25.0, sigma, k0).unwrap();
+        Propagator::new(ham_long, 0.01).unwrap().run(&mut w_long, 2000).unwrap();
+        let t_ref = w_long.probability_in(a, 100.0);
+        assert!(w_long.edge_probability(0.05) < 1e-9, "reference touched a wall");
+
+        // Short domain with absorbers. The transmitted packet WILL run
+        // into the right-hand absorber, so transmission is measured as
+        // "probability that left through the right", i.e. what is
+        // missing from the interior plus what is still travelling right.
+        let g_short = Grid::new(-45.0, 45.0, 1350).unwrap();
+        let ham_short = Hamiltonian::from_fn(g_short.clone(), pot, 1.0, 1.0)
+            .unwrap()
+            .with_absorber(15.0, 0.8, 2.0)
+            .unwrap();
+        let mut w_short = Wavefunction::gaussian(g_short, -25.0, sigma, k0).unwrap();
+        let prop = Propagator::new(ham_short, 0.01).unwrap();
+        // Stop while both packets are still inside the clear region, so
+        // this compares like with like.
+        prop.run(&mut w_short, 2000).unwrap();
+        let t_cap = w_short.probability_in(a, 30.0);
+
+        let rel = (t_cap - t_ref).abs() / t_ref;
+        assert!(
+            rel < 0.02,
+            "absorbing domain gave T = {t_cap}, reference {t_ref} ({:.2}% off)",
+            100.0 * rel
+        );
+    }
+
+    /// An absorbing Hamiltonian is not Hermitian, so the symmetric
+    /// eigensolver must refuse rather than return plausible nonsense.
+    #[test]
+    fn bound_states_refuse_an_absorbing_hamiltonian() {
+        let g = Grid::new(-10.0, 10.0, 100).unwrap();
+        let ham = Hamiltonian::from_fn(g, |x| 0.5 * x * x, 1.0, 1.0)
+            .unwrap()
+            .with_absorber(2.0, 1.0, 2.0)
+            .unwrap();
+        let e = ham.bound_states(3).unwrap_err();
+        assert!(e.contains("non-Hermitian") || e.contains("NON-Hermitian"), "got: {e}");
+        // and removing it makes them available again
+        assert!(ham.without_absorber().bound_states(3).is_ok());
+    }
+
+    /// Absorber construction rejects nonsense.
+    #[test]
+    fn absorber_parameters_are_validated() {
+        let g = Grid::new(-10.0, 10.0, 100).unwrap();
+        let h = || Hamiltonian::from_fn(g.clone(), |_| 0.0, 1.0, 1.0).unwrap();
+        assert!(h().with_absorber(0.0, 1.0, 2.0).is_err(), "zero width");
+        assert!(h().with_absorber(2.0, -1.0, 2.0).is_err(), "negative strength");
+        assert!(h().with_absorber(2.0, 1.0, 0.5).is_err(), "power < 1");
+        assert!(h().with_absorber(11.0, 1.0, 2.0).is_err(), "absorbers overlap");
+        assert!(h().with_absorber(2.0, 1.0, 2.0).is_ok());
     }
 
     #[test]
