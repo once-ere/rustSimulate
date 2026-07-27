@@ -280,6 +280,7 @@ a confident, wrong number, and you would have no way to notice.
 | Hankel (travelling waves) | `hankel_h1_z(n,z)`, `hankel_h2_z(n,z)`, `hankel_h1_nu(nu,z)`, `hankel_h2_nu(nu,z)` |
 | Hankel derivatives | `hankel_h1_prime_z(n,z)`, `hankel_h2_prime_z(n,z)`, `hankel_h1_prime_nu(nu,z)`, `hankel_h2_prime_nu(nu,z)` |
 | spherical Hankel | `sph_hankel_h1(n,x)`, `sph_hankel_h2(n,x)`, `sph_hankel_h1_prime(n,x)`, `sph_hankel_h2_prime(n,x)` |
+| scaled forms | `bessel_j_scaled(nu,z)`, `bessel_y_scaled(nu,z)`, `bessel_i_scaled(nu,z)`, `bessel_k_scaled(nu,z)`, `hankel_h1_scaled(nu,z)`, `hankel_h2_scaled(nu,z)` |
 | quadrature | `gauss_legendre(n)` → `[nodes, weights]` |
 | eigenproblems | `eigenvalues(matrix)` → list, `jacobi_eigen(matrix)` → `[values, vectors]` |
 | angular momentum | `wigner_3j(j1,j2,j3,m1,m2,m3)`, `wigner_6j(j1,j2,j3,j4,j5,j6)`, `wigner_9j(a,b,c,d,e,f,g,h,i)`, `clebsch_gordan(j1,m1,j2,m2,j3,m3)` |
@@ -577,6 +578,96 @@ Measured, not asserted:
 
 ```
 cargo run -p special_functions --release --example hankel_accuracy
+```
+
+#### Scaled forms — the exponential factored out
+
+The three sections above each end in the same place: a small quantity
+computed from large ones, losing digits it cannot get back. `Y_0(40)` is
+wrong in its first digit, `K_0(15)` is worthless, `H1` above the real
+axis is gone by `Im z = 12`. Each section said the remedy was "a scaled
+formulation, which is not implemented". It is now.
+
+| function | returns |
+|---|---|
+| `bessel_j_scaled(nu,z)` | `exp(-|Im z|) J_nu(z)` |
+| `bessel_y_scaled(nu,z)` | `exp(-|Im z|) Y_nu(z)` |
+| `bessel_i_scaled(nu,z)` | `exp(-|Re z|) I_nu(z)` |
+| `bessel_k_scaled(nu,z)` | `exp(z) K_nu(z)` |
+| `hankel_h1_scaled(nu,z)` | `exp(-iz) H1_nu(z)` |
+| `hankel_h2_scaled(nu,z)` | `exp(iz) H2_nu(z)` |
+
+**Multiplying by the exponential afterwards would fix nothing** — the
+digits are gone before the multiplication. What makes these work is a
+different algorithm: the asymptotic expansions of DLMF 10.17 and 10.40,
+which are plain series in `1/z` with leading term 1 and **no
+cancellation anywhere in them**.
+
+```
+exp(-iz) H1_nu(z) ~ sqrt(2/(pi z)) exp(-i(nu pi/2 + pi/4)) S(i)
+exp(z)   K_nu(z)  ~ sqrt(pi/(2z))                          S(1)
+
+   where S(c) = sum_k c^k a_k(nu)/z^k,
+         a_0 = 1,  a_k = a_{k-1}(4nu^2 - (2k-1)^2)/(8k)
+```
+
+`J` and `Y` then come from the Hankel pair without the growing
+exponential ever being formed, because `exp(±iz - |Im z|)` has modulus
+at most 1 by construction.
+
+```
+In[1]:= bessel_y_scaled(0, 40)
+Out[1]= 0.12593641705826092 + 0i
+In[2]:= bessel_y_z(0, 40)
+Out[2]= 0.09242859229058376 + 0i
+In[3]:= bessel_k_scaled(0, 2000)
+Out[3]= 0.02802320501460432 + 0i
+In[4]:= sqrt(pi/4000)
+Out[4]= 0.028024956081989644
+In[5]:= bessel_i_scaled(0, 1000)
+Out[5]= 0.012617240455891252 + 0i
+In[6]:= hankel_h1_scaled(0.5, 3 + 700i)
+Out[6]= -0.02127852045069675 - 0.02136990952385759i
+In[7]:= bessel_k_scaled(40, 25)
+Out[7]= 213915362812.9533 + 0i
+In[8]:= bessel_y_scaled(0, 5000)
+Out[8]= -0.009116740769643965 + -0i
+In[9]:= bessel_k_scaled(0.5, 1e6)
+Out[9]= 0.0012533141373154998 + 0i
+In[10]:= sqrt(pi/2e6)
+Out[10]= 0.0012533141373155003
+```
+
+On the real axis the `J`/`Y` scaling is `exp(0) = 1`, so `Out[1]` **is**
+`Y_0(40)`, and `Out[2]` is the same number computed the old way. The
+true value is `0.12593641705826097`: the scaled form has fifteen correct
+digits and the unscaled one has none.
+
+`Out[3]` and `Out[4]` are `exp(x)K_0(2000)` and its leading asymptotic
+`sqrt(pi/2x)`; they agree to four digits, and the gap is `-1/(8x)` to
+the digit. **Unscaled, that value does not exist** — `K_0(2000)` is
+about `1e-870`, below the smallest `f64`. `Out[5]` is the same story
+upward: `I_0(1000)` is about `e^1000`, above the largest. `Out[6]` is
+`H1` seven hundred nepers above the real axis, where `J` and `Y` are
+each about `e^700`. `Out[9]`/`Out[10]` are the exact half-integer form
+`exp(z)K_{1/2}(z) = sqrt(pi/2z)`, at `z = 10^6`.
+
+**Order is handled by recurrence.** `K`, `Y`, `H1` and `H2` all grow
+with order, so upward recurrence in `nu` is stable, and the expansion is
+used at a base order below 1 and stepped up. `Out[7]` is order 40, where
+the vendored Cephes `kn` overflows outright.
+
+**When no method reaches a point, these return an error** naming both
+estimates and what is missing. That is the substantive difference from
+the plain forms, which returned a confident wrong first digit. The gap
+is the region where `|z|` and `nu` are large and comparable, which needs
+the uniform Airy-type expansions of DLMF 10.20 — **not implemented**.
+Complex *order* is also still absent.
+
+Measured, not asserted:
+
+```
+cargo run -p special_functions --release --example bessel_scaled_accuracy
 ```
 
 **A wrinkle worth knowing about lists.** The bracket literal is

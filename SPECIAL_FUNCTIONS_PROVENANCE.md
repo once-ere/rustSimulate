@@ -49,7 +49,7 @@ and the matrix below states plainly what is absent.
 | 7 | Error Functions, Dawson, Fresnel | partial | **vendored**: erf, erfc + inverses, Dawson, Fresnel |
 | 8 | Incomplete Gamma and Related | partial | **vendored**: incomplete gamma/beta + inverses |
 | 9 | Airy and Related | partial | **vendored**: Ai, Bi and derivatives, real argument only |
-| 10 | Bessel Functions | partial | **vendored** cylindrical Jᵥ Yᵥ Iᵥ Kᵥ (real arg); **native** spherical jₙ yₙ and derivatives; **native** integer-order Jₙ whole-table; **native Jₙ, Yₙ, Iₙ, Kₙ for COMPLEX argument**; **native J_ν, Y_ν, I_ν, K_ν for real NON-INTEGER order at complex argument**; **native H^(1), H^(2) and their derivatives, cylindrical (any real order, complex argument) and spherical (real argument)** |
+| 10 | Bessel Functions | partial | **vendored** cylindrical Jᵥ Yᵥ Iᵥ Kᵥ (real arg); **native** spherical jₙ yₙ and derivatives; **native** integer-order Jₙ whole-table; **native Jₙ, Yₙ, Iₙ, Kₙ for COMPLEX argument**; **native J_ν, Y_ν, I_ν, K_ν for real NON-INTEGER order at complex argument**; **native H^(1), H^(2) and their derivatives, cylindrical (any real order, complex argument) and spherical (real argument)**; **native SCALED forms of all six by the asymptotic expansions of DLMF 10.17/10.40 plus order recurrence** |
 | 11 | Struve and Related | **none** | — |
 | 12 | Parabolic Cylinder | **none** | — |
 | 13 | Confluent Hypergeometric | **none** | — |
@@ -138,6 +138,7 @@ record is separate and detailed:
 | `orthopoly` | native | three-term recurrences; Clenshaw for series | DLMF 18.9, A&S 22.7 |
 | `wigner` | native | Racah single-sum for 3-j and 6-j, all factorials in logarithms; 9-j as a single sum over 6-j | DLMF 34.2.4, 34.4.1, 34.6.1; Edmonds 1957 §3.6 |
 | `bessel` | native, **clean-room** | Miller downward recurrence, scale fixed by `J₀+2(J₂+J₄+…)=1` | DLMF 10.6.1, 10.12.4; A&S 9.1.27, 9.1.46 |
+| `bessel_scaled` | native | The asymptotic expansions `e^{-iz}H1 ~ sqrt(2/πz)e^{-i(νπ/2+π/4)}S(i)`, `e^zK ~ sqrt(π/2z)S(1)`, `e^{-z}I ~ S(-1)/sqrt(2πz)` with `a_k = a_{k-1}(4ν²-(2k-1)²)/8k`; `J` and `Y` from the Hankel pair without forming the envelope; optimal truncation supplying its own error estimate, which then **selects between the asymptotic and the ascending series by comparing estimates**; upward order recurrence for `K`, `Y`, `H1`, `H2`; the I–K Wronskian with a continued-fraction ratio anchoring `I` at large order | DLMF 10.6.1, 10.17.5, 10.17.6, 10.28.2, 10.29.1, 10.34.1, 10.27.6, 10.40.1, 10.40.2 |
 | `hankel` | native | `H1 = J + iY`, `H2 = J - iY` (DLMF 10.4.3) over both the integer- and non-integer-order routines; derivatives from `C'_ν = C_{ν-1} - (ν/z)C_ν` (DLMF 10.6.2), which holds for every cylinder function, with `C'_0 = -C_1` for the one order that would need `C_{-1}`; spherical `h1 = j_n + i y_n` (DLMF 10.47.5) on the real line | DLMF 10.2.5, 10.4.3, 10.5.4, 10.6.2, 10.27.8, 10.47.5, 10.49.6, 10.50.1 |
 | `bessel_complex` (non-integer order) | native | One ascending series for J and one for I, evaluated at ±ν; Y and K then follow from the reflection formulas, which are singular at whole ν and so are handed to the integer routines within 1e-9 of one. `1/Γ` is taken from the vendored reciprocal gamma, which is **zero** at the poles — that is what makes `J_{−n} = (−1)ⁿJₙ` fall out, and it keeps ν ≳ 171 in range where Γ itself would overflow | DLMF 10.2.2, 10.2.3, 10.25.2, 10.27.4 |
 | `bessel_complex` | native | Jₙ/Iₙ by the same Miller recurrence (both it and the normalisation are identities in `z`); Yₙ by the ascending series with the log and digamma terms, then **upward** recurrence — the stable direction for Y and the opposite of J's; Kₙ by identity from Jₙ + iYₙ | DLMF 10.6.1, 10.8.1, 10.27.6, 10.27.8, 10.35.1 |
@@ -220,7 +221,9 @@ recorded here because it shaped the suite:
 | `legendre` | ≤1e-13 | `assoc_legendre_p` **overflows f64** and returns `Err`; the driver is the ORDER m, via the (2m−1)!! seed — not ℓ, as an earlier draft of the docs wrongly claimed. `norm_assoc_legendre_p` stays O(1) and is the fix |
 | `orthopoly` | ≤1e-13 | worst at high degree with large argument, as the recurrences predict |
 | `bessel_complex` (non-integer order) | ~1e-16·e^L, where L = \|z\|−\|Im z\| for J and Y and L = \|z\|+Re z for I and K | **weakest regime:** J and Y on the real axis, I and K on the *positive* real axis — the two families fail in opposite directions and the integer-order advice does not transfer. Machine precision up the imaginary axis to \|z\|=70. Large **order** is free (1e-13 at ν=150). The bound 1e-14·e^L is pinned by `documented_accuracy_bounds_hold`; the surface is printed by `examples/bessel_nu_accuracy.rs`, measured against the half-integer closed forms |
+| `bessel_complex` (branch) | fixed in Stage 14 | `bessel_k_c` was on the **wrong sheet** for `arg z > π/2`: the identity it uses rotates the argument by `i`, which pushed `arg(iz)` past `π` and wrapped `ln` to the far side of `Y`'s cut. The I–K Wronskian residual was 3e8 at `arg z = 2.5` where the accuracy law predicts 5e-8. Fixed by conjugation (`K_ν(z̄) = conj K_ν(z)`), pinned by `k_stays_on_the_right_sheet_past_the_imaginary_axis`. Found by the Stage-14 cross-check of the scaled routines against the series |
 | `bessel_complex` | **four laws, not one** — ~1e-16·e^L with L = \|Im z\| for J, \|Re z\| for I, \|z\|−\|Im z\| for Y, and max(2\|Re z\|,\|z\|)+Re z for K | **This row was wrong until Stage 13.** It quoted J's law for the whole module. J and I are Miller recurrence and hold up superbly (1e-15 at x=35 on their good axis); Y is an ascending series and K is built from J and Y at imaginary argument, so on the **real** axis — where J is at its best — Y is wrong in the first digit by x=40 and K is worthless past x≈12. The old measurement used only the generating-function identity, which involves no Y at all; a Hankel asymptotic test at x=40 exposed it. Now measured against six independent Cephes cross-checks and pinned by `integer_order_accuracy_laws_hold` |
+| `bessel_scaled` | machine precision essentially everywhere: worst measured disagreement with the ascending series, over 864 grid points where the series' own law says it is sound, is 4e-8 for J and 9e-7 for Y at extreme order; typically 1e-15 | **weakest regime:** `\|z\|` and `ν` large and comparable, which needs the uniform Airy-type expansions of DLMF 10.20 and **returns an error** rather than a number. Reaches values no unscaled routine can represent — `e^xK_0(2000)` where `K_0` is ~1e-870, `e^{-x}I_0(1000)` where `I_0` is ~e^1000, `H1` 700 nepers above the real axis — and orders where the vendored Cephes `kn` overflows |
 | `hankel` | cylindrical: ~1e-16·e^(3\|Im z\|) on the bad side of each; spherical: as accurate as `sph_bessel`, i.e. everywhere | **weakest regime:** `H1` above the real axis and `H2` below it. `H1` decays like e^(−Im z) while J and Y each grow like e^(\|Im z\|), so the sum cancels — good to Im z≈8, three digits at 10, gone by 12. Intrinsic to the combination: switching between the `_z` and `_nu` routes changes nothing (measured, factor 1.5), since at whole order `_nu` delegates Y to `_z`. Same law as K on the real axis, because `K_ν(y) = (π/2)i^(ν+1)H1_ν(iy)` makes them the same computation |
 | `bessel` | ≤1e-10 vs Cephes | **weakest regime:** the seed order must sit well above x. At `x = 45` an under-sized seed gave only ~9 correct digits — caught by the cross-check, fixed, and the measurement recorded in the source |
 | `wigner` | ≤1e-12 on orthogonality sums | **weakest regime:** large j, where the alternating Racah sum cancels catastrophically. This is a property of the formula, not the implementation, and it is stated in the module docs |
@@ -252,12 +255,11 @@ Unit tests prove the pieces; three examples prove they do the job:
   hard limits rather than performance advice. Where the order happens
   to be whole, the integer-order Miller routines reach much further
   along the real axis.
-- **Scaled** Hankel and Bessel routines (the AMOS approach: return
-  `exp(-iz) H1` and let the caller supply the exponential). This is the
-  only thing that would remove the `H1`/`K` cancellation rather than
-  merely document it.
-- Uniform asymptotic expansions for large `|z|` at any order. Without
-  them the ranges above are hard limits.
+- **Uniform (Airy-type) asymptotic expansions**, DLMF 10.20 and 10.41,
+  for `|z|` and `ν` large and comparable. This is now the *only*
+  remaining gap in chapter 10's coverage, and the scaled routines
+  detect it and return an error naming it rather than guessing.
+- Complex **order** throughout.
 - Accuracy at very large j in `wigner`, as above.
 - The twenty chapters marked **none** in §1.
 

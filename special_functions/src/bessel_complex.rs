@@ -387,6 +387,22 @@ pub fn bessel_k_c(n: i32, z: C) -> Result<C, String> {
     if z.abs() == 0.0 {
         return Err("bessel_k_c: K_n has a singularity at z = 0".to_string());
     }
+    // The identity rotates the argument by i, so `arg(iz) = arg(z) +
+    // pi/2`. For `arg z > pi/2` that leaves the principal range and
+    // `ln` inside `Y` wraps to the far side of its branch cut, putting
+    // the answer on the WRONG SHEET. Measured, the I-K Wronskian
+    // residual jumped from the 5e-8 its accuracy law predicts to 3e8 at
+    // `arg z = 2.5`. Conjugation avoids the rotation entirely: `K_n` has
+    // real coefficients, so `K_n(conj z) = conj(K_n(z))`, and `conj z`
+    // has `arg` in `[-pi, -pi/2)`, where `arg(iz)` lands safely in
+    // `[-pi/2, 0)`.
+    // `z.im > 0.0` and not merely `arg > pi/2`: on the negative real
+    // axis itself the rotation lands at `arg(iz) = -pi/2`, which is
+    // safe, and conjugating there would silently move the answer to the
+    // other side of the cut — a convention change, not a fix.
+    if z.im > 0.0 && z.arg() > std::f64::consts::FRAC_PI_2 {
+        return Ok(bessel_k_c(n, z.conj())?.conj());
+    }
     let iz = C::I * z;
     let j = bessel_j_c(n, iz)?;
     let y = bessel_y_c(n, iz)?;
@@ -1365,6 +1381,30 @@ mod tests {
                         bound(l)
                     );
                 }
+            }
+        }
+    }
+
+    /// `K_n` on the far side of the imaginary axis. The identity used
+    /// to build `K` rotates its argument by `i`, which for
+    /// `arg z > pi/2` used to cross `Y`'s branch cut and land on the
+    /// wrong sheet. Pinned by the I-K Wronskian, whose right-hand side
+    /// is elementary and correct on every sheet, and scaled by the
+    /// largest term so the metric's own cancellation is divided out.
+    #[test]
+    fn k_stays_on_the_right_sheet_past_the_imaginary_axis() {
+        for &nu in &[0, 1, 5, 10] {
+            for &a in &[1.6, 2.0, 2.5, 3.0, -1.6, -2.0, -2.5, -3.0] {
+                let z = C::from_polar(6.0, a);
+                let (i0, i1) = (bessel_i_c(nu, z).unwrap(), bessel_i_c(nu + 1, z).unwrap());
+                let (k0, k1) = (bessel_k_c(nu, z).unwrap(), bessel_k_c(nu + 1, z).unwrap());
+                let w = i0 * k1 + i1 * k0;
+                let scale = (i0 * k1).abs() + (i1 * k0).abs();
+                assert!(
+                    (w - z.inv()).abs() / scale < 1e-10,
+                    "I-K Wronskian at n={nu}, arg z={a}: residual {:.2e}",
+                    (w - z.inv()).abs() / scale
+                );
             }
         }
     }

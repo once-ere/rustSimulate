@@ -344,6 +344,10 @@ spherical Hankel &
   \code{sph\_hankel\_h1(n,x)}, \code{sph\_hankel\_h2(n,x)},
   \code{sph\_hankel\_h1\_prime(n,x)},
   \code{sph\_hankel\_h2\_prime(n,x)}\\
+scaled forms &
+  \code{bessel\_j\_scaled(nu,z)}, \code{bessel\_y\_scaled(nu,z)},
+  \code{bessel\_i\_scaled(nu,z)}, \code{bessel\_k\_scaled(nu,z)},
+  \code{hankel\_h1\_scaled(nu,z)}, \code{hankel\_h2\_scaled(nu,z)}\\
 quadrature & \code{gauss\_legendre(n)} $\to$ \code{[nodes, weights]}\\
 eigenproblems & \code{eigenvalues(matrix)} $\to$ list,
   \code{jacobi\_eigen(matrix)} $\to$ \code{[values, vectors]}\\
@@ -659,6 +663,102 @@ wherever they are.
 Measured, not asserted:
 \begin{lstlisting}
 cargo run -p special_functions --release --example hankel_accuracy
+\end{lstlisting}
+
+\subsubsection*{Scaled forms --- the exponential factored out}
+
+The three sections above each end in the same place: a small quantity
+computed from large ones, losing digits it cannot get back. $Y_0(40)$ is
+wrong in its first digit, $K_0(15)$ is worthless, $H^{(1)}$ above the
+real axis is gone by $\mathrm{Im}\,z = 12$. Each said the remedy was ``a
+scaled formulation, which is not implemented''. It is now.
+
+\begin{center}
+\begin{tabular}{lp{6.2cm}}
+\textbf{function} & \textbf{returns}\\
+\hline
+\code{bessel\_j\_scaled(nu,z)} & $e^{-|\mathrm{Im}\,z|}J_\nu(z)$\\
+\code{bessel\_y\_scaled(nu,z)} & $e^{-|\mathrm{Im}\,z|}Y_\nu(z)$\\
+\code{bessel\_i\_scaled(nu,z)} & $e^{-|\mathrm{Re}\,z|}I_\nu(z)$\\
+\code{bessel\_k\_scaled(nu,z)} & $e^{z}K_\nu(z)$\\
+\code{hankel\_h1\_scaled(nu,z)} & $e^{-iz}H^{(1)}_\nu(z)$\\
+\code{hankel\_h2\_scaled(nu,z)} & $e^{iz}H^{(2)}_\nu(z)$\\
+\end{tabular}
+\end{center}
+
+\textbf{Multiplying by the exponential afterwards would fix nothing} ---
+the digits are gone before the multiplication. What makes these work is
+a different algorithm: the asymptotic expansions of DLMF 10.17 and
+10.40, plain series in $1/z$ with leading term 1 and \textbf{no
+cancellation anywhere in them}:
+\[
+  e^{-iz}H^{(1)}_\nu(z) \sim \sqrt{\tfrac{2}{\pi z}}\,
+    e^{-i(\nu\pi/2+\pi/4)}\,S(i),
+  \qquad
+  e^{z}K_\nu(z) \sim \sqrt{\tfrac{\pi}{2z}}\,S(1),
+\]
+\[
+  S(c) = \sum_k \frac{c^k a_k(\nu)}{z^k},\qquad
+  a_0 = 1,\quad a_k = a_{k-1}\frac{4\nu^2 - (2k-1)^2}{8k}.
+\]
+$J$ and $Y$ then come from the Hankel pair without the growing
+exponential ever being formed, because $e^{\pm iz - |\mathrm{Im}\,z|}$
+has modulus at most 1 by construction.
+
+\begin{lstlisting}
+In[1]:= bessel_y_scaled(0, 40)
+Out[1]= 0.12593641705826092 + 0i
+In[2]:= bessel_y_z(0, 40)
+Out[2]= 0.09242859229058376 + 0i
+In[3]:= bessel_k_scaled(0, 2000)
+Out[3]= 0.02802320501460432 + 0i
+In[4]:= sqrt(pi/4000)
+Out[4]= 0.028024956081989644
+In[5]:= bessel_i_scaled(0, 1000)
+Out[5]= 0.012617240455891252 + 0i
+In[6]:= hankel_h1_scaled(0.5, 3 + 700i)
+Out[6]= -0.02127852045069675 - 0.02136990952385759i
+In[7]:= bessel_k_scaled(40, 25)
+Out[7]= 213915362812.9533 + 0i
+In[8]:= bessel_y_scaled(0, 5000)
+Out[8]= -0.009116740769643965 + -0i
+In[9]:= bessel_k_scaled(0.5, 1e6)
+Out[9]= 0.0012533141373154998 + 0i
+In[10]:= sqrt(pi/2e6)
+Out[10]= 0.0012533141373155003
+\end{lstlisting}
+
+On the real axis the $J$/$Y$ scaling is $e^0 = 1$, so \code{Out[1]}
+\emph{is} $Y_0(40)$ and \code{Out[2]} is the same number computed the
+old way. The true value is $0.12593641705826097$: the scaled form has
+fifteen correct digits, the unscaled one none.
+
+\code{Out[3]} and \code{Out[4]} are $e^xK_0(2000)$ and its leading
+asymptotic $\sqrt{\pi/2x}$, agreeing to four digits with the gap equal
+to $-1/(8x)$ to the digit. \textbf{Unscaled, that value does not
+exist}: $K_0(2000)$ is about $10^{-870}$, below the smallest \code{f64}.
+\code{Out[5]} is the same story upward, $I_0(1000) \approx e^{1000}$
+being above the largest. \code{Out[6]} is $H^{(1)}$ seven hundred nepers
+above the real axis, where $J$ and $Y$ are each about $e^{700}$.
+\code{Out[9]}/\code{Out[10]} are the exact half-integer form
+$e^{z}K_{1/2}(z) = \sqrt{\pi/2z}$ at $z = 10^{6}$.
+
+\textbf{Order is handled by recurrence.} $K$, $Y$, $H^{(1)}$ and
+$H^{(2)}$ all grow with order, so upward recurrence in $\nu$ is stable;
+the expansion is used at a base order below 1 and stepped up.
+\code{Out[7]} is order 40, where the vendored Cephes \code{kn} overflows
+outright.
+
+\textbf{When no method reaches a point these return an error}, naming
+both estimates and what is missing. That is the substantive difference
+from the plain forms, which returned a confident wrong first digit. The
+gap is the region where $|z|$ and $\nu$ are large and comparable, which
+needs the uniform Airy-type expansions of DLMF 10.20 --- \textbf{not
+implemented}. Complex \emph{order} is also still absent.
+
+Measured, not asserted:
+\begin{lstlisting}
+cargo run -p special_functions --release --example bessel_scaled_accuracy
 \end{lstlisting}
 
 \textbf{A wrinkle worth knowing about lists.} The bracket literal is

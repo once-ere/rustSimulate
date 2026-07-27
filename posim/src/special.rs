@@ -235,6 +235,8 @@ pub fn call(name: &str, args: &[Value]) -> Option<Result<Value, String>> {
         "hankel_h1_prime_nu" | "hankel_h2_prime_nu" => 2,
         "sph_hankel_h1" | "sph_hankel_h2" => 2,
         "sph_hankel_h1_prime" | "sph_hankel_h2_prime" => 2,
+        "bessel_j_scaled" | "bessel_y_scaled" | "bessel_i_scaled" | "bessel_k_scaled" => 2,
+        "hankel_h1_scaled" | "hankel_h2_scaled" => 2,
         "solve_cyclic_tridiag_c" => 6,
         _ => return None,
     };
@@ -414,6 +416,37 @@ fn dispatch(name: &str, a: &[Value]) -> Result<Value, String> {
             as_num(name, 1, &a[1])?,
         )?)),
 
+        // ---- scaled forms: the exponential factored out -----------
+        // These take a real order and return the function DIVIDED by
+        // its exponential envelope, computed by a method that never
+        // forms the envelope. That is what makes them accurate where
+        // the plain forms are not — and defined where the plain forms
+        // overflow or underflow out of f64 entirely.
+        "bessel_j_scaled" => Ok(Value::Complex(sf::bessel_scaled::bessel_j_scaled_nu(
+            as_num(name, 0, &a[0])?,
+            as_cplx(name, 1, &a[1])?,
+        )?)),
+        "bessel_y_scaled" => Ok(Value::Complex(sf::bessel_scaled::bessel_y_scaled_nu(
+            as_num(name, 0, &a[0])?,
+            as_cplx(name, 1, &a[1])?,
+        )?)),
+        "bessel_i_scaled" => Ok(Value::Complex(sf::bessel_scaled::bessel_i_scaled_nu(
+            as_num(name, 0, &a[0])?,
+            as_cplx(name, 1, &a[1])?,
+        )?)),
+        "bessel_k_scaled" => Ok(Value::Complex(sf::bessel_scaled::bessel_k_scaled_nu(
+            as_num(name, 0, &a[0])?,
+            as_cplx(name, 1, &a[1])?,
+        )?)),
+        "hankel_h1_scaled" => Ok(Value::Complex(sf::bessel_scaled::hankel_h1_scaled_nu(
+            as_num(name, 0, &a[0])?,
+            as_cplx(name, 1, &a[1])?,
+        )?)),
+        "hankel_h2_scaled" => Ok(Value::Complex(sf::bessel_scaled::hankel_h2_scaled_nu(
+            as_num(name, 0, &a[0])?,
+            as_cplx(name, 1, &a[1])?,
+        )?)),
+
         // ---- quadrature nodes -------------------------------------
         // Returns [nodes, weights] — two lists, so a script can zip them.
         "gauss_legendre" => {
@@ -507,14 +540,18 @@ fn dispatch(name: &str, a: &[Value]) -> Result<Value, String> {
 pub const SPECIAL_NAMES: &[&str] = &[
     "assoc_legendre_p",
     "bessel_i_nu",
+    "bessel_i_scaled",
     "bessel_i_z",
     "bessel_j",
     "bessel_k_nu",
+    "bessel_k_scaled",
     "bessel_k_z",
     "bessel_j_array",
     "bessel_j_nu",
+    "bessel_j_scaled",
     "bessel_j_z",
     "bessel_y_nu",
+    "bessel_y_scaled",
     "bessel_y_z",
     "chebyshev_t",
     "chebyshev_u",
@@ -522,10 +559,12 @@ pub const SPECIAL_NAMES: &[&str] = &[
     "eigenvalues",
     "gauss_legendre",
     "hankel_h1_nu",
+    "hankel_h1_scaled",
     "hankel_h1_prime_nu",
     "hankel_h1_prime_z",
     "hankel_h1_z",
     "hankel_h2_nu",
+    "hankel_h2_scaled",
     "hankel_h2_prime_nu",
     "hankel_h2_prime_z",
     "hankel_h2_z",
@@ -753,6 +792,74 @@ mod tests {
         // Singular points report errors rather than infinities.
         assert!(!call_err("hankel_h1_z", &[n(0.0), z(0.0, 0.0)]).is_empty());
         assert!(!call_err("sph_hankel_h1", &[n(0.0), n(0.0)]).is_empty());
+    }
+
+    /// The scaled entry points, checked by what makes them worth
+    /// having: values the plain forms get wrong, and values the plain
+    /// forms cannot represent at all.
+    #[test]
+    fn scaled_entry_points_are_reachable() {
+        use sf::complex::Complex64 as Cx;
+        let z = |re: f64, im: f64| Value::Complex(Cx::new(re, im));
+        let get = |v: Value| match v {
+            Value::Complex(c) => c,
+            Value::Num(r) => Cx::real(r),
+            other => panic!("expected complex, got {other:?}"),
+        };
+
+        // On the real axis exp(-|Im z|) is 1, so the scaled Y IS Y.
+        let got = get(call_ok("bessel_y_scaled", &[n(0.0), n(40.0)]));
+        let want = sf::cephes::cephes64::yv(0.0, 40.0);
+        assert!((got.re - want).abs() < 1e-13, "Y_0(40): {} vs {want}", got.re);
+        // ... and the plain form is wrong in its first digit there,
+        // which is the entire reason these exist.
+        let old = get(call_ok("bessel_y_z", &[n(0.0), n(40.0)]));
+        assert!((old.re - want).abs() / want.abs() > 0.1, "plain Y_0(40) = {}", old.re);
+
+        // exp(x) K_{1/2}(x) = sqrt(pi/2x) exactly, at a magnitude where
+        // the unscaled K_{1/2} is far below the smallest f64.
+        let got = get(call_ok("bessel_k_scaled", &[n(0.5), n(1.0e6)]));
+        let want = (std::f64::consts::PI / 2.0e6).sqrt();
+        assert!((got.re - want).abs() < 1e-15, "exp(x)K_1/2(1e6): {} vs {want}", got.re);
+        assert_eq!(sf::cephes::cephes64::k0(2000.0), 0.0, "K_0(2000) must underflow");
+        assert!(get(call_ok("bessel_k_scaled", &[n(0.0), n(2000.0)])).re > 0.0);
+
+        // exp(-iz) H1_{1/2}(z) = -i sqrt(2/(pi z)), 700 nepers above the
+        // real axis where J and Y are each about e^700.
+        let zz = Cx::new(3.0, 700.0);
+        let got = get(call_ok("hankel_h1_scaled", &[n(0.5), z(zz.re, zz.im)]));
+        let want = Cx::I * -1.0
+            * (Cx::real(2.0 / std::f64::consts::PI) * zz.inv()).powf(0.5);
+        assert!((got - want).abs() / want.abs() < 1e-13, "H1s: {got:?} vs {want:?}");
+        // The plain form cannot even be evaluated there — its
+        // ingredients leave f64 range — so it errors out.
+        assert!(
+            !call_err("hankel_h1_z", &[n(0.0), z(zz.re, zz.im)]).is_empty(),
+            "the plain H1 is expected to be unusable at Im z = 700"
+        );
+
+        // exp(-x) I_0(x) where I_0 itself overflows.
+        assert!(sf::cephes::cephes64::i0(1000.0).is_infinite());
+        let got = get(call_ok("bessel_i_scaled", &[n(0.0), n(1000.0)]));
+        let lead = 1.0 / (2.0 * std::f64::consts::PI * 1000.0).sqrt();
+        assert!((got.re / lead - 1.0 - 1.0 / 8000.0).abs() < 1e-6, "I_0 scaled = {}", got.re);
+
+        // The order recurrence, past where Cephes kn overflows.
+        assert!(sf::cephes::cephes64::kn(40, 25.0).is_infinite());
+        assert!(get(call_ok("bessel_k_scaled", &[n(40.0), n(25.0)])).re > 0.0);
+
+        // J scaled agrees with Cephes on the real axis.
+        let got = get(call_ok("bessel_j_scaled", &[n(0.0), n(1000.0)]));
+        assert!((got.re - sf::cephes::cephes64::j0(1000.0)).abs() < 1e-13);
+        // H2 is reachable and is the conjugate of H1 on the real axis.
+        let a = get(call_ok("hankel_h1_scaled", &[n(1.0), n(30.0)]));
+        let b = get(call_ok("hankel_h2_scaled", &[n(1.0), n(30.0)]));
+        assert!((b - a.conj()).abs() < 1e-13, "H2s != conj(H1s) on the real axis");
+
+        // Singular and unreachable points report errors.
+        assert!(!call_err("bessel_k_scaled", &[n(0.0), z(0.0, 0.0)]).is_empty());
+        let e = call_err("bessel_j_scaled", &[n(400.5), n(25.0)]);
+        assert!(e.contains("neither method"), "unhelpful message: {e}");
     }
 
     #[test]

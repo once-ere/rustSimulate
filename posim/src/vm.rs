@@ -585,6 +585,19 @@ special functions (see grammar.md; orders must be WHOLE numbers):
                             sph_hankel_h2_prime(n,x)
                             (the outgoing/incoming spherical waves;
                             |x*h1| -> 1 exactly as it should)
+  scaled forms              bessel_j_scaled(nu,z)   e^-|Im z| J
+                            bessel_y_scaled(nu,z)   e^-|Im z| Y
+                            bessel_i_scaled(nu,z)   e^-|Re z| I
+                            bessel_k_scaled(nu,z)   e^z K
+                            hankel_h1_scaled(nu,z)  e^-iz H1
+                            hankel_h2_scaled(nu,z)  e^iz H2
+                            (the exponential factored out, by a method
+                            that never forms it — accurate where the
+                            plain forms are not, and DEFINED where they
+                            overflow or underflow out of f64. Y_0(5000)
+                            and e^x K_0(2000) both work. When no method
+                            reaches a point these return an error rather
+                            than a wrong first digit)
   quadrature                gauss_legendre(n)  -> [nodes, weights]
   eigenproblems             eigenvalues(matrix)          -> list
                             jacobi_eigen(matrix) -> [values, vectors]
