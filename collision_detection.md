@@ -195,7 +195,7 @@ collision detection science
 │                                                                      adaptive integrator)
 └── HURDLES (and the posim answer)
     ├── tunneling            → event rootfinding + CVodeSetMaxStep cap (verified: 100 m/s vs 5 mm plate)
-    ├── resting contact/Zeno → tiered guard: 64 events → plastic; 128 → disarm + project
+    ├── resting contact/Zeno → tiered guard: 64 events IN A BURST → plastic; 128 → disarm + project
     ├── simultaneity         → Gauss-Seidel passes over all pairs (Newton's cradle emerges)
     ├── deep initial overlap → end-of-interval sweep + projection (no root to find)
     └── degenerate geometry  → concentric centers etc. skipped, never a division by zero
@@ -486,7 +486,11 @@ never go stale.
 
 **Defaults.** restitution 1.0 (elastic — energy checks stay exact),
 combine = min(e_i, e_j); `restitution_threshold` 1e-3; `contact_slop` 1e-9;
-`MAX_EVENTS_PER_OUTPUT` 64 (Zeno tier 1), 128 (tier 2).
+`MAX_EVENTS_IN_BURST` 64 (Zeno tier 1), 128 (tier 2). A *burst* is a run of
+events separated by less than `ZENO_GAP_RELATIVE * max(|t|, 1)` = `1e-9 max(|t|,1)`;
+any real flight between two impacts resets it. It was formerly counted per
+**output interval**, which made the physics depend on how often output was
+requested — see `box_of_shapes_m32.md` §5.
 
 ---
 

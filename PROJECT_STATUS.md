@@ -89,14 +89,21 @@ But nobody should mistake this for a general special-function library.
 upstream; `MIT OR Apache-2.0` is declared only in `Cargo.toml`. Plus a
 Cephes-derivation question. Recorded in `THIRD_PARTY.md`, unresolved.
 
-**A real numerical defect remains unfixed.** The trajectory depends on
-how often output is requested: `|dE/E|` of 6.9e-8 at output interval
-0.001 versus 2.3e-1 at 0.125. The simulator reports `mode = running`
-throughout. Documented; not repaired.
+**The output-granularity defect is repaired.** It used to be listed
+here as unfixed: the trajectory depended on how often output was
+requested, `|dE/E|` of 6.9e-8 at interval 0.001 against 2.3e-1 at 0.125.
+The cause was the Zeno guard counting events per *output interval*, so
+ordinary elastic collisions were forced plastic when the caller asked
+for fewer snapshots. The guard now counts a time-local **burst**, and
+the coarse run conserves energy to 1.0e-7 while resolving 9160
+collisions instead of 898. See `box_of_shapes_m32.md` §5.
 
-**Everything is `f64` and real.** No complex arithmetic anywhere — not
-in the VM, not in the special functions. No arbitrary precision, no
-`f32`, no SIMD.
+**Everything is `f64`.** No arbitrary precision, no `f32`, no SIMD, and
+values genuinely outside `f64` range are refused rather than returned.
+*(This entry used to add "and real — no complex arithmetic anywhere".
+That has not been true for many stages: the VM has a `Complex` value
+type, and `special_functions` carries complex argument **and** complex
+order throughout Bessel, Airy and gamma.)*
 
 **Linear algebra stops at 3×3.** `Vec3`/`Mat3`/`Quat` and nothing more.
 There is no general matrix type, no decomposition, no eigensolver.

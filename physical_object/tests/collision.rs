@@ -584,3 +584,99 @@ fn colliding_dumbbells_conserve_energy_momentum_and_angular_momentum() {
     // The collision genuinely redistributed spin.
     assert!(sys.objects[0].get_angular_momentum().norm() > 1e-6);
 }
+
+/// **The output-granularity defect**, reproduced as a test.
+///
+/// `PROJECT_STATUS.md` recorded it as a real numerical defect, left
+/// unrepaired: the trajectory depends on how often output is
+/// requested. `box_of_shapes_m32.md` §5 measured `|dE/E|` of 6.9e-8 at
+/// output interval 0.001 against 2.3e-1 at 0.125 — 23 % of the energy
+/// gone, with no warning and a smooth-looking animation.
+///
+/// The cause is the Zeno guard counting events **per output interval**:
+/// past 64 it forces restitution to zero, so ordinary elastic
+/// collisions become plastic purely because the caller asked for fewer
+/// snapshots. Requesting output is supposed to be an observation, and
+/// an observation must not change the physics.
+///
+/// A fast light sphere between two static walls collides about 100
+/// times per unit time here, so one coarse interval crosses the
+/// threshold and a fine one does not.
+#[test]
+fn energy_does_not_depend_on_how_often_output_is_requested() {
+    let build = || {
+        let mut left = cuboid(1, 1.0, [0.1, 2.0, 2.0], Vec3::new(-1.0, 0.0, 0.0), Vec3::zeros());
+        left.set_inverse_mass(0.0);
+        left.set_inverse_inertia_tensor(Mat3::zeros());
+        let mut right = cuboid(2, 1.0, [0.1, 2.0, 2.0], Vec3::new(1.0, 0.0, 0.0), Vec3::zeros());
+        right.set_inverse_mass(0.0);
+        right.set_inverse_inertia_tensor(Mat3::zeros());
+        free_system(vec![
+            sphere(0, 1.0, 0.05, Vec3::zeros(), Vec3::new(400.0, 0.0, 0.0)),
+            left,
+            right,
+        ])
+    };
+    let energy = |s: &PhysicalObjectSystem| -> f64 {
+        let v = s.objects[0].get_velocity().norm();
+        0.5 * v * v
+    };
+
+    let mut fine = build();
+    let e0 = energy(&fine);
+    let fine_report = integrate::run(&mut fine, 1.0, 400).expect("fine run");
+    let e_fine = energy(&fine);
+
+    let mut coarse = build();
+    let coarse_report = integrate::run(&mut coarse, 1.0, 2).expect("coarse run");
+    let e_coarse = energy(&coarse);
+
+    // Both must conserve energy: these are elastic collisions off
+    // static walls, so the speed is an exact invariant.
+    assert!(
+        (e_fine - e0).abs() < 1e-6 * e0,
+        "fine output: energy {e0} -> {e_fine} over {} collisions",
+        fine_report.ncollisions
+    );
+    assert!(
+        (e_coarse - e0).abs() < 1e-6 * e0,
+        "COARSE output: energy {e0} -> {e_coarse} over {} collisions — asking for fewer \
+         snapshots changed the physics",
+        coarse_report.ncollisions
+    );
+    // And they must agree with each other.
+    assert!(
+        (e_fine - e_coarse).abs() < 1e-6 * e0,
+        "fine {e_fine} vs coarse {e_coarse}: the trajectory depends on the output interval"
+    );
+}
+
+/// The Zeno guard must still fire — a burst-based rule that never
+/// escalates would be a worse defect than the interval-based one it
+/// replaced, because a settling ball would never terminate.
+///
+/// A ball bouncing with `e = 0.5` under gravity has bounce intervals
+/// falling geometrically, so infinitely many impacts occur before the
+/// settling time. This runs well past that point: it must **finish**,
+/// come to rest on the floor, and not sink through it.
+#[test]
+fn a_settling_ball_is_caught_by_the_zeno_guard_and_terminates() {
+    let mut floor = cuboid(0, 1.0, [5.0, 0.5, 5.0], Vec3::new(0.0, -0.5, 0.0), Vec3::zeros());
+    floor.set_inverse_mass(0.0);
+    floor.set_inverse_inertia_tensor(Mat3::zeros());
+    let mut ball = sphere(1, 1.0, 0.5, Vec3::new(0.0, 2.0, 0.0), Vec3::zeros());
+    ball.set_restitution(0.5);
+    let mut sys = free_system(vec![floor, ball]);
+    sys.uniform_gravity = Vec3::new(0.0, -10.0, 0.0);
+
+    // Total flight time for e = 0.5 from h = 1.5 is finite:
+    // t = sqrt(2h/g) (1 + 2e/(1-e)) = 0.548 * 3 = 1.64. Run to 6.
+    let report = integrate::run(&mut sys, 6.0, 60).expect("the run must terminate");
+    assert!(report.ncollisions > 5, "it should bounce several times first");
+
+    let y = sys.objects[1].get_position().y;
+    let v = sys.objects[1].get_velocity().norm();
+    // At rest ON the floor: centre at the sphere radius above y = 0.
+    assert!((y - 0.5).abs() < 5e-2, "the ball should settle at y = 0.5, got {y}");
+    assert!(v < 1.0, "and it should be nearly at rest, got |v| = {v}");
+}

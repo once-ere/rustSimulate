@@ -37,11 +37,39 @@ use crate::linalg::{Mat3, Quat, Vec3};
 use crate::physical_object::physical_object;
 use crate::PhysicalObjectSystem;
 
-/// Impulse events resolved per output interval before the Zeno guard
-/// escalates: beyond this count restitution is forced to 0 (plastic);
-/// beyond twice this count rootfinding is disarmed for the rest of the
-/// interval and penetrations are projected out instead.
-pub const MAX_EVENTS_PER_OUTPUT: usize = 64;
+/// Impulse events in one **burst** before the Zeno guard escalates:
+/// beyond this count restitution is forced to 0 (plastic); beyond twice
+/// it rootfinding is disarmed for the rest of the output interval and
+/// penetrations are projected out instead.
+///
+/// A *burst* is a run of events with essentially no time between them —
+/// see [`ZENO_GAP_RELATIVE`]. It is **not** a count per output interval,
+/// which is what this used to be and which made the physics depend on
+/// how often the caller asked for output: 65 ordinary elastic
+/// collisions in one coarse interval tripped a chattering guard and
+/// took the energy from 80000 to **0**. `PROJECT_STATUS.md` carried
+/// that as a known unrepaired defect and
+/// `energy_does_not_depend_on_how_often_output_is_requested` now pins
+/// it.
+pub const MAX_EVENTS_IN_BURST: usize = 64;
+
+/// How close together events must be, relative to the current time, to
+/// count as the same burst.
+///
+/// Genuine Zeno behaviour — a ball settling, a chattering contact — has
+/// the interval between events collapsing towards zero, so any
+/// threshold this far below the dynamics catches it. Ordinary
+/// collisions are separated by a free flight, which is enormous by
+/// comparison, and each one resets the burst.
+///
+/// Scaling by `max(|t|, 1)` keeps the rule free of the two quantities
+/// it must not depend on: the output interval and the run length.
+pub const ZENO_GAP_RELATIVE: f64 = 1e-9;
+
+/// Whether `t` continues the burst that last fired at `previous`.
+pub fn same_burst(t: f64, previous: f64) -> bool {
+    (t - previous).abs() <= ZENO_GAP_RELATIVE * t.abs().max(1.0)
+}
 
 /// Contacts kept on `PhysicalObjectSystem::contacts` (oldest dropped).
 pub const CONTACTS_CAP: usize = 1024;

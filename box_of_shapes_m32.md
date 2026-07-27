@@ -202,67 +202,64 @@ Out[20]= 9293
 
 ---
 
-## 5. The setting that will silently ruin this
+## 5. The setting that used to silently ruin this — now repaired
 
 > **Ask for output more often than collisions happen.**
 
-The point crosses the 4-unit box in about **0.016 time units**. If a
-single solver output interval spans several collisions, they are not
-resolved correctly and **energy collapses** — with no error message, no
-warning, and a perfectly smooth-looking animation.
+That was the rule, and it was a real defect rather than a law of nature.
+The point crosses the 4-unit box in about **0.016 time units**, and if a
+single solver output interval spanned several collisions the energy
+collapsed — with no error message, no warning, and a perfectly
+smooth-looking animation.
 
-Measured on this exact scenario, `0 ≤ t ≤ 1`, changing *only* how many
-snapshots were requested:
+**Measured then**, `0 ≤ t ≤ 1`, changing *only* how many snapshots were
+requested:
 
 | command | interval | collisions | final E | \|dE/E\| | |
 |---|---|---|---|---|---|
 | `run 1 steps 1000` | 0.001 | 9293 | 959999.93 | 6.9×10⁻⁸ | correct |
 | `run 1 steps 8` | 0.125 | 898 | **741962.41** | 2.3×10⁻¹ | **23% of the energy gone** |
 
-The same effect measured on the mass-1 parent scenario, which makes the
-threshold clear:
+**The cause** was the Zeno guard counting impulse events *per output
+interval*: past 64 it forced restitution to zero and past 128 it
+disarmed rootfinding, so ordinary elastic collisions turned plastic
+purely because the caller had asked for fewer snapshots. Requesting
+output is an observation, and an observation must not change the
+physics.
 
-| snapshots over `0 ≤ t ≤ 1` | interval | \|dE/E\| | verdict |
-|---|---|---|---|
-| 8 | 0.125 | 9.6×10⁻¹ | collapses |
-| 25 | 0.040 | 3.3×10⁻¹ | collapses |
-| 100 | 0.010 | 1.7×10⁻⁸ | correct |
-| 400 | 0.0025 | 1.0×10⁻⁸ | correct |
-| 1000 | 0.0010 | 1.8×10⁻⁸ | correct |
-| 4000 | 0.00025 | 2.2×10⁻⁸ | correct |
+The guard now counts a **burst** — events separated by essentially no
+time, which is what chattering actually is — and resets whenever the
+clock advances by a real flight. It no longer refers to the output
+interval at all.
 
-Conservation holds while the interval stays **below the mean free time
-between collisions (~0.016)** and fails above it.
+**Measured now**, same scenario, same commands:
 
-The same rule governs the window's playback step. The notebook ships
-`scene set_time_step 0.0002` for this reason. Raising it to `0.1` — 500×
-larger, about 24.5 units of travel per step inside a 4-unit box — runs
-happily at 37 fps and destroys the physics:
+| command | interval | collisions | final E | \|dE/E\| | |
+|---|---|---|---|---|---|
+| `run 1 steps 1000` | 0.001 | 9293 | 959999.93 | 6.9×10⁻⁸ | correct |
+| `run 1 steps 8` | 0.125 | 9160 | 959999.90 | 1.0×10⁻⁷ | correct |
 
-| playback dt | E after the run |
-|---|---|
-| 0.0002 (shipped) | 29999.99986915 — correct |
-| 0.1 | **78.66** — 99.7% of the energy gone |
+The coarse run now resolves **9160 collisions instead of 898**. The
+remaining difference between the two columns is ordinary integrator
+tolerance amplified by a chaotic billiard, not a change of physics;
+energy is the invariant, and it holds either way.
 
-*(that pair was measured on the mass-1 parent scenario)*
+The same repair covers the playback step, which was the second half of
+this warning. One output interval spanning the entire run:
 
-**Practical rule:** keep the playback `dt` at 0.0002, and when
-integrating headlessly ask for at least ~100 snapshots per unit of
-time. If you need a long span, raise the snapshot count with it —
-`run 128 steps 12800`, not `run 128 steps 8`.
+```text
+run 10 steps 1   ->  t = 10, 109251 collision(s), |dE/E| = 1.2e-6
+```
 
-### Known limitation
+109 251 collisions inside a **single** interval, energy still conserved
+to a part in 10⁶.
 
-This is a genuine defect, not merely a tuning knob: **the trajectory
-should not depend on how often you ask for output.** The simulator
-currently accepts a step size or snapshot cadence that makes collision
-resolution unsound, reports `mode = running` as though all is well, and
-gives a wrong answer silently. A guard — warning when `|v|·dt` exceeds a
-fraction of the smallest body dimension, or when energy drifts in a
-system where every restitution is 1 — would turn a silent wrong answer
-into a visible one.
-
----
+`energy_does_not_depend_on_how_often_output_is_requested` in
+`physical_object/tests/collision.rs` pins the rule, and
+`a_settling_ball_is_caught_by_the_zeno_guard_and_terminates` pins the
+protection that guard still has to provide — a ball bouncing with
+`e = 0.5` has infinitely many impacts in finite time, and the run must
+still finish.
 
 ## 6. Why `0 ≤ t ≤ 128` is not an interactive request
 

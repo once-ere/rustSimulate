@@ -490,6 +490,11 @@ fn run_cvode(
     let mut t = t0;
     let span = t_end - t0;
     let mut roots_armed = armed;
+    /* Zeno burst state. This lives across output intervals on purpose:
+     * counting per interval is what made the physics depend on how
+     * often output was requested. */
+    let mut burst = 0usize;
+    let mut last_event_t = f64::NEG_INFINITY;
     for k in 1..=nout {
         let tout = t0 + span * (k as f64) / (nout as f64);
 
@@ -524,7 +529,6 @@ fn run_cvode(
          * contact event at the interpolated time of impact — resolve
          * impulses, re-initialize, continue toward the same tout
          * (the cvRocket_dns.rs pattern). */
-        let mut events = 0usize;
         loop {
             retval = CVode(&mut cvode_mem, tout, &mut y, &mut t, CV_NORMAL);
             if retval < 0 {
@@ -541,14 +545,23 @@ fn run_cvode(
             system.unpack_state(&y.data);
             system.time = t;
             let flagged: Vec<bool> = roots.iter().map(|ri| *ri != 0).collect();
-            let force_plastic = events >= collide::MAX_EVENTS_PER_OUTPUT;
+            /* Zeno accounting is by BURST, not by output interval: an
+             * event that follows the previous one after a real flight
+             * starts the count again, however many have happened since
+             * the last snapshot. */
+            if collide::same_burst(t, last_event_t) {
+                burst += 1;
+            } else {
+                burst = 1;
+            }
+            last_event_t = t;
+            let force_plastic = burst > collide::MAX_EVENTS_IN_BURST;
             let contacts = collide::resolve_impulses(system, &pairs, &flagged, force_plastic)?;
-            events += 1;
             report.ncollisions += contacts.len() as u64;
             system.collision_count += contacts.len() as u64;
             collide::record_contacts(system, contacts);
 
-            if events >= 2 * collide::MAX_EVENTS_PER_OUTPUT && roots_armed {
+            if burst > 2 * collide::MAX_EVENTS_IN_BURST && roots_armed {
                 /* Zeno guard tier 2: chattering contact — project out
                  * any penetration and disarm rootfinding for the rest
                  * of this output interval. */
@@ -857,6 +870,11 @@ fn run_sprk(
     let mut t = t0;
     let span = t_end - t0;
     let mut roots_armed = armed;
+    /* Zeno burst state. This lives across output intervals on purpose:
+     * counting per interval is what made the physics depend on how
+     * often output was requested. */
+    let mut burst = 0usize;
+    let mut last_event_t = f64::NEG_INFINITY;
     let write_back = |system: &mut PhysicalObjectSystem, y: &NVector| {
         let n = system.objects.len();
         for (i, o) in system.objects.iter_mut().enumerate() {
@@ -885,7 +903,6 @@ fn run_sprk(
             }
             roots_armed = true;
         }
-        let mut events = 0usize;
         loop {
             retval = ARKodeEvolve(&mut am, tout, &mut y, &mut t, ARK_NORMAL);
             if retval < 0 {
@@ -902,13 +919,18 @@ fn run_sprk(
             write_back(system, &y);
             system.time = t;
             let flagged: Vec<bool> = roots.iter().map(|ri| *ri != 0).collect();
-            let force_plastic = events >= collide::MAX_EVENTS_PER_OUTPUT;
+            if collide::same_burst(t, last_event_t) {
+                burst += 1;
+            } else {
+                burst = 1;
+            }
+            last_event_t = t;
+            let force_plastic = burst > collide::MAX_EVENTS_IN_BURST;
             let contacts = collide::resolve_impulses(system, &pairs, &flagged, force_plastic)?;
-            events += 1;
             report.ncollisions += contacts.len() as u64;
             system.collision_count += contacts.len() as u64;
             collide::record_contacts(system, contacts);
-            if events >= 2 * collide::MAX_EVENTS_PER_OUTPUT && roots_armed {
+            if burst > 2 * collide::MAX_EVENTS_IN_BURST && roots_armed {
                 let extra = collide::resolve_penetrations(system, true)?;
                 report.ncollisions += extra.len() as u64;
                 system.collision_count += extra.len() as u64;

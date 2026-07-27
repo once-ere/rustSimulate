@@ -450,8 +450,12 @@ crate root (module/type namespace collision) — do not try.
   pairs, ≤10 passes — simultaneity and cradle propagation) → repack →
   accumulate stats → `ReInit`/`Reset` → continue toward the same tout;
   a tout-boundary guard breaks when the event lands on tout itself.
-  **Zeno tiers**: >64 events per output interval → restitution forced
+  **Zeno tiers**: >64 events in one **burst** → restitution forced
   0; >128 → disarm roots, `resolve_penetrations(plastic = true)`
+  (a *burst* is a run of events separated by less than `1e-9 max(|t|,1)`
+  — chattering; any real flight between two events resets the count, so
+  the tiers do **not** depend on the output interval, which is the
+  defect they used to cause)
   (impulse + positional projection split by inverse mass beyond
   `contact_slop`), re-arm next interval. End-of-interval sweep
   (read-only pre-check first) catches deep initial overlaps, which
