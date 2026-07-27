@@ -275,6 +275,7 @@ a confident, wrong number, and you would have no way to notice.
 | spherical harmonics | `sph_harm(l,m,theta,phi)` → `[re, im]`, `sph_harm_real(l,m,theta,phi)` |
 | orthogonal polynomials | `hermite_h(n,x)`, `hermite_he(n,x)`, `laguerre_l(n,x)`, `laguerre_l_assoc(n,alpha,x)`, `chebyshev_t(n,x)`, `chebyshev_u(n,x)`, `gegenbauer_c(n,alpha,x)`, `jacobi_p(n,alpha,beta,x)` |
 | cylindrical Bessel | `bessel_j(n,x)`, `bessel_j_array(n_max,x)` → list |
+| cylindrical Bessel, **complex argument** | `bessel_j_z(n,z)`, `bessel_i_z(n,z)` |
 | quadrature | `gauss_legendre(n)` → `[nodes, weights]` |
 | eigenproblems | `eigenvalues(matrix)` → list, `jacobi_eigen(matrix)` → `[values, vectors]` |
 | angular momentum | `wigner_3j(j1,j2,j3,m1,m2,m3)`, `wigner_6j(j1,j2,j3,j4,j5,j6)`, `wigner_9j(a,b,c,d,e,f,g,h,i)`, `clebsch_gordan(j1,m1,j2,m2,j3,m3)` |
@@ -293,6 +294,34 @@ want to write for two spin-½ particles. A coupling that violates a
 selection rule returns **0**, which is the mathematically correct
 answer, not an error; a value that is not an angular momentum at all
 (`j = 0.3`, or a negative `j`) *is* an error.
+
+#### Complex-argument Bessel
+
+`bessel_j_z(n, z)` and `bessel_i_z(n, z)` take and return **complex**
+values — they exist because the language has `Value::Complex` (§4.3).
+Real arguments promote, so `bessel_j_z(0, 2.4048)` works.
+
+The algorithm is the same Miller downward recurrence as the real
+routine, and deliberately so: the three-term recurrence and the
+normalisation `J₀ + 2(J₂+J₄+…) = 1` are both identities in `z`, real or
+not. The second follows from the generating function at `t = 1`, where
+`exp(0) = 1`.
+
+**Accuracy falls with the imaginary part**, and the reason is
+cancellation rather than anything about the recurrence: the individual
+`J_n(z)` grow like `exp(|Im z|)` while the sum they must reproduce is
+exactly 1, so about `|Im z|/ln 10` decimal digits are lost. Measured
+against the generating-function identity
+(`cargo run -p special_functions --release --example bessel_complex_accuracy`):
+
+| `\|Im z\|` | 0 | 5 | 8 | 12 | 18 | 25 |
+|---|---|---|---|---|---|---|
+| relative error | 1e-16 | 1e-14 | 1e-13 | 1e-11 | 1e-9 | 1e-6 |
+
+The error barely depends on `Re z`, exactly as that argument predicts.
+`Y_n` and `K_n` are **not** provided: they need a logarithmic term and a
+different algorithm, and claiming them on the strength of this
+recurrence would be wrong.
 
 **A wrinkle worth knowing about lists.** The bracket literal is
 overloaded: `[a,b,c]` is a *vector*, `[a,b,c,d]` is a *quaternion*, and

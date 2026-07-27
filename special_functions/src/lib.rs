@@ -45,6 +45,7 @@
 #![allow(non_upper_case_globals)]
 
 pub mod bessel;
+pub mod bessel_complex;
 pub mod wigner;
 pub mod complex;
 pub mod tridiag;

@@ -49,7 +49,7 @@ and the matrix below states plainly what is absent.
 | 7 | Error Functions, Dawson, Fresnel | partial | **vendored**: erf, erfc + inverses, Dawson, Fresnel |
 | 8 | Incomplete Gamma and Related | partial | **vendored**: incomplete gamma/beta + inverses |
 | 9 | Airy and Related | partial | **vendored**: Ai, Bi and derivatives, real argument only |
-| 10 | Bessel Functions | partial | **vendored** cylindrical Jᵥ Yᵥ Iᵥ Kᵥ (real arg); **native** spherical jₙ yₙ and derivatives; **native** integer-order Jₙ whole-table |
+| 10 | Bessel Functions | partial | **vendored** cylindrical Jᵥ Yᵥ Iᵥ Kᵥ (real arg); **native** spherical jₙ yₙ and derivatives; **native** integer-order Jₙ whole-table; **native Jₙ and Iₙ for COMPLEX argument**. Yₙ/Kₙ at complex argument remain absent |
 | 11 | Struve and Related | **none** | — |
 | 12 | Parabolic Cylinder | **none** | — |
 | 13 | Confluent Hypergeometric | **none** | — |
@@ -138,6 +138,7 @@ record is separate and detailed:
 | `orthopoly` | native | three-term recurrences; Clenshaw for series | DLMF 18.9, A&S 22.7 |
 | `wigner` | native | Racah single-sum for 3-j and 6-j, all factorials in logarithms; 9-j as a single sum over 6-j | DLMF 34.2.4, 34.4.1, 34.6.1; Edmonds 1957 §3.6 |
 | `bessel` | native, **clean-room** | Miller downward recurrence, scale fixed by `J₀+2(J₂+J₄+…)=1` | DLMF 10.6.1, 10.12.4; A&S 9.1.27, 9.1.46 |
+| `bessel_complex` | native | the same Miller recurrence — both the recurrence and the normalisation are identities in `z`, so complex argument needs no new algorithm | DLMF 10.6.1, 10.27.6, 10.35.1 |
 | `tridiag` | native, **clean-room** | Thomas algorithm; Sherman–Morrison for the cyclic case | textbook |
 | `eigen` | native | cyclic Jacobi, ≤100 sweeps | textbook |
 | `lanczos` | native | Lanczos with full reorthogonalisation + deflation, matrix-free | textbook |
@@ -216,6 +217,7 @@ recorded here because it shaped the suite:
 | `sph_bessel` | ≤1e-14 against closed forms | Miller recurrence; the upward direction is *proved unstable* by a test rather than merely asserted |
 | `legendre` | ≤1e-13 | `assoc_legendre_p` **overflows f64** and returns `Err`; the driver is the ORDER m, via the (2m−1)!! seed — not ℓ, as an earlier draft of the docs wrongly claimed. `norm_assoc_legendre_p` stays O(1) and is the fix |
 | `orthopoly` | ≤1e-13 | worst at high degree with large argument, as the recurrences predict |
+| `bessel_complex` | 1e-16 on the real axis, 1e-13 at \|Im z\|=8, 1e-6 at \|Im z\|=25 | **weakest regime:** large \|Im z\|, by cancellation in the normalising sum (terms grow like e^\|Im z\| while their sum is 1). Measured, not asserted — see `examples/bessel_complex_accuracy.rs` |
 | `bessel` | ≤1e-10 vs Cephes | **weakest regime:** the seed order must sit well above x. At `x = 45` an under-sized seed gave only ~9 correct digits — caught by the cross-check, fixed, and the measurement recorded in the source |
 | `wigner` | ≤1e-12 on orthogonality sums | **weakest regime:** large j, where the alternating Racah sum cancels catastrophically. This is a property of the formula, not the implementation, and it is stated in the module docs |
 | `tridiag` | residual ≤1e-11; CN norm drift **1.47e-12** over 6000 steps | no pivoting — stable for diagonally dominant systems only, documented rather than hidden |

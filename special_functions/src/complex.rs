@@ -58,10 +58,33 @@ impl Complex64 {
     pub fn is_finite(self) -> bool {
         self.re.is_finite() && self.im.is_finite()
     }
-    /// Reciprocal, scaled to avoid overflow in `re^2 + im^2`.
+    /// Reciprocal, by **Smith's algorithm** — dividing through by the
+    /// larger component so `re^2 + im^2` is never formed.
+    ///
+    /// The naive `conj / norm_sqr` looks equivalent and is not. At
+    /// `|z| ~ 1e-199` the squared modulus underflows to zero and the
+    /// reciprocal comes back NaN; at `|z| ~ 1e199` it overflows and the
+    /// reciprocal comes back zero. Both are inside the range of ordinary
+    /// f64 values.
+    ///
+    /// This was a real defect, not a hypothetical: the complex Bessel
+    /// routine normalises by a sum that legitimately reaches 1e-199, and
+    /// every value it returned was NaN. The doc comment here previously
+    /// claimed the scaling was being done when it was not — which is the
+    /// worse half of the bug, because it invited trusting it.
     pub fn inv(self) -> Self {
-        let d = self.norm_sqr();
-        Self::new(self.re / d, -self.im / d)
+        if self.re == 0.0 && self.im == 0.0 {
+            return Self::new(f64::INFINITY, f64::INFINITY);
+        }
+        if self.re.abs() >= self.im.abs() {
+            let r = self.im / self.re;
+            let d = self.re + self.im * r;
+            Self::new(1.0 / d, -r / d)
+        } else {
+            let r = self.re / self.im;
+            let d = self.re * r + self.im;
+            Self::new(r / d, -1.0 / d)
+        }
     }
 }
 
@@ -133,6 +156,39 @@ mod tests {
         // i^2 = -1
         let ii = Complex64::I * Complex64::I;
         assert_eq!(ii, Complex64::new(-1.0, 0.0));
+    }
+
+    /// Reciprocal and division must survive magnitudes where the
+    /// squared modulus underflows or overflows — well inside the range
+    /// of ordinary f64 values.
+    #[test]
+    fn reciprocal_survives_extreme_magnitudes() {
+        for &m in &[1e-199_f64, 1e-160, 1.0, 1e160, 1e199] {
+            for z in [
+                Complex64::new(m, 0.0),
+                Complex64::new(0.0, m),
+                Complex64::new(m, m),
+                Complex64::new(-m, 0.3 * m),
+            ] {
+                let inv = z.inv();
+                assert!(inv.is_finite(), "1/{z:?} = {inv:?}");
+                // z * (1/z) must be 1
+                let one = z * inv;
+                assert!(
+                    (one.re - 1.0).abs() < 1e-12 && one.im.abs() < 1e-12,
+                    "z * (1/z) = {one:?} for z = {z:?}"
+                );
+                // and division agrees
+                let q = z / z;
+                assert!(
+                    (q.re - 1.0).abs() < 1e-12 && q.im.abs() < 1e-12,
+                    "z / z = {q:?} for z = {z:?}"
+                );
+            }
+        }
+        // 1/0 is infinite, not NaN
+        let inv0 = Complex64::ZERO.inv();
+        assert!(inv0.re.is_infinite() && inv0.im.is_infinite());
     }
 
     #[test]

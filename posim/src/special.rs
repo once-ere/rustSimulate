@@ -225,6 +225,10 @@ pub fn call(name: &str, args: &[Value]) -> Option<Result<Value, String>> {
         "wigner_9j" => 9,
         "eigenvalues" | "jacobi_eigen" => 1,
         "solve_tridiag" | "solve_tridiag_c" => 4,
+        // Complex argument: these take and return complex values, which
+        // is why the language needed Value::Complex before they could
+        // exist at all.
+        "bessel_j_z" | "bessel_i_z" => 2,
         "solve_cyclic_tridiag_c" => 6,
         _ => return None,
     };
@@ -308,6 +312,16 @@ fn dispatch(name: &str, a: &[Value]) -> Result<Value, String> {
         "bessel_j_array" => Ok(nums(sf::bessel::bessel_j_array(
             as_usize(name, 0, &a[0])?,
             as_num(name, 1, &a[1])?,
+        )?)),
+
+        // ---- Bessel, complex argument -----------------------------
+        "bessel_j_z" => Ok(Value::Complex(sf::bessel_complex::bessel_j_c(
+            as_int(name, 0, &a[0])?,
+            as_cplx(name, 1, &a[1])?,
+        )?)),
+        "bessel_i_z" => Ok(Value::Complex(sf::bessel_complex::bessel_i_c(
+            as_int(name, 0, &a[0])?,
+            as_cplx(name, 1, &a[1])?,
         )?)),
 
         // ---- quadrature nodes -------------------------------------
@@ -402,8 +416,10 @@ fn dispatch(name: &str, a: &[Value]) -> Result<Value, String> {
 /// reserved-name list so a user function cannot shadow one.
 pub const SPECIAL_NAMES: &[&str] = &[
     "assoc_legendre_p",
+    "bessel_i_z",
     "bessel_j",
     "bessel_j_array",
+    "bessel_j_z",
     "chebyshev_t",
     "chebyshev_u",
     "clebsch_gordan",
@@ -629,6 +645,37 @@ mod tests {
         let ev = as_matrix("t", 0, &m).unwrap();
         assert_eq!(ev.len(), 4);
         assert_eq!(ev[0].len(), 4);
+    }
+
+    /// Complex-argument Bessel, reachable only because the language has
+    /// a complex value type. Checked against identities rather than a
+    /// table: real argument must reproduce the real routine, and
+    /// `J_n(iy) = i^n I_n(y)`.
+    #[test]
+    fn complex_argument_bessel_is_reachable() {
+        use sf::complex::Complex64 as Cx;
+        let z = |re: f64, im: f64| Value::Complex(Cx::new(re, im));
+        let get = |v: Value| match v {
+            Value::Complex(c) => c,
+            Value::Num(r) => Cx::real(r),
+            other => panic!("expected complex, got {other:?}"),
+        };
+        // real argument reproduces the real routine: J_0 at its first zero
+        let v = get(call_ok("bessel_j_z", &[n(0.0), z(2.404_825_557_695_773, 0.0)]));
+        assert!(v.abs() < 1e-12, "J_0 at its first zero = {v:?}");
+        // a real number promotes to complex
+        let v = get(call_ok("bessel_j_z", &[n(0.0), n(2.404_825_557_695_773)]));
+        assert!(v.abs() < 1e-12, "real argument should promote");
+        // J_n(i y) = i^n I_n(y): for n = 0 that is real and equals I_0
+        let y = 1.5_f64;
+        let j0 = get(call_ok("bessel_j_z", &[n(0.0), z(0.0, y)]));
+        let i0v = get(call_ok("bessel_i_z", &[n(0.0), z(y, 0.0)]));
+        assert!(
+            (j0 - i0v).abs() < 1e-10,
+            "J_0(i*{y}) = {j0:?} should equal I_0({y}) = {i0v:?}"
+        );
+        // the order must still be a whole number
+        assert!(call_err("bessel_j_z", &[n(1.5), z(1.0, 1.0)]).contains("whole number"));
     }
 
     /// Complex values: literal, arithmetic, and the solvers they were

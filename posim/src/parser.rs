@@ -163,7 +163,8 @@
 //!                norm_assoc_legendre_p sph_harm sph_harm_real
 //!                hermite_h hermite_he laguerre_l laguerre_l_assoc
 //!                chebyshev_t chebyshev_u gegenbauer_c jacobi_p
-//!                bessel_j bessel_j_array gauss_legendre eigenvalues
+//!                bessel_j bessel_j_array bessel_j_z bessel_i_z
+//!                gauss_legendre eigenvalues
 //!                jacobi_eigen solve_tridiag solve_tridiag_c
 //!                solve_cyclic_tridiag_c wigner_3j wigner_6j
 //!                clebsch_gordan wigner_9j rel_err

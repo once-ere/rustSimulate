@@ -549,6 +549,10 @@ special functions (see grammar.md; orders must be WHOLE numbers):
                             jacobi_p(n,alpha,beta,x)
   cylindrical Bessel        bessel_j(n,x)
                             bessel_j_array(n_max,x)      -> list
+                            bessel_j_z(n,z)  COMPLEX argument
+                            bessel_i_z(n,z)  modified, complex argument
+                            (accuracy falls with |Im z|: ~1e-13 at 8,
+                            ~1e-8 at 18, ~1e-6 at 25 — see grammar.md)
   quadrature                gauss_legendre(n)  -> [nodes, weights]
   eigenproblems             eigenvalues(matrix)          -> list
                             jacobi_eigen(matrix) -> [values, vectors]

@@ -327,6 +327,8 @@ orthogonal polynomials & \code{hermite\_h(n,x)}, \code{hermite\_he(n,x)},
   \code{gegenbauer\_c(n,alpha,x)}, \code{jacobi\_p(n,alpha,beta,x)}\\
 cylindrical Bessel & \code{bessel\_j(n,x)},
   \code{bessel\_j\_array(n\_max,x)} $\to$ list\\
+cylindrical Bessel, \textbf{complex argument} &
+  \code{bessel\_j\_z(n,z)}, \code{bessel\_i\_z(n,z)}\\
 quadrature & \code{gauss\_legendre(n)} $\to$ \code{[nodes, weights]}\\
 eigenproblems & \code{eigenvalues(matrix)} $\to$ list,
   \code{jacobi\_eigen(matrix)} $\to$ \code{[values, vectors]}\\
@@ -355,6 +357,35 @@ particles. A coupling that violates a selection rule returns
 \textbf{0}, which is the mathematically correct answer, not an error; a
 value that is not an angular momentum at all ($j=0.3$, or a negative
 $j$) \emph{is} an error.
+
+\subsubsection*{Complex-argument Bessel}
+
+\code{bessel\_j\_z(n, z)} and \code{bessel\_i\_z(n, z)} take and return
+\textbf{complex} values --- they exist because the language has
+\code{Value::Complex} (\S\ref{sec:complex}). Real arguments promote.
+
+The algorithm is the same Miller downward recurrence as the real
+routine, deliberately: the three-term recurrence and the normalisation
+$J_0 + 2(J_2+J_4+\cdots) = 1$ are both identities in $z$, real or not,
+the second following from the generating function at $t=1$.
+
+\textbf{Accuracy falls with the imaginary part}, by cancellation rather
+than anything about the recurrence: the terms grow like
+$e^{|\mathrm{Im}\,z|}$ while their sum is exactly 1, so about
+$|\mathrm{Im}\,z|/\ln 10$ decimal digits are lost. Measured against the
+generating-function identity:
+
+\begin{center}
+\begin{tabular}{lcccccc}
+$|\mathrm{Im}\,z|$ & 0 & 5 & 8 & 12 & 18 & 25\\
+\hline
+relative error & $10^{-16}$ & $10^{-14}$ & $10^{-13}$ & $10^{-11}$ &
+$10^{-9}$ & $10^{-6}$\\
+\end{tabular}
+\end{center}
+
+$Y_n$ and $K_n$ are \textbf{not} provided: they need a logarithmic term
+and a different algorithm.
 
 \textbf{A wrinkle worth knowing about lists.} The bracket literal is
 overloaded: \code{[a,b,c]} is a \emph{vector}, \code{[a,b,c,d]} is a
