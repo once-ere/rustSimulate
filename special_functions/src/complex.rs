@@ -82,6 +82,45 @@ impl Complex64 {
         (self.ln() * p).exp()
     }
 
+    /// `z^p` for a **complex** exponent, as `exp(p ln z)`.
+    ///
+    /// Same branch cut as [`Self::ln`]. Note that with a complex
+    /// exponent the modulus of the result depends on `arg z` as well as
+    /// `|z|` — `i^i` is real, and about `0.2079` — so a branch choice
+    /// here is not a phase convention, it changes the magnitude.
+    pub fn powc(self, p: Self) -> Self {
+        if self.re == 0.0 && self.im == 0.0 {
+            return if p.re > 0.0 {
+                Self::ZERO
+            } else if p.re == 0.0 && p.im == 0.0 {
+                Self::ONE
+            } else {
+                Self::new(f64::INFINITY, 0.0)
+            };
+        }
+        (self.ln() * p).exp()
+    }
+
+    /// `sin z`, from the real definition
+    /// `sin(x+iy) = sin x cosh y + i cos x sinh y`.
+    ///
+    /// Built this way rather than from `exp` so that it stays accurate
+    /// for small `|y|`, where `(e^{iz} - e^{-iz})/2i` cancels.
+    pub fn sin(self) -> Self {
+        Self::new(
+            self.re.sin() * self.im.cosh(),
+            self.re.cos() * self.im.sinh(),
+        )
+    }
+
+    /// `cos z = cos x cosh y - i sin x sinh y`.
+    pub fn cos(self) -> Self {
+        Self::new(
+            self.re.cos() * self.im.cosh(),
+            -self.re.sin() * self.im.sinh(),
+        )
+    }
+
     /// `e^{i*theta}` — the common case in a propagator.
     pub fn from_polar(r: f64, theta: f64) -> Self {
         Self::new(r * theta.cos(), r * theta.sin())

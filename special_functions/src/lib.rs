@@ -48,6 +48,8 @@ pub mod bessel;
 pub mod bessel_complex;
 pub mod hankel;
 pub mod debye;
+pub mod gamma_complex;
+pub mod bessel_cnu;
 pub mod airy_uniform;
 pub mod bessel_scaled;
 pub mod wigner;

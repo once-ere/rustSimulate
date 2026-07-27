@@ -173,6 +173,7 @@
 //!                sph_hankel_h1_prime sph_hankel_h2_prime
 //!                bessel_j_scaled bessel_y_scaled bessel_i_scaled
 //!                bessel_k_scaled hankel_h1_scaled hankel_h2_scaled
+//!                gamma_z ln_gamma_z rgamma_z
 //!                gauss_legendre eigenvalues
 //!                jacobi_eigen solve_tridiag solve_tridiag_c
 //!                solve_cyclic_tridiag_c wigner_3j wigner_6j

@@ -230,6 +230,7 @@ pub fn call(name: &str, args: &[Value]) -> Option<Result<Value, String>> {
         // exist at all.
         "bessel_j_z" | "bessel_i_z" | "bessel_y_z" | "bessel_k_z" => 2,
         "bessel_j_nu" | "bessel_i_nu" | "bessel_y_nu" | "bessel_k_nu" => 2,
+        "gamma_z" | "ln_gamma_z" | "rgamma_z" => 1,
         "hankel_h1_z" | "hankel_h2_z" | "hankel_h1_nu" | "hankel_h2_nu" => 2,
         "hankel_h1_prime_z" | "hankel_h2_prime_z" => 2,
         "hankel_h1_prime_nu" | "hankel_h2_prime_nu" => 2,
@@ -343,22 +344,37 @@ fn dispatch(name: &str, a: &[Value]) -> Result<Value, String> {
         // ---- Bessel, real non-integer order, complex argument -----
         // Order is a plain number here, not an integer: that is the
         // whole point of these four.
-        "bessel_j_nu" => Ok(Value::Complex(sf::bessel_complex::bessel_j_nu(
-            as_num(name, 0, &a[0])?,
+        // The order is taken as COMPLEX here. A real one dispatches to
+        // exactly the routine it always did, so nothing that worked
+        // before changes; a complex one reaches the series that needs
+        // the complex gamma.
+        "bessel_j_nu" => Ok(Value::Complex(sf::bessel_cnu::bessel_j_cnu(
+            as_cplx(name, 0, &a[0])?,
             as_cplx(name, 1, &a[1])?,
         )?)),
-        "bessel_i_nu" => Ok(Value::Complex(sf::bessel_complex::bessel_i_nu(
-            as_num(name, 0, &a[0])?,
+        "bessel_i_nu" => Ok(Value::Complex(sf::bessel_cnu::bessel_i_cnu(
+            as_cplx(name, 0, &a[0])?,
             as_cplx(name, 1, &a[1])?,
         )?)),
-        "bessel_y_nu" => Ok(Value::Complex(sf::bessel_complex::bessel_y_nu(
-            as_num(name, 0, &a[0])?,
+        "bessel_y_nu" => Ok(Value::Complex(sf::bessel_cnu::bessel_y_cnu(
+            as_cplx(name, 0, &a[0])?,
             as_cplx(name, 1, &a[1])?,
         )?)),
-        "bessel_k_nu" => Ok(Value::Complex(sf::bessel_complex::bessel_k_nu(
-            as_num(name, 0, &a[0])?,
+        "bessel_k_nu" => Ok(Value::Complex(sf::bessel_cnu::bessel_k_cnu(
+            as_cplx(name, 0, &a[0])?,
             as_cplx(name, 1, &a[1])?,
         )?)),
+
+        // ---- gamma at complex argument ----------------------------
+        "gamma_z" => Ok(Value::Complex(sf::gamma_complex::gamma_c(as_cplx(
+            name, 0, &a[0],
+        )?)?)),
+        "ln_gamma_z" => Ok(Value::Complex(sf::gamma_complex::ln_gamma_c(as_cplx(
+            name, 0, &a[0],
+        )?)?)),
+        "rgamma_z" => Ok(Value::Complex(sf::gamma_complex::rgamma_c(as_cplx(
+            name, 0, &a[0],
+        )?)?)),
 
         // ---- Hankel: the travelling-wave pair ---------------------
         // H1 = J + iY is outgoing, H2 = J - iY incoming. Named rather
@@ -557,7 +573,10 @@ pub const SPECIAL_NAMES: &[&str] = &[
     "chebyshev_u",
     "clebsch_gordan",
     "eigenvalues",
+    "gamma_z",
     "gauss_legendre",
+    "ln_gamma_z",
+    "rgamma_z",
     "hankel_h1_nu",
     "hankel_h1_scaled",
     "hankel_h1_prime_nu",
@@ -868,6 +887,63 @@ mod tests {
         // The genuine no-method refusal is still reachable.
         let e = call_err("bessel_i_scaled", &[n(4000.0), z(1e-6, 300.0)]);
         assert!(e.contains("neither method"), "unhelpful message: {e}");
+    }
+
+    /// Complex order, reachable from the language, and the complex
+    /// gamma that made it possible.
+    #[test]
+    fn complex_order_and_gamma_are_reachable() {
+        use sf::complex::Complex64 as Cx;
+        let z = |re: f64, im: f64| Value::Complex(Cx::new(re, im));
+        let get = |v: Value| match v {
+            Value::Complex(c) => c,
+            Value::Num(r) => Cx::real(r),
+            other => panic!("expected complex, got {other:?}"),
+        };
+
+        // |Gamma(1+iy)|^2 = pi y / sinh(pi y), a closed form on the
+        // imaginary axis with nothing but elementary functions on the
+        // right.
+        for y in [0.5_f64, 2.0, 7.0] {
+            let g = get(call_ok("gamma_z", &[z(1.0, y)]));
+            let want = std::f64::consts::PI * y / (std::f64::consts::PI * y).sinh();
+            assert!(
+                (g.norm_sqr() - want).abs() <= 1e-11 * want,
+                "|Gamma(1+{y}i)|^2 = {} vs {want}",
+                g.norm_sqr()
+            );
+        }
+        // 1/Gamma is entire: exactly zero at the poles.
+        assert_eq!(get(call_ok("rgamma_z", &[n(-3.0)])), Cx::ZERO);
+        // ln Gamma is defined where Gamma has left f64 range.
+        assert!(call_err("gamma_z", &[n(200.0)]).contains("overflow"));
+        let l = get(call_ok("ln_gamma_z", &[n(200.0)]));
+        assert!((l.re - sf::cephes::cephes64::lgam(200.0)).abs() < 1e-10);
+
+        // A real order still reaches exactly what it always did.
+        let a = get(call_ok("bessel_j_nu", &[n(0.5), n(2.0)]));
+        let want = (2.0 / (std::f64::consts::PI * 2.0)).sqrt() * 2.0_f64.sin();
+        assert!((a.re - want).abs() < 1e-13, "J_1/2(2) = {a:?}");
+
+        // A complex order, judged by the J-Y Wronskian, whose right-hand
+        // side does not involve the order at all.
+        let (nu, zz) = (Cx::new(1.0, 2.0), Cx::new(3.0, 0.5));
+        let j0 = get(call_ok("bessel_j_nu", &[z(nu.re, nu.im), z(zz.re, zz.im)]));
+        let j1 = get(call_ok("bessel_j_nu", &[z(nu.re + 1.0, nu.im), z(zz.re, zz.im)]));
+        let y0 = get(call_ok("bessel_y_nu", &[z(nu.re, nu.im), z(zz.re, zz.im)]));
+        let y1 = get(call_ok("bessel_y_nu", &[z(nu.re + 1.0, nu.im), z(zz.re, zz.im)]));
+        let w = j1 * y0 - j0 * y1;
+        let want = zz.inv() * (2.0 / std::f64::consts::PI);
+        assert!((w - want).abs() < 1e-11, "Wronskian at complex order: {w:?}");
+
+        // K of imaginary order is real, and even in the order.
+        let a = get(call_ok("bessel_k_nu", &[z(0.0, 1.0), n(2.0)]));
+        let b = get(call_ok("bessel_k_nu", &[z(0.0, -1.0), n(2.0)]));
+        assert!(a.im.abs() < 1e-13, "K_i(2) should be real, got {a:?}");
+        assert!((a - b).abs() < 1e-13, "K_-i != K_i");
+
+        assert!(!call_err("bessel_y_nu", &[z(1.0, 1.0), z(0.0, 0.0)]).is_empty());
+        assert!(!call_err("ln_gamma_z", &[n(0.0)]).is_empty(), "pole at 0");
     }
 
     #[test]

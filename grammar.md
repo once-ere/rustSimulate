@@ -281,6 +281,7 @@ a confident, wrong number, and you would have no way to notice.
 | Hankel derivatives | `hankel_h1_prime_z(n,z)`, `hankel_h2_prime_z(n,z)`, `hankel_h1_prime_nu(nu,z)`, `hankel_h2_prime_nu(nu,z)` |
 | spherical Hankel | `sph_hankel_h1(n,x)`, `sph_hankel_h2(n,x)`, `sph_hankel_h1_prime(n,x)`, `sph_hankel_h2_prime(n,x)` |
 | scaled forms | `bessel_j_scaled(nu,z)`, `bessel_y_scaled(nu,z)`, `bessel_i_scaled(nu,z)`, `bessel_k_scaled(nu,z)`, `hankel_h1_scaled(nu,z)`, `hankel_h2_scaled(nu,z)` |
+| gamma, complex argument | `gamma_z(z)`, `ln_gamma_z(z)`, `rgamma_z(z)` |
 | quadrature | `gauss_legendre(n)` → `[nodes, weights]` |
 | eigenproblems | `eigenvalues(matrix)` → list, `jacobi_eigen(matrix)` → `[values, vectors]` |
 | angular momentum | `wigner_3j(j1,j2,j3,m1,m2,m3)`, `wigner_6j(j1,j2,j3,j4,j5,j6)`, `wigner_9j(a,b,c,d,e,f,g,h,i)`, `clebsch_gordan(j1,m1,j2,m2,j3,m3)` |
@@ -713,6 +714,90 @@ Measured, not asserted:
 ```
 cargo run -p special_functions --release --example bessel_scaled_accuracy
 ```
+
+#### Complex order
+
+Every `_nu` form above takes a **complex** order as well as a real one.
+`bessel_j_nu(1 + 2i, 3)` is `J_{1+2i}(3)`; a real order reaches exactly
+the routine it always did, so nothing that worked before changes.
+
+This was the last entry on the list of things chapter 10 did not cover,
+and it is the one no expansion could have closed. The obstacle was not
+an algorithm — the ascending series is the same one — it was that
+`1/Gamma(nu + k + 1)` had no meaning here for complex `nu`. So the
+stage is really a **complex gamma**, and the Bessel functions follow.
+
+| function | |
+|---|---|
+| `gamma_z(z)` | `Gamma` at complex argument |
+| `ln_gamma_z(z)` | still defined where `Gamma` has left `f64` |
+| `rgamma_z(z)` | `1/Gamma`, **entire** — exactly zero at the poles |
+
+`gamma_z` is Stirling with argument shifting, not Lanczos. Lanczos is
+a little faster and is rejected for the reason that has shaped this
+crate: its coefficients are a *table*, and the tables in circulation are
+most often reproduced from *Numerical Recipes*, whose licence this
+project will not inherit. Stirling needs no table — only the Bernoulli
+numbers, which are defined by a recurrence the crate states and a test
+re-derives.
+
+```
+In[1]:= gamma_z(0.5)
+Out[1]= 1.7724538509055292 + 0i
+In[2]:= sqrt(pi)
+Out[2]= 1.7724538509055159
+In[3]:= gamma_z(1 + 1i)
+Out[3]= 0.4980156681183574 - 0.15494982830181092i
+In[4]:= rgamma_z(-3)
+Out[4]= 0 + 0i
+In[5]:= ln_gamma_z(200)
+Out[5]= 857.9336698258575 + 0i
+In[6]:= bessel_j_nu(1 + 2i, 3)
+Out[6]= 2.616967138257939 + 0.5245621513264704i
+In[7]:= bessel_j_nu(0.5, 2)
+Out[7]= 0.5130161365618277 + 0i
+In[8]:= bessel_k_nu(1i, 2)
+Out[8]= 0.09238545989039124 + 0i
+In[9]:= bessel_k_nu(-1i, 2)
+Out[9]= 0.09238545989039124 + 0i
+```
+
+`Out[1]` and `Out[2]` differ in the fourteenth digit, which is the
+method's honest accuracy: reaching the Stirling regime from `z = 0.5`
+takes fourteen shifts and each rounds. `Out[4]` is the reciprocal being
+*entire* — a series term that ought to vanish does, rather than
+producing `1/inf`. `Out[5]` is a value `gamma_z(200)` refuses, because
+`Gamma(200)` is about `1e372`.
+
+**`Out[8]` and `Out[9]` are the result worth looking at.** `K_{iy}(x)`
+is real for real `y` and real positive `x` — the Macdonald function of
+imaginary order, which is why it appears as an eigenfunction on the half
+line. Nothing in the implementation arranges that: `K` is built from two
+`I`s at `+nu` and `-nu` divided by `sin(nu pi)`, all three thoroughly
+complex. It comes out real, and even in the order, because the
+mathematics says so.
+
+**Two things change once the order is complex**, both because it now
+sits in an exponent. `(z/2)^nu` is `exp(nu ln(z/2))`, so its *modulus*
+depends on `arg z` as well as `|z|` — a branch choice is no longer a
+phase convention. And `sin(nu pi)` in the reflections grows like
+`exp(pi |Im nu|)`, so the reflections get **better** conditioned off the
+real axis: a whole-numbered real part is not a special case at all
+unless the imaginary part is small too. The accuracy law picks up one
+term for the same reason:
+
+```
+relative error ~ 1e-16 exp(|z| - |Im z| + Im nu * arg z)
+```
+
+so complex order is free on the positive real axis and costs
+`Im nu * arg z` elsewhere.
+
+**The large-order machinery is not extended.** The Debye, Airy-type and
+`1/z` expansions are expansions *in* the order, and their uniformity is
+stated for real order; reusing them would be assuming something nobody
+proved. Complex order therefore reaches as far as the ascending series
+does, and says so rather than guessing.
 
 **A wrinkle worth knowing about lists.** The bracket literal is
 overloaded: `[a,b,c]` is a *vector*, `[a,b,c,d]` is a *quaternion*, and

@@ -568,6 +568,12 @@ special functions (see grammar.md; orders must be WHOLE numbers):
   (abs() of a complex value is its modulus; the other scalar builtins
    are real-only, since complex sqrt and log need a branch-cut choice
    this language has not made)
+  (the _nu forms take a COMPLEX order as well as a real one:
+   bessel_j_nu(1 + 2i, 3) is J_(1+2i)(3). Complex order costs nothing
+   on the positive real axis and ~exp(Im nu * arg z) off it)
+  gamma                     gamma_z(z)      complex argument
+                            ln_gamma_z(z)   defined past Gamma's overflow
+                            rgamma_z(z)     1/Gamma, ZERO at the poles
   Hankel (travelling wave)  hankel_h1_z(n,z)   H1 = J + iY, outgoing
                             hankel_h2_z(n,z)   H2 = J - iY, incoming
                             hankel_h1_nu(nu,z) any real order

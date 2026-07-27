@@ -348,6 +348,8 @@ scaled forms &
   \code{bessel\_j\_scaled(nu,z)}, \code{bessel\_y\_scaled(nu,z)},
   \code{bessel\_i\_scaled(nu,z)}, \code{bessel\_k\_scaled(nu,z)},
   \code{hankel\_h1\_scaled(nu,z)}, \code{hankel\_h2\_scaled(nu,z)}\\
+gamma, complex argument &
+  \code{gamma\_z(z)}, \code{ln\_gamma\_z(z)}, \code{rgamma\_z(z)}\\
 quadrature & \code{gauss\_legendre(n)} $\to$ \code{[nodes, weights]}\\
 eigenproblems & \code{eigenvalues(matrix)} $\to$ list,
   \code{jacobi\_eigen(matrix)} $\to$ \code{[values, vectors]}\\
@@ -805,6 +807,92 @@ Measured, not asserted:
 \begin{lstlisting}
 cargo run -p special_functions --release --example bessel_scaled_accuracy
 \end{lstlisting}
+
+\subsubsection*{Complex order}
+
+Every \code{\_nu} form above takes a \textbf{complex} order as well as a
+real one. \code{bessel\_j\_nu(1 + 2i, 3)} is $J_{1+2i}(3)$; a real order
+reaches exactly the routine it always did, so nothing that worked before
+changes.
+
+This was the last entry on the list of things chapter 10 did not cover,
+and the one no expansion could have closed. The obstacle was not an
+algorithm --- the ascending series is the same --- it was that
+$1/\Gamma(\nu+k+1)$ had no meaning here for complex $\nu$. So the stage
+is really a \textbf{complex gamma}, and the Bessel functions follow.
+
+\begin{center}
+\begin{tabular}{lp{7.4cm}}
+\code{gamma\_z(z)} & $\Gamma$ at complex argument\\
+\code{ln\_gamma\_z(z)} & still defined where $\Gamma$ has left \code{f64}\\
+\code{rgamma\_z(z)} & $1/\Gamma$, \textbf{entire} --- exactly zero at the poles\\
+\end{tabular}
+\end{center}
+
+\code{gamma\_z} is Stirling with argument shifting, not Lanczos. Lanczos
+is a little faster and is rejected for the reason that has shaped this
+crate: its coefficients are a \emph{table}, and the tables in
+circulation are most often reproduced from \emph{Numerical Recipes},
+whose licence this project will not inherit. Stirling needs no table ---
+only the Bernoulli numbers, defined by a recurrence the crate states and
+a test re-derives.
+
+\begin{lstlisting}
+In[1]:= gamma_z(0.5)
+Out[1]= 1.7724538509055292 + 0i
+In[2]:= sqrt(pi)
+Out[2]= 1.7724538509055159
+In[3]:= gamma_z(1 + 1i)
+Out[3]= 0.4980156681183574 - 0.15494982830181092i
+In[4]:= rgamma_z(-3)
+Out[4]= 0 + 0i
+In[5]:= ln_gamma_z(200)
+Out[5]= 857.9336698258575 + 0i
+In[6]:= bessel_j_nu(1 + 2i, 3)
+Out[6]= 2.616967138257939 + 0.5245621513264704i
+In[7]:= bessel_j_nu(0.5, 2)
+Out[7]= 0.5130161365618277 + 0i
+In[8]:= bessel_k_nu(1i, 2)
+Out[8]= 0.09238545989039124 + 0i
+In[9]:= bessel_k_nu(-1i, 2)
+Out[9]= 0.09238545989039124 + 0i
+\end{lstlisting}
+
+\code{Out[1]} and \code{Out[2]} differ in the fourteenth digit, which is
+the method's honest accuracy: reaching the Stirling regime from
+$z = 0.5$ takes fourteen shifts and each rounds. \code{Out[4]} is the
+reciprocal being \emph{entire}. \code{Out[5]} is a value
+\code{gamma\_z(200)} refuses, $\Gamma(200)$ being about $10^{372}$.
+
+\textbf{\code{Out[8]} and \code{Out[9]} are the result worth looking
+at.} $K_{iy}(x)$ is real for real $y$ and real positive $x$ --- the
+Macdonald function of imaginary order, which is why it appears as an
+eigenfunction on the half line. Nothing in the implementation arranges
+that: $K$ is built from two $I$s at $\pm\nu$ divided by $\sin\nu\pi$,
+all three thoroughly complex. It comes out real, and even in the order,
+because the mathematics says so.
+
+\textbf{Two things change once the order is complex}, both because it
+now sits in an exponent. $(z/2)^\nu = e^{\nu\ln(z/2)}$, so its
+\emph{modulus} depends on $\arg z$ as well as $|z|$ --- a branch choice
+is no longer a phase convention. And $\sin\nu\pi$ in the reflections
+grows like $e^{\pi|\mathrm{Im}\,\nu|}$, so they get \textbf{better}
+conditioned off the real axis: a whole-numbered real part is not a
+special case unless the imaginary part is small too. The accuracy law
+gains one term for the same reason:
+\[
+  \text{relative error} \sim 10^{-16}
+    \exp\!\big(|z| - |\mathrm{Im}\,z|
+      + \mathrm{Im}\,\nu \cdot \arg z\big),
+\]
+so complex order is free on the positive real axis and costs
+$\mathrm{Im}\,\nu \cdot \arg z$ elsewhere.
+
+\textbf{The large-order machinery is not extended.} The Debye,
+Airy-type and $1/z$ expansions are expansions \emph{in} the order and
+their uniformity is stated for real order; reusing them would assume
+something nobody proved. Complex order reaches as far as the ascending
+series does, and says so rather than guessing.
 
 \textbf{A wrinkle worth knowing about lists.} The bracket literal is
 overloaded: \code{[a,b,c]} is a \emph{vector}, \code{[a,b,c,d]} is a
