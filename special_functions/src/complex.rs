@@ -51,6 +51,19 @@ impl Complex64 {
         let m = self.re.exp();
         Self::new(m * self.im.cos(), m * self.im.sin())
     }
+    /// Principal natural logarithm, `ln|z| + i arg(z)`.
+    ///
+    /// The branch cut runs along the negative real axis, where `arg`
+    /// jumps from `+pi` to `-pi`: `ln` is discontinuous there and any
+    /// function built on it inherits that. `ln(0)` is `-inf` in the real
+    /// part, which is the right answer rather than an error.
+    ///
+    /// `ln|z|` is taken through `hypot`, so it does not overflow for
+    /// large `z` or underflow for small — the same care `inv` needs.
+    pub fn ln(self) -> Self {
+        Self::new(self.abs().ln(), self.arg())
+    }
+
     /// `e^{i*theta}` — the common case in a propagator.
     pub fn from_polar(r: f64, theta: f64) -> Self {
         Self::new(r * theta.cos(), r * theta.sin())
@@ -156,6 +169,34 @@ mod tests {
         // i^2 = -1
         let ii = Complex64::I * Complex64::I;
         assert_eq!(ii, Complex64::new(-1.0, 0.0));
+    }
+
+    /// `ln` must invert `exp`, and must survive magnitudes where a
+    /// naive `sqrt(re^2 + im^2)` would overflow or underflow.
+    #[test]
+    fn logarithm_inverts_the_exponential() {
+        for z in [
+            Complex64::new(1.0, 0.0),
+            Complex64::new(0.3, -2.0),
+            Complex64::new(-1.5, 0.7),
+            Complex64::new(1e-200, 1e-200),
+            Complex64::new(1e200, -1e200),
+        ] {
+            let l = z.ln();
+            assert!(l.is_finite(), "ln({z:?}) = {l:?}");
+            // exp(ln z) = z, relative to |z|
+            let back = l.exp();
+            let err = (back - z).abs() / z.abs();
+            assert!(err < 1e-13, "exp(ln {z:?}) = {back:?}, relative error {err}");
+        }
+        // ln of a positive real is real
+        let l = Complex64::real(7.0).ln();
+        assert!((l.re - 7.0_f64.ln()).abs() < 1e-15 && l.im.abs() < 1e-15);
+        // ln(-1) = i pi: the branch cut is approached from above
+        let l = Complex64::real(-1.0).ln();
+        assert!(l.re.abs() < 1e-15 && (l.im - std::f64::consts::PI).abs() < 1e-15);
+        // ln(0) is -inf, not NaN
+        assert!(Complex64::ZERO.ln().re.is_infinite());
     }
 
     /// Reciprocal and division must survive magnitudes where the

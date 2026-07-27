@@ -275,7 +275,7 @@ a confident, wrong number, and you would have no way to notice.
 | spherical harmonics | `sph_harm(l,m,theta,phi)` → `[re, im]`, `sph_harm_real(l,m,theta,phi)` |
 | orthogonal polynomials | `hermite_h(n,x)`, `hermite_he(n,x)`, `laguerre_l(n,x)`, `laguerre_l_assoc(n,alpha,x)`, `chebyshev_t(n,x)`, `chebyshev_u(n,x)`, `gegenbauer_c(n,alpha,x)`, `jacobi_p(n,alpha,beta,x)` |
 | cylindrical Bessel | `bessel_j(n,x)`, `bessel_j_array(n_max,x)` → list |
-| cylindrical Bessel, **complex argument** | `bessel_j_z(n,z)`, `bessel_i_z(n,z)` |
+| cylindrical Bessel, **complex argument** | `bessel_j_z(n,z)`, `bessel_i_z(n,z)`, `bessel_y_z(n,z)`, `bessel_k_z(n,z)` |
 | quadrature | `gauss_legendre(n)` → `[nodes, weights]` |
 | eigenproblems | `eigenvalues(matrix)` → list, `jacobi_eigen(matrix)` → `[values, vectors]` |
 | angular momentum | `wigner_3j(j1,j2,j3,m1,m2,m3)`, `wigner_6j(j1,j2,j3,j4,j5,j6)`, `wigner_9j(a,b,c,d,e,f,g,h,i)`, `clebsch_gordan(j1,m1,j2,m2,j3,m3)` |
@@ -319,9 +319,35 @@ against the generating-function identity
 | relative error | 1e-16 | 1e-14 | 1e-13 | 1e-11 | 1e-9 | 1e-6 |
 
 The error barely depends on `Re z`, exactly as that argument predicts.
-`Y_n` and `K_n` are **not** provided: they need a logarithmic term and a
-different algorithm, and claiming them on the strength of this
-recurrence would be wrong.
+#### `Y_n` and `K_n`: a different method, because they need one
+
+`Y_n` has a **logarithmic branch point** at the origin, so no recurrence
+produces it from `J_n` alone. It comes instead from the ascending series
+(DLMF 10.8.1) for `Y_0` and `Y_1` — the one carrying the `ln(z/2)·J_n(z)`
+term and digamma coefficients — followed by **upward** recurrence in `n`.
+
+That direction is the opposite of `J`'s, and deliberately so: `Y_n`
+*grows* with order while `J_n` decays, so the stable sweep for one is
+the unstable sweep for the other. Sharing an implementation would
+destroy whichever function got the wrong direction.
+
+`K_n` then follows by identity,
+`K_n(z) = (π/2) i^{n+1} [J_n(iz) + i Y_n(iz)]` (DLMF 10.27.8), needing
+no third algorithm.
+
+Both are verified by **Wronskians**, whose right-hand sides are
+elementary so no reference library is involved:
+
+```
+J_{n+1}(z) Y_n(z) - J_n(z) Y_{n+1}(z) = 2/(pi z)
+I_n(z) K_{n+1}(z) + I_{n+1}(z) K_n(z) = 1/z
+```
+
+**Both inherit the branch cut** of `ln` along the negative real axis and
+are discontinuous across it, while `J_n` and `I_n` are entire. The jump
+is `4i J_n`: crossing takes `arg` from `+π` to `−π`, a change of `2π`, and
+the `(2/π) ln(z/2) J` term turns that into `(2/π)(2πi)J`. Both are
+singular at `z = 0` and report an error there rather than an infinity.
 
 **A wrinkle worth knowing about lists.** The bracket literal is
 overloaded: `[a,b,c]` is a *vector*, `[a,b,c,d]` is a *quaternion*, and

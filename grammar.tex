@@ -328,7 +328,8 @@ orthogonal polynomials & \code{hermite\_h(n,x)}, \code{hermite\_he(n,x)},
 cylindrical Bessel & \code{bessel\_j(n,x)},
   \code{bessel\_j\_array(n\_max,x)} $\to$ list\\
 cylindrical Bessel, \textbf{complex argument} &
-  \code{bessel\_j\_z(n,z)}, \code{bessel\_i\_z(n,z)}\\
+  \code{bessel\_j\_z(n,z)}, \code{bessel\_i\_z(n,z)},
+  \code{bessel\_y\_z(n,z)}, \code{bessel\_k\_z(n,z)}\\
 quadrature & \code{gauss\_legendre(n)} $\to$ \code{[nodes, weights]}\\
 eigenproblems & \code{eigenvalues(matrix)} $\to$ list,
   \code{jacobi\_eigen(matrix)} $\to$ \code{[values, vectors]}\\
@@ -384,8 +385,30 @@ $10^{-9}$ & $10^{-6}$\\
 \end{tabular}
 \end{center}
 
-$Y_n$ and $K_n$ are \textbf{not} provided: they need a logarithmic term
-and a different algorithm.
+\subsubsection*{$Y_n$ and $K_n$: a different method, because they need one}
+
+$Y_n$ has a \textbf{logarithmic branch point} at the origin, so no
+recurrence produces it from $J_n$ alone. It comes from the ascending
+series (DLMF 10.8.1) for $Y_0$ and $Y_1$ --- the one carrying the
+$(2/\pi)\ln(z/2)J_n(z)$ term and digamma coefficients --- followed by
+\textbf{upward} recurrence in $n$.
+
+That direction is the opposite of $J$'s, deliberately: $Y_n$ \emph{grows}
+with order while $J_n$ decays, so the stable sweep for one is the
+unstable sweep for the other.
+
+$K_n$ follows by identity, $K_n(z) = (\pi/2) i^{n+1}[J_n(iz)+iY_n(iz)]$
+(DLMF 10.27.8). Both are verified by Wronskians, whose right-hand sides
+are elementary:
+\[
+  J_{n+1}Y_n - J_nY_{n+1} = \frac{2}{\pi z},\qquad
+  I_nK_{n+1} + I_{n+1}K_n = \frac{1}{z}.
+\]
+
+Both inherit the branch cut of $\ln$ along the negative real axis, where
+they jump by $4iJ_n$ --- crossing changes $\arg$ by $2\pi$, and the
+$(2/\pi)\ln(z/2)J$ term turns that into $(2/\pi)(2\pi i)J$. Both are
+singular at $z=0$ and report an error there.
 
 \textbf{A wrinkle worth knowing about lists.} The bracket literal is
 overloaded: \code{[a,b,c]} is a \emph{vector}, \code{[a,b,c,d]} is a

@@ -551,6 +551,10 @@ special functions (see grammar.md; orders must be WHOLE numbers):
                             bessel_j_array(n_max,x)      -> list
                             bessel_j_z(n,z)  COMPLEX argument
                             bessel_i_z(n,z)  modified, complex argument
+                            bessel_y_z(n,z)  second kind, complex
+                            bessel_k_z(n,z)  modified second kind
+                            (Y and K have a BRANCH CUT on the negative
+                            real axis and are singular at z = 0)
                             (accuracy falls with |Im z|: ~1e-13 at 8,
                             ~1e-8 at 18, ~1e-6 at 25 — see grammar.md)
   quadrature                gauss_legendre(n)  -> [nodes, weights]

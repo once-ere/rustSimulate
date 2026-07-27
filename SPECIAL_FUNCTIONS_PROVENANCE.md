@@ -49,7 +49,7 @@ and the matrix below states plainly what is absent.
 | 7 | Error Functions, Dawson, Fresnel | partial | **vendored**: erf, erfc + inverses, Dawson, Fresnel |
 | 8 | Incomplete Gamma and Related | partial | **vendored**: incomplete gamma/beta + inverses |
 | 9 | Airy and Related | partial | **vendored**: Ai, Bi and derivatives, real argument only |
-| 10 | Bessel Functions | partial | **vendored** cylindrical Jᵥ Yᵥ Iᵥ Kᵥ (real arg); **native** spherical jₙ yₙ and derivatives; **native** integer-order Jₙ whole-table; **native Jₙ and Iₙ for COMPLEX argument**. Yₙ/Kₙ at complex argument remain absent |
+| 10 | Bessel Functions | partial | **vendored** cylindrical Jᵥ Yᵥ Iᵥ Kᵥ (real arg); **native** spherical jₙ yₙ and derivatives; **native** integer-order Jₙ whole-table; **native Jₙ, Yₙ, Iₙ, Kₙ for COMPLEX argument** |
 | 11 | Struve and Related | **none** | — |
 | 12 | Parabolic Cylinder | **none** | — |
 | 13 | Confluent Hypergeometric | **none** | — |
@@ -138,7 +138,7 @@ record is separate and detailed:
 | `orthopoly` | native | three-term recurrences; Clenshaw for series | DLMF 18.9, A&S 22.7 |
 | `wigner` | native | Racah single-sum for 3-j and 6-j, all factorials in logarithms; 9-j as a single sum over 6-j | DLMF 34.2.4, 34.4.1, 34.6.1; Edmonds 1957 §3.6 |
 | `bessel` | native, **clean-room** | Miller downward recurrence, scale fixed by `J₀+2(J₂+J₄+…)=1` | DLMF 10.6.1, 10.12.4; A&S 9.1.27, 9.1.46 |
-| `bessel_complex` | native | the same Miller recurrence — both the recurrence and the normalisation are identities in `z`, so complex argument needs no new algorithm | DLMF 10.6.1, 10.27.6, 10.35.1 |
+| `bessel_complex` | native | Jₙ/Iₙ by the same Miller recurrence (both it and the normalisation are identities in `z`); Yₙ by the ascending series with the log and digamma terms, then **upward** recurrence — the stable direction for Y and the opposite of J's; Kₙ by identity from Jₙ + iYₙ | DLMF 10.6.1, 10.8.1, 10.27.6, 10.27.8, 10.35.1 |
 | `tridiag` | native, **clean-room** | Thomas algorithm; Sherman–Morrison for the cyclic case | textbook |
 | `eigen` | native | cyclic Jacobi, ≤100 sweeps | textbook |
 | `lanczos` | native | Lanczos with full reorthogonalisation + deflation, matrix-free | textbook |

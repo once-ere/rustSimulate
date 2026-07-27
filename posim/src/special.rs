@@ -228,7 +228,7 @@ pub fn call(name: &str, args: &[Value]) -> Option<Result<Value, String>> {
         // Complex argument: these take and return complex values, which
         // is why the language needed Value::Complex before they could
         // exist at all.
-        "bessel_j_z" | "bessel_i_z" => 2,
+        "bessel_j_z" | "bessel_i_z" | "bessel_y_z" | "bessel_k_z" => 2,
         "solve_cyclic_tridiag_c" => 6,
         _ => return None,
     };
@@ -320,6 +320,14 @@ fn dispatch(name: &str, a: &[Value]) -> Result<Value, String> {
             as_cplx(name, 1, &a[1])?,
         )?)),
         "bessel_i_z" => Ok(Value::Complex(sf::bessel_complex::bessel_i_c(
+            as_int(name, 0, &a[0])?,
+            as_cplx(name, 1, &a[1])?,
+        )?)),
+        "bessel_y_z" => Ok(Value::Complex(sf::bessel_complex::bessel_y_c(
+            as_int(name, 0, &a[0])?,
+            as_cplx(name, 1, &a[1])?,
+        )?)),
+        "bessel_k_z" => Ok(Value::Complex(sf::bessel_complex::bessel_k_c(
             as_int(name, 0, &a[0])?,
             as_cplx(name, 1, &a[1])?,
         )?)),
@@ -418,8 +426,10 @@ pub const SPECIAL_NAMES: &[&str] = &[
     "assoc_legendre_p",
     "bessel_i_z",
     "bessel_j",
+    "bessel_k_z",
     "bessel_j_array",
     "bessel_j_z",
+    "bessel_y_z",
     "chebyshev_t",
     "chebyshev_u",
     "clebsch_gordan",
@@ -674,6 +684,26 @@ mod tests {
             (j0 - i0v).abs() < 1e-10,
             "J_0(i*{y}) = {j0:?} should equal I_0({y}) = {i0v:?}"
         );
+        // Y and K: pinned by the Wronskian J_{n+1} Y_n - J_n Y_{n+1}
+        // = 2/(pi z), which is elementary on the right-hand side.
+        let zz = Cx::new(1.6, 0.9);
+        let j0 = get(call_ok("bessel_j_z", &[n(0.0), z(zz.re, zz.im)]));
+        let j1 = get(call_ok("bessel_j_z", &[n(1.0), z(zz.re, zz.im)]));
+        let y0 = get(call_ok("bessel_y_z", &[n(0.0), z(zz.re, zz.im)]));
+        let y1 = get(call_ok("bessel_y_z", &[n(1.0), z(zz.re, zz.im)]));
+        let w = j1 * y0 - j0 * y1;
+        let want = zz.inv() * (2.0 / std::f64::consts::PI);
+        assert!((w - want).abs() < 1e-10, "Wronskian {w:?} vs {want:?}");
+        // K via the I-K Wronskian I_0 K_1 + I_1 K_0 = 1/z
+        let i0v = get(call_ok("bessel_i_z", &[n(0.0), z(zz.re, zz.im)]));
+        let i1v = get(call_ok("bessel_i_z", &[n(1.0), z(zz.re, zz.im)]));
+        let k0v = get(call_ok("bessel_k_z", &[n(0.0), z(zz.re, zz.im)]));
+        let k1v = get(call_ok("bessel_k_z", &[n(1.0), z(zz.re, zz.im)]));
+        let w2 = i0v * k1v + i1v * k0v;
+        assert!((w2 - zz.inv()).abs() < 1e-9, "I-K Wronskian {w2:?} vs 1/z");
+        // Y and K are singular at the origin
+        assert!(!call_err("bessel_y_z", &[n(0.0), z(0.0, 0.0)]).is_empty());
+        assert!(!call_err("bessel_k_z", &[n(0.0), z(0.0, 0.0)]).is_empty());
         // the order must still be a whole number
         assert!(call_err("bessel_j_z", &[n(1.5), z(1.0, 1.0)]).contains("whole number"));
     }
