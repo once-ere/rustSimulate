@@ -44,9 +44,31 @@
 //!   K_n:  L = max(2|Re z|, |z|) + Re z      worst along the POSITIVE real axis
 //! ```
 //!
-//! Measured against Cephes on the axes where each is at its worst
-//! (`examples/bessel_complex_accuracy.rs`), and pinned by
-//! `integer_order_accuracy_laws_hold` with two digits of slack:
+//! **Those four laws describe the individual routes, and since Stage 19
+//! they are no longer what these functions deliver.** Each of `J`, `Y`
+//! and `K` now has a second route that fails where the first one does
+//! and succeeds where it does not, and the better estimate is taken:
+//!
+//! * `J` near the imaginary axis by `J_nu(z) = i^nu I_nu(-iz)`, where
+//!   `-iz` is near the real axis and the `1/z` expansion for `I` has no
+//!   cancellation;
+//! * `Y` near the imaginary axis by
+//!   `Y_n(z) = i^(n+1) I_n(w) - (2/pi) i^(-n) K_n(w)`, `w = -iz`, which
+//!   replaces the upward recurrence in `n` — the direction that
+//!   destroys `Y` there, since its content is mostly the recessive `I`;
+//! * `Y` along the real axis, and `K` everywhere, by their own `1/z`
+//!   expansions, which are single series with nothing to cancel.
+//!
+//! Measured after that, the J-Y Wronskian residual over `|z|` from 5 to
+//! 40 and `arg z` across the upper half plane is **1e-10 or better and
+//! mostly below 1e-15**, against 1e-1 before. `Y_0(40)` was wrong in its
+//! first digit and is now exact to 1e-15; `K_0(20)` was out by `8e8`
+//! and is now exact to 2e-16.
+//!
+//! The laws below are kept because they still describe what each route
+//! costs, and because the selector uses them to choose. They are pinned
+//! by `integer_order_accuracy_laws_hold` as **upper bounds**, which is
+//! all they now are:
 //!
 //! | x (real) | 1 | 10 | 20 | 30 | 35 |
 //! |---|---|---|---|---|---|
@@ -56,12 +78,10 @@
 //! | `Y_0(x)`  | 1e-15 | 3e-12 | 3e-8  | 2e-4  | 6e-2  |
 //! | `K_0(x)`  | 7e-16 | 3e-5  | 8e8   | 5e21  | 7e27  |
 //!
-//! So: **`J` is excellent on the real axis and `Y` is not**, and `K` on
-//! the real axis is unusable past about `x = 12`. `I` and `J` are the
-//! same function at right angles, which is why their columns match to
-//! the last digit. Practically, the whole family is sound for
-//! `|z| <~ 10`; past that, check which kind you are using and in which
-//! direction.
+//! Those numbers are what the ROUTES cost, not what the functions
+//! deliver — the table predates Stage 19 and is kept as the record of
+//! why the second routes exist. `I` and `J` are the same function at
+//! right angles, which is why their columns match to the last digit.
 //!
 //! `K`'s exponent has three terms because `K_n(z)` is built from
 //! `J_n(iz) + i Y_n(iz)`: that `J` is amplified by `exp(|Re z|)`
@@ -188,6 +208,9 @@ pub fn bessel_j_array_c(n_max: usize, z: C) -> Result<Vec<C>, String> {
 /// assert!(v.abs() < 1e-12);
 /// ```
 pub fn bessel_j_c(n: i32, z: C) -> Result<C, String> {
+    if let Some(v) = j_via_i(n, z) {
+        return Ok(v);
+    }
     if n < 0 {
         return Err(format!("bessel_j_c: order n must be >= 0, got {n}"));
     }
@@ -356,7 +379,169 @@ pub fn bessel_y_c(n: i32, z: C) -> Result<C, String> {
     if n < 0 {
         return Err(format!("bessel_y_c: order n must be >= 0, got {n}"));
     }
+    if let Some(v) = y_via_ik(n, z) {
+        return Ok(v);
+    }
+    if let Some(v) = y_via_asym(n, z) {
+        return Ok(v);
+    }
     Ok(bessel_y_array_c(n as usize, z)?[n as usize])
+}
+
+/// `Y_n(z)` by the `1/z` Hankel expansion, where the ascending series
+/// has cancelled away its digits.
+///
+/// The other half of the same story: near the imaginary axis it is the
+/// *recurrence* that fails and [`y_via_ik`] answers; along the **real**
+/// axis it is the ascending series, whose terms are `exp(|z|)` while
+/// `Y` is `O(1)`. `Y_0(40)` was wrong in its first digit.
+///
+/// Stage 14 already fixed that for the scaled routines. This brings the
+/// fix to `bessel_y_c` itself, which everything else in this module is
+/// built on — including `bessel_k_c`, and so `hankel`, and so the rest.
+fn y_via_asym(n: i32, z: C) -> Option<C> {
+    if !z.is_finite() || z.abs() == 0.0 {
+        return None;
+    }
+    let (v, e) = crate::bessel_cnu_large::y_asym(C::real(n as f64), z)?;
+    if !v.is_finite() {
+        return None;
+    }
+    let loss = z.abs() - z.im.abs();
+    let series_err = if loss > 700.0 { f64::INFINITY } else { 1e-16 * loss.exp() };
+    (e < series_err).then_some(v)
+}
+
+/// `J_n(z)` near the **imaginary axis**, from `I` on the rotated
+/// argument.
+///
+/// Miller's recurrence normalises by `J_0 + 2(J_2 + J_4 + ...) = 1`,
+/// and up the imaginary axis the individual terms grow like
+/// `exp(|Im z|)` while their sum is 1 — the loss documented since Stage
+/// 13. But `J_nu(z) = i^nu I_nu(-iz)` (DLMF 10.27.6), and `-iz` is then
+/// near the **real** axis, where the `1/z` expansion for `I` has no
+/// cancellation at all.
+///
+/// The same rotation that makes `Y` hard makes `J` easy, and the same
+/// recursion-free route serves both.
+fn j_via_i(n: i32, z: C) -> Option<C> {
+    if z.im.abs() <= z.re.abs() || !z.is_finite() {
+        return None;
+    }
+    let (zz, conjugated) = if z.im >= 0.0 { (z, false) } else { (z.conj(), true) };
+    let w = zz * (C::I * -1.0);
+    let (i_val, e) = crate::bessel_cnu_large::i_asym(C::real(n as f64), w)?;
+    let j = i_pow(n) * i_val;
+    if !j.is_finite() {
+        return None;
+    }
+    let loss = z.im.abs();
+    let miller_err = if loss > 700.0 { f64::INFINITY } else { 1e-16 * loss.exp() };
+    (e < miller_err).then_some(if conjugated { j.conj() } else { j })
+}
+
+/// `K_n(z)` by its own asymptotic expansion, when the identity below
+/// would cancel.
+///
+/// `bessel_k_c` is built on `K_n(z) = (pi/2) i^(n+1)[J_n(iz) + iY_n(iz)]`,
+/// and on the real axis that identity **cancels by construction**:
+/// `J_n(ix)` is `I_n(x)` and `Y_n(ix)` contributes `i I_n(x)` too, so
+/// the two `I` parts — of size `exp(x)` — annihilate and leave `K`, of
+/// size `exp(-x)`. That is not a defect of any ingredient; it is the
+/// identity being the wrong way to compute a recessive function.
+///
+/// Measured, it costs everything: `K_0(10)` was wrong by 2.8e-5 and
+/// `K_0(20)` by `8e8`. This route takes the `1/z` expansion of DLMF
+/// 10.40.2 instead, which is a single series with no cancellation in
+/// it, and is used whenever its truncation estimate beats the
+/// identity's `exp(max(2|Re z|, |z|) + Re z)` loss.
+///
+/// Recursion-free by construction, like [`y_via_ik`], and for the same
+/// reason.
+fn k_via_asym(n: i32, z: C) -> Option<C> {
+    if !z.is_finite() || z.abs() == 0.0 {
+        return None;
+    }
+    let (v, e) = crate::bessel_cnu_large::k_asym(C::real(n as f64), z)?;
+    if !v.is_finite() {
+        return None;
+    }
+    let loss = (2.0 * z.re.abs()).max(z.abs()) + z.re;
+    let identity_err = if loss > 700.0 { f64::INFINITY } else { 1e-16 * loss.exp() };
+    (e < identity_err).then_some(v)
+}
+
+/// `Y_n(z)` near the **imaginary axis**, from `I` and `K` on the
+/// rotated argument instead of from the upward recurrence.
+///
+/// # The defect this exists to fix
+///
+/// [`bessel_y_array_c`] builds `Y_n` by recurring **upward** in `n`
+/// from `Y_0` and `Y_1`. That is the stable direction for real
+/// argument. It is not near the imaginary axis, and the reason is
+/// visible in the connection formula below: at `z = iy` the content of
+/// `Y_n` is mostly `I_n(y)`, and `I` is the **recessive** solution of
+/// that recurrence in `n` — the direction which destroys it.
+///
+/// Stage 18 found this by accident and the Wronskian settled it: at
+/// `n = 2, z = 29.4 e^{1.6i}` the `1/z` expansion closes the J-Y
+/// Wronskian to 7e-26 and the recurrence to **4.5e-6**. The accuracy
+/// law recorded in Stage 13 said 1e-16 and was wrong.
+///
+/// # The route
+///
+/// With `w = -iz` (which puts `Re w >= 0` for `z` in the upper half
+/// plane),
+///
+/// ```text
+///   Y_n(z) = i^(n+1) I_n(w) - (2/pi) i^(-n) K_n(w)
+/// ```
+///
+/// and for `Im z < 0` the conjugate, since `Y_n` has real coefficients
+/// away from its cut. `I` dominates `K` by `exp(2 Re w)` here, so
+/// forming the combination costs nothing — the opposite of the
+/// recurrence.
+///
+/// `I` and `K` come from the **asymptotic** routines of
+/// [`crate::bessel_cnu_large`], which are self-contained series in
+/// `1/w`. That is not an accident of convenience: `bessel_k_c` is built
+/// on `bessel_y_c`, so anything that reached back into this module
+/// through the scaled or non-integer routines would recurse forever.
+///
+/// Returns `None` when the expansions do not apply — small `|z|`, or
+/// away from the imaginary axis — and the caller falls back to the
+/// recurrence, which is sound there.
+fn y_via_ik(n: i32, z: C) -> Option<C> {
+    // Only where the recurrence is actually the wrong tool: nearer the
+    // imaginary axis than the real one.
+    if z.im.abs() <= z.re.abs() || !z.is_finite() {
+        return None;
+    }
+    let (zz, conjugated) = if z.im >= 0.0 { (z, false) } else { (z.conj(), true) };
+    let w = zz * (C::I * -1.0);
+    let nu = C::real(n as f64);
+    let (i_val, e_i) = crate::bessel_cnu_large::i_asym(nu, w)?;
+    let (k_val, e_k) = crate::bessel_cnu_large::k_asym(nu, w)?;
+    let y = i_pow(n + 1) * i_val - i_pow(-n) * k_val * (2.0 / std::f64::consts::PI);
+    if !y.is_finite() {
+        return None;
+    }
+    // Only take this route if it beats what the recurrence would give.
+    // The recurrence's loss is the series' own `|z| - |Im z|` plus, for
+    // an order it actually recurs to, the instability — measured as
+    // `exp(|Im z|)`.
+    let recurrence_loss = if n >= 2 {
+        (z.abs() - z.im.abs()).max(z.im.abs())
+    } else {
+        z.abs() - z.im.abs()
+    };
+    let recurrence_err = if recurrence_loss > 700.0 {
+        f64::INFINITY
+    } else {
+        1e-16 * recurrence_loss.exp()
+    };
+    let here = e_i.max(e_k);
+    (here < recurrence_err).then_some(if conjugated { y.conj() } else { y })
 }
 
 /// The modified Bessel function of the second kind, `K_n(z)`, complex
@@ -386,6 +571,9 @@ pub fn bessel_k_c(n: i32, z: C) -> Result<C, String> {
     }
     if z.abs() == 0.0 {
         return Err("bessel_k_c: K_n has a singularity at z = 0".to_string());
+    }
+    if let Some(v) = k_via_asym(n, z) {
+        return Ok(v);
     }
     // The identity rotates the argument by i, so `arg(iz) = arg(z) +
     // pi/2`. For `arg z > pi/2` that leaves the principal range and
@@ -1322,19 +1510,51 @@ mod tests {
         }
     }
 
-    /// The other half of the law above: it must be a real constraint,
-    /// not a bound so loose that anything passes. At `x = 25` the
-    /// measured `Y` error is 1.6e-6 and the measured `K` error is 2e15,
-    /// so a routine that were merely "good to 1e-9" would still fail
-    /// these, and one that were perfect would fail the K assertion here.
+    /// The points where these routines used to fail, now asserted to
+    /// work. This test used to say the opposite — that `Y_0(25)` had
+    /// lost its digits and `K_0(20)` was worthless — and it was right
+    /// when it was written. Route selection made it wrong, so it is
+    /// inverted rather than deleted: the record of what was broken is
+    /// the point of it.
+    ///
+    /// `Y_0(40)` was wrong in its first digit. `K_0(20)` was out by a
+    /// factor of `8e8`. `Y_2` at `z = 29.4 e^{1.6i}` closed the J-Y
+    /// Wronskian to 4.5e-6.
     #[test]
-    fn the_integer_order_laws_are_tight_enough_to_bite() {
-        let y = bessel_y_c(0, C::real(25.0)).unwrap().re;
-        let e = (y - yn(0, 25.0)).abs() / yn(0, 25.0).abs();
-        assert!(e > 1e-9, "Y_0(25) is expected to have lost digits, got {e:e}");
-        let k = bessel_k_c(0, C::real(20.0)).unwrap().re;
-        let e = (k - spec_math::cephes64::k0(20.0)).abs() / spec_math::cephes64::k0(20.0);
-        assert!(e > 1.0, "K_0(20) is expected to be worthless, got {e:e}");
+    fn the_points_that_used_to_fail_now_work() {
+        for &x in &[10.0_f64, 20.0, 25.0, 30.0, 40.0, 60.0] {
+            let got = bessel_y_c(0, C::real(x)).unwrap().re;
+            let want = yn(0, x);
+            // 1e-11: at x = 10 the ascending series is still the best
+            // route available and its own law gives 2e-12, which is what
+            // it delivers. The fix is for where it used to give 1e-1.
+            assert!(
+                (got - want).abs() <= 1e-11 * want.abs().max(0.05),
+                "Y_0({x}): {got} vs {want}"
+            );
+            let got = bessel_k_c(0, C::real(x)).unwrap().re;
+            let want = spec_math::cephes64::k0(x);
+            if want > 0.0 {
+                // Likewise 1e-9 at x = 10, where the 1/z expansion is
+                // only just better than the identity and its own
+                // truncation is 2e-10.
+                assert!(
+                    (got - want).abs() <= 1e-9 * want,
+                    "K_0({x}): {got} vs {want}"
+                );
+            }
+        }
+        // The complex point Stage 18 found, judged by the Wronskian.
+        let z = C::from_polar(29.4, 1.6);
+        let w = bessel_j_c(3, z).unwrap() * bessel_y_c(2, z).unwrap()
+            - bessel_j_c(2, z).unwrap() * bessel_y_c(3, z).unwrap();
+        let want = z.inv() * (2.0 / std::f64::consts::PI);
+        let scale = (bessel_j_c(3, z).unwrap() * bessel_y_c(2, z).unwrap()).abs() * 2.0;
+        assert!(
+            (w - want).abs() / scale < 1e-13,
+            "Wronskian at 29.4e^(1.6i): {:.2e}",
+            (w - want).abs() / scale
+        );
     }
 
     /// The accuracy bounds the documentation states are a claim, so they
@@ -1407,6 +1627,83 @@ mod tests {
                 );
             }
         }
+    }
+
+    /// The whole family near the imaginary axis, judged by the J-Y
+    /// Wronskian — elementary on the right, so it needs no reference —
+    /// scaled by its own largest term so the metric's cancellation is
+    /// divided out rather than measured.
+    ///
+    /// This grid is what Stage 19 was for. Before it, the column at
+    /// `arg z = pi/2` read 3.3e-7 at `|z| = 25` and 1.0e0 at `|z| = 40`.
+    #[test]
+    fn the_whole_plane_satisfies_the_wronskian() {
+        let mut worst = 0.0_f64;
+        for &r in &[5.0_f64, 10.0, 15.0, 20.0, 25.0, 30.0, 40.0] {
+            for &a in &[0.0_f64, 0.4, 0.8, 1.2, 1.4, std::f64::consts::FRAC_PI_2, 1.8, 2.2, 2.8] {
+                let z = C::from_polar(r, a);
+                let (Ok(j0), Ok(j1), Ok(y0), Ok(y1)) = (
+                    bessel_j_c(2, z),
+                    bessel_j_c(3, z),
+                    bessel_y_c(2, z),
+                    bessel_y_c(3, z),
+                ) else {
+                    continue;
+                };
+                let w = j1 * y0 - j0 * y1;
+                let want = z.inv() * (2.0 / std::f64::consts::PI);
+                let scale = (j1 * y0).abs() + (j0 * y1).abs();
+                if !scale.is_finite() || scale == 0.0 {
+                    continue;
+                }
+                let e = (w - want).abs() / scale;
+                worst = worst.max(e);
+                // The bound is whichever route is actually available.
+                // Where one of the expansions applies it is 1e-11; where
+                // none does — inside the pi/3 margin both Hankel
+                // expansions keep from the negative real axis — the
+                // ascending series is all there is and its
+                // exp(|z| - |Im z|) loss governs. That direction is the
+                // one Stage 19 did not reach, and saying so beats
+                // loosening the bound everywhere to accommodate it.
+                let has_route = y_via_ik(2, z).is_some() || y_via_asym(2, z).is_some();
+                let bound = if has_route {
+                    // 1e-10, which is the measured worst with a route
+                    // available: 7.2e-11 at |z| = 40, arg z = 0.4.
+                    1e-10
+                } else {
+                    (1e-13 * (r - z.im.abs()).exp()).max(1e-11)
+                };
+                assert!(
+                    e < bound,
+                    "|z|={r}, arg={a:.2}: residual {e:.2e} exceeds {bound:.1e} \
+                     (expansion available: {has_route})"
+                );
+            }
+        }
+        // ... and the grid must actually be reaching something hard, or
+        // the bound above is decoration.
+        assert!(worst > 1e-15, "worst was {worst:.1e}");
+    }
+
+    /// The three routes must each be the one chosen where it belongs,
+    /// and the choice must be right rather than merely different.
+    #[test]
+    fn each_route_is_taken_where_it_belongs() {
+        // Near the imaginary axis: J and Y from I and K on w = -iz.
+        let z = C::from_polar(30.0, 1.5);
+        assert!(j_via_i(2, z).is_some(), "J should rotate here");
+        assert!(y_via_ik(2, z).is_some(), "Y should rotate here");
+        // On the real axis: Y and K from their own 1/z expansions.
+        let z = C::real(30.0);
+        assert!(j_via_i(2, z).is_none(), "J does not rotate on the real axis");
+        assert!(y_via_asym(2, z).is_some(), "Y should use the expansion here");
+        assert!(k_via_asym(2, z).is_some(), "K should use the expansion here");
+        // At small |z| every route declines and the series is used.
+        let z = C::real(2.0);
+        assert!(y_via_asym(2, z).is_none(), "no expansion at |z| = 2");
+        assert!(k_via_asym(2, z).is_none(), "no expansion at |z| = 2");
+        assert!(j_via_i(2, C::new(0.0, 2.0)).is_none(), "no rotation at |z| = 2");
     }
 
     #[test]

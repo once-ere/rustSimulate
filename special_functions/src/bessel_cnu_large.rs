@@ -83,7 +83,16 @@ pub type Cand = Option<(C, f64)>;
 /// truncation estimate structurally cannot tell you, which is why it is
 /// checked separately rather than folded into a safety factor.
 fn order_is_small_enough(nu: C, z: C) -> bool {
-    (nu * nu * 4.0).abs() <= 2.0 * z.abs()
+    let mu = (nu * nu * 4.0).abs();
+    // `8|z|` is the condition that the FIRST ratio `|mu - 1|/(8|z|)` is
+    // below 1, i.e. the terms start shrinking immediately. That is
+    // enough for a real order, where the coefficients are real and the
+    // series behaves. It is not enough once the order is complex: at
+    // `nu = 0.5 + 5i` and `|z| = 22` the terms shrink but slowly, and
+    // the actual error ran 2163 times the truncation estimate. So a
+    // complex order is held to the stricter `2|z|`.
+    let limit = if nu.im == 0.0 { 8.0 } else { 2.0 };
+    mu <= limit * z.abs()
 }
 
 /// Floor on any estimate.

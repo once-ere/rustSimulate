@@ -67,8 +67,24 @@ use crate::complex::Complex64 as C;
 use crate::sph_bessel::{sph_j, sph_j_prime, sph_y, sph_y_prime};
 
 /// Assemble `J + s i Y` where `s` is `+1` for `H1` and `-1` for `H2`.
-fn combine(j: C, y: C, s: f64) -> C {
-    j + C::I * y * s
+///
+/// Refuses a non-finite result. Far above the real axis `J` and `Y` are
+/// each about `exp(|Im z|)` while `H1` is about `exp(-Im z)`, so at
+/// `Im z = 700` the ingredients are at the top of `f64` and their sum
+/// can come back `inf - inf`. Returning `NaN` from that is worse than
+/// returning nothing: use [`crate::bessel_scaled::hankel_h1_scaled_nu`],
+/// which never forms the large factor.
+fn combine(j: C, y: C, s: f64, what: &str, z: C) -> Result<C, String> {
+    let v = j + C::I * y * s;
+    if v.is_finite() {
+        Ok(v)
+    } else {
+        Err(format!(
+            "{what}: J and Y are about exp(|Im z|) at z = {z:?} and their combination \
+             left f64 range. The scaled form carries this without forming the \
+             exponential."
+        ))
+    }
 }
 
 /// `H1_n(z) = J_n(z) + i Y_n(z)` for **whole** order `n >= 0`
@@ -96,7 +112,7 @@ fn combine(j: C, y: C, s: f64) -> C {
 /// assert!(h1.im > 0.0, "Im H1_0(3) is Y_0(3), which is positive");
 /// ```
 pub fn hankel_h1_c(n: i32, z: C) -> Result<C, String> {
-    Ok(combine(bessel_j_c(n, z)?, bessel_y_c(n, z)?, 1.0))
+    combine(bessel_j_c(n, z)?, bessel_y_c(n, z)?, 1.0, "hankel_h1_c", z)
 }
 
 /// `H2_n(z) = J_n(z) - i Y_n(z)` for whole order `n >= 0`.
@@ -106,7 +122,7 @@ pub fn hankel_h1_c(n: i32, z: C) -> Result<C, String> {
 /// # Errors
 /// As [`hankel_h1_c`].
 pub fn hankel_h2_c(n: i32, z: C) -> Result<C, String> {
-    Ok(combine(bessel_j_c(n, z)?, bessel_y_c(n, z)?, -1.0))
+    combine(bessel_j_c(n, z)?, bessel_y_c(n, z)?, -1.0, "hankel_h2_c", z)
 }
 
 /// `H1_nu(z)` for any **real** order, integer or not.
@@ -136,7 +152,7 @@ pub fn hankel_h2_c(n: i32, z: C) -> Result<C, String> {
 /// assert!((got - want).abs() < 1e-12);
 /// ```
 pub fn hankel_h1_nu(nu: f64, z: C) -> Result<C, String> {
-    Ok(combine(bessel_j_nu(nu, z)?, bessel_y_nu(nu, z)?, 1.0))
+    combine(bessel_j_nu(nu, z)?, bessel_y_nu(nu, z)?, 1.0, "hankel_h1_nu", z)
 }
 
 /// `H2_nu(z)` for any real order.
@@ -144,7 +160,7 @@ pub fn hankel_h1_nu(nu: f64, z: C) -> Result<C, String> {
 /// # Errors
 /// As [`hankel_h1_nu`].
 pub fn hankel_h2_nu(nu: f64, z: C) -> Result<C, String> {
-    Ok(combine(bessel_j_nu(nu, z)?, bessel_y_nu(nu, z)?, -1.0))
+    combine(bessel_j_nu(nu, z)?, bessel_y_nu(nu, z)?, -1.0, "hankel_h2_nu", z)
 }
 
 /// The derivative of any cylinder function,

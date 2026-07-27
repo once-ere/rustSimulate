@@ -830,10 +830,16 @@ mod tests {
         let got = get(call_ok("bessel_y_scaled", &[n(0.0), n(40.0)]));
         let want = sf::cephes::cephes64::yv(0.0, 40.0);
         assert!((got.re - want).abs() < 1e-13, "Y_0(40): {} vs {want}", got.re);
-        // ... and the plain form is wrong in its first digit there,
-        // which is the entire reason these exist.
-        let old = get(call_ok("bessel_y_z", &[n(0.0), n(40.0)]));
-        assert!((old.re - want).abs() / want.abs() > 0.1, "plain Y_0(40) = {}", old.re);
+        // The plain form used to be wrong in its first digit here,
+        // which was the entire reason the scaled ones existed. Stage 19
+        // fixed it at the source, so the two now agree — asserted, so a
+        // regression is caught from both sides.
+        let plain = get(call_ok("bessel_y_z", &[n(0.0), n(40.0)]));
+        assert!(
+            (plain.re - want).abs() <= 1e-12 * want.abs(),
+            "bessel_y_z(0, 40) should now be right too: {}",
+            plain.re
+        );
 
         // exp(x) K_{1/2}(x) = sqrt(pi/2x) exactly, at a magnitude where
         // the unscaled K_{1/2} is far below the smallest f64.

@@ -956,16 +956,17 @@ mod tests {
                 got.re
             );
         }
-        // ... and the contrast, so the improvement is measured and not
-        // merely claimed: at x = 40 the old route is wrong in its first
-        // digit. If this ever stops being true the improvement has been
-        // absorbed elsewhere and this test should be revisited, not
-        // deleted.
-        let old = bessel_y_c(0, C::real(40.0)).unwrap().re;
+        // This used to assert the CONTRAST — that the unscaled route was
+        // wrong in its first digit at x = 40. Stage 19 fixed
+        // `bessel_y_c` itself, so the contrast is gone and the two now
+        // agree. Asserting the agreement is what keeps the record: if
+        // `bessel_y_c` ever regresses, this fails here as well as in its
+        // own module.
+        let unscaled = bessel_y_c(0, C::real(40.0)).unwrap().re;
         let want = yv(0.0, 40.0);
         assert!(
-            (old - want).abs() / want.abs() > 0.1,
-            "the unscaled route is supposed to be badly wrong at x = 40, got {old} vs {want}"
+            (unscaled - want).abs() <= 1e-12 * want.abs(),
+            "bessel_y_c(0, 40) should now be right too: {unscaled} vs {want}"
         );
     }
 

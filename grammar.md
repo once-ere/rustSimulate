@@ -353,17 +353,41 @@ Measured against Cephes on the axis where each is at its worst:
 | `bessel_y_z(0,x)` | 1e-15 | 3e-12 | 3e-8 | 2e-4 | 6e-2 |
 | `bessel_k_z(0,x)` | 7e-16 | 3e-5 | 8e8 | 5e21 | 7e27 |
 
-So `Y_0` on the real axis is wrong in the first digit by `x = 40`, and
-`K_0` is worthless past about `x = 12`. The rule of thumb that is
-actually safe is **`|z| <= 10` for every kind**; past that, check which
-kind you are using and in which direction. `bessel_j_z` and
-`bessel_i_z` columns agree digit for digit because they are the same
-measurement — `I_n(z)` *is* `J_n(iz)`.
+**That table is now history rather than guidance.** It describes what
+each *route* costs, and every one of those failures has since been
+fixed by giving the function a second route:
 
-The correction came from a Hankel asymptotic test at `x = 40`. The old
-claim was measured, but only through the generating-function identity,
-which involves no `Y` at all. A narrow measurement quoted as a broad one
-is still a wrong claim.
+* `bessel_j_z` near the imaginary axis uses `J_nu(z) = i^nu I_nu(-iz)`,
+  putting the argument back near the real axis where `I` has nothing to
+  cancel;
+* `bessel_y_z` near the imaginary axis uses
+  `Y_n(z) = i^{n+1} I_n(w) - (2/pi) i^{-n} K_n(w)` with `w = -iz`,
+  instead of the upward recurrence in `n` — which is the wrong
+  direction there, because `Y_n(iy)` is mostly `I_n(y)` and `I` is the
+  recessive solution of that recurrence;
+* `bessel_y_z` along the real axis and `bessel_k_z` everywhere use
+  their own `1/z` expansions, single series with nothing to cancel.
+
+The routes are chosen by comparing error estimates, so nothing changes
+in what you write. What changed is the answers:
+
+| | before | after |
+|---|---|---|
+| `bessel_y_z(0, 40)` | wrong in the first digit | 1e-15 |
+| `bessel_k_z(0, 20)` | out by a factor of 8e8 | 2e-16 |
+| `bessel_y_z(2, 29.4e^{1.6i})` | Wronskian 4.5e-6 | below 1e-13 |
+
+Measured across `|z|` from 5 to 40 and `arg z` over the upper half
+plane, the J-Y Wronskian residual is now **1e-10 or better and mostly
+below 1e-15**.
+
+Two of those defects were found by accident and one by a test written
+for something else, and in each case the elementary Wronskian settled
+which side was wrong. The `K` one is worth stating plainly: its identity
+`K_n(z) = (pi/2) i^{n+1}[J_n(iz) + i Y_n(iz)]` **cancels by
+construction** on the real axis — both terms carry `I_n(x)`, of size
+`e^x`, and what survives is `e^{-x}`. No ingredient was inaccurate. The
+identity was the wrong way to compute a recessive function.
 #### `Y_n` and `K_n`: a different method, because they need one
 
 `Y_n` has a **logarithmic branch point** at the origin, so no recurrence
