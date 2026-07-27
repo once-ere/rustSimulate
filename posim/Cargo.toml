@@ -8,6 +8,7 @@ description = "physical_object simulator: lexer + stack machine + notebook REPL 
 [dependencies]
 physical_object = { path = "../physical_object" }
 special_functions = { path = "../special_functions" }
+quantum = { path = "../quantum" }
 
 [[bin]]
 name = "posim"

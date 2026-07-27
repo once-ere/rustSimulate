@@ -19,6 +19,7 @@ mod lexer;
 mod machine;
 mod notebook;
 mod parser;
+mod qm;
 mod scene;
 mod special;
 mod vm;

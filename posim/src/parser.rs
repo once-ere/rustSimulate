@@ -67,6 +67,32 @@
 //!                                                  AS-registered names *)
 //! expr     := term { ("+" | "-") term } ;
 //! term     := unary { ("*" | "/") unary } ;
+//! qmcmd    := [ "STATUS" ]
+//!           | "GRID" expr expr expr
+//!           | "POTENTIAL" ( "ZERO"
+//!                         | "BARRIER" expr expr expr
+//!                         | "WELL" expr expr expr
+//!                         | IDENT )              (* a DEF'd V(x)        *)
+//!           | "MASS" expr | "HBAR" expr
+//!           | "STATES" expr | "STATE" expr
+//!           | "PACKET" expr expr expr
+//!           | "STEP" expr | "RUN" expr [ "STEPS" expr ]
+//!           | "NORM" | "ENERGY" | "POSITION" | "MOMENTUM"
+//!           | "PROB" expr expr
+//!           | "DENSITY" | "RESET" ;
+//!
+//! (* The QM subcommand word is read as an IDENT-or-keyword rather than
+//!    being lexed as a keyword of its own, because `run`, `step`,
+//!    `state`, `energy`, `momentum` and `reset` are ALREADY keywords
+//!    here. Matching on the lowercased text keeps the whole quantum
+//!    vocabulary out of the global keyword namespace: `QM` is the only
+//!    word this family reserves.
+//!
+//!    Argument lists accept an optional comma between arguments. That
+//!    is not decoration: `QM POTENTIAL WELL 5 -2 2` parses `-2` as
+//!    SUBTRACTION, yielding two arguments where three were wanted.
+//!    `5, -2, 2` is unambiguous. *)
+//!
 //! unary    := "-" unary | atom ;
 //! atom     := NUMBER | IMAGINARY | STRING
 //!           | "[" expr { "," expr } "]" | "(" expr ")"
@@ -380,6 +406,10 @@ impl Parser {
                 let n = self.expect_number("an object index")?;
                 prog.push(Instr::Laplace(n as usize));
             }
+            TokKind::Keyword(Keyword::Qm) => {
+                self.pos += 1;
+                prog.extend(self.qm_command()?);
+            }
             TokKind::Keyword(Keyword::Reset) => {
                 self.pos += 1;
                 prog.push(Instr::Reset);
@@ -578,6 +608,125 @@ impl Parser {
             });
         }
         Ok(Path { root, field, comp })
+    }
+
+    /// `QM <word> [args]`.
+    ///
+    /// The subcommand word is read with [`Self::expect_field`], which
+    /// accepts an identifier OR a keyword — necessary because `run`,
+    /// `step`, `energy`, `momentum`, `state` and `reset` are already
+    /// keywords in this language. Matching on the lowercased text keeps
+    /// the QM vocabulary out of the global keyword namespace entirely,
+    /// so `QM` is the only word this family reserves.
+    ///
+    /// Numeric arguments are ordinary expressions, compiled before the
+    /// instruction so it can pop them.
+    fn qm_command(&mut self) -> Result<Vec<Instr>, String> {
+        use crate::qm::QmCmd;
+        let mut prog = Vec::new();
+        // bare `QM` reports status
+        if self.peek().is_none() {
+            return Ok(vec![Instr::Qm(QmCmd::Status)]);
+        }
+        let word = self.expect_field()?;
+        // Arguments may be separated by spaces or by commas. Commas
+        // are not decoration: `qm potential well 5 -2 2` parses the
+        // `-2` as SUBTRACTION, giving `(5-2)` and `2` — two arguments
+        // where three were wanted. Writing `5, -2, 2` is unambiguous.
+        // Space separation is kept because it reads better when every
+        // argument is positive, which is the common case.
+        let args = |me: &mut Self, n: usize, p: &mut Vec<Instr>| -> Result<(), String> {
+            for i in 0..n {
+                if i > 0 {
+                    if let Some(Token { kind: TokKind::Comma, .. }) = me.peek() {
+                        me.pos += 1;
+                    }
+                }
+                me.expr(p)?;
+            }
+            Ok(())
+        };
+        let cmd = match word.as_str() {
+            "status" => QmCmd::Status,
+            "grid" => {
+                args(self, 3, &mut prog)?;
+                QmCmd::Grid
+            }
+            "potential" => {
+                use crate::qm::PotentialSpec;
+                let name = self.expect_field()?;
+                match name.as_str() {
+                    "zero" | "free" => QmCmd::Potential(PotentialSpec::Zero),
+                    "barrier" => {
+                        args(self, 3, &mut prog)?;
+                        QmCmd::Potential(PotentialSpec::Barrier)
+                    }
+                    "well" => {
+                        args(self, 3, &mut prog)?;
+                        QmCmd::Potential(PotentialSpec::Well)
+                    }
+                    _ => QmCmd::Potential(PotentialSpec::Named(name)),
+                }
+            }
+            "mass" => {
+                args(self, 1, &mut prog)?;
+                QmCmd::Mass
+            }
+            "hbar" => {
+                args(self, 1, &mut prog)?;
+                QmCmd::Hbar
+            }
+            "states" => {
+                args(self, 1, &mut prog)?;
+                QmCmd::States
+            }
+            "state" => {
+                args(self, 1, &mut prog)?;
+                QmCmd::LoadState
+            }
+            "packet" => {
+                args(self, 3, &mut prog)?;
+                QmCmd::Packet
+            }
+            "step" => {
+                args(self, 1, &mut prog)?;
+                QmCmd::Step
+            }
+            "run" => {
+                self.expr(&mut prog)?;
+                // `STEPS <n>` is optional; default to 1 step
+                let has_steps = matches!(
+                    self.peek(),
+                    Some(Token { kind: TokKind::Keyword(Keyword::Steps), .. })
+                );
+                if has_steps {
+                    self.pos += 1;
+                    self.expr(&mut prog)?;
+                } else {
+                    prog.push(Instr::Push(Value::Num(1.0)));
+                }
+                QmCmd::Run
+            }
+            "norm" => QmCmd::Norm,
+            "energy" => QmCmd::Energy,
+            "position" | "x" => QmCmd::Position,
+            "momentum" | "p" => QmCmd::Momentum,
+            "prob" | "probability" => {
+                args(self, 2, &mut prog)?;
+                QmCmd::Prob
+            }
+            "density" => QmCmd::Density,
+            "reset" => QmCmd::Reset,
+            other => {
+                return Err(format!(
+                    "QM: unknown subcommand `{other}` (grid, potential, mass, hbar, states, \
+                     state, packet, step, run, norm, energy, position, momentum, prob, \
+                     density, status, reset)"
+                ))
+            }
+        };
+        prog.push(Instr::Qm(cmd));
+        Ok(prog)
     }
 
     fn expr(&mut self, prog: &mut Vec<Instr>) -> Result<(), String> {

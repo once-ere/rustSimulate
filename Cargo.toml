@@ -1,11 +1,13 @@
 [workspace]
 resolver = "2"
 members = [
+    "quantum",
     "physical_object",
     "posim",
     "special_functions",
 ]
-default-members = ["posim"]
+default-members = [
+    "quantum","posim"]
 # Vendored third-party code is a dependency, never a workspace member:
 # excluding it keeps `cargo test --workspace` reporting OUR tests only,
 # and stops upstream lint settings leaking into this workspace.

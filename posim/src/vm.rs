@@ -245,6 +245,7 @@ pub enum Instr {
     Help,
     /// Graphical scene window command (see [`SceneCmd`]).
     Scene(SceneCmd),
+    Qm(crate::qm::QmCmd),
     /// `COLLIDE [ON|OFF]` — `None` reports the current status.
     Collide(Option<bool>),
     /// `CONTACTS` — list the contacts of the last STEP/RUN.
@@ -291,6 +292,8 @@ pub struct SimState {
     pub globals: BTreeMap<String, Value>,
     /// User-defined functions (`DEF name(...) { ... }`).
     pub functions: BTreeMap<String, FuncDef>,
+    /// The one-dimensional quantum problem, if any.
+    pub qm: crate::qm::QmState,
     /// User names registered with `NEW ... AS name` → object index
     /// (kept renumbered by DEL / BOX OFF).
     pub names: BTreeMap<String, usize>,
@@ -313,6 +316,7 @@ impl Default for SimState {
             pending_dumbbell: None,
             globals: BTreeMap::new(),
             functions: BTreeMap::new(),
+            qm: crate::qm::QmState::default(),
             names: BTreeMap::new(),
             env_stack: Vec::new(),
         }
@@ -386,6 +390,29 @@ posim command language (case-insensitive keywords):
                             complex number; + - * / all accept them
   RESET                     clear the system
   HELP                      this text
+one-dimensional quantum mechanics (see grammar.md):
+  QM                        report the current quantum setup
+  QM GRID <x_min> <x_max> <n>
+                            the domain and its interior point count.
+                            The walls are infinite: psi = 0 outside
+  QM POTENTIAL ZERO         free particle
+  QM POTENTIAL BARRIER <v0>, <x1>, <x2>
+  QM POTENTIAL WELL <depth>, <x1>, <x2>
+  QM POTENTIAL <function>   sample a DEF'd function of one argument
+  QM MASS <m> | QM HBAR <h> default 1 each
+  QM STATES <k>             the k lowest bound-state energies
+  QM STATE <n>              load bound state n as psi
+  QM PACKET <x0> <sigma> <k0>
+                            a normalised Gaussian wavepacket
+  QM STEP <dt> | QM RUN <t> [STEPS <n>]
+                            Crank-Nicolson propagation (unitary)
+  QM NORM | QM ENERGY | QM POSITION | QM MOMENTUM
+  QM PROB <a> <b>           probability in [a, b]
+  QM DENSITY                |psi|^2 as a list
+  QM RESET                  forget the quantum problem
+                            NOTE: separate negative arguments with
+                            commas — `well 5 -2 2` reads `5 - 2` as
+                            subtraction; write `well 5, -2, 2`
 special functions (see grammar.md; orders must be WHOLE numbers):
   spherical Bessel          sph_j(n,x) sph_y(n,x)
                             sph_j_prime(n,x) sph_y_prime(n,x)
@@ -1024,6 +1051,14 @@ fn exec_one(instr: &Instr, state: &mut SimState, stack: &mut Vec<Value>) -> Resu
             let out = exec_scene(cmd, state, stack)?;
             stack.push(Value::Str(out));
         }
+        Instr::Qm(cmd) => {
+            let out = crate::qm::exec_qm(cmd, state, stack)?;
+            /* QM DENSITY pushes its own list value; everything else
+             * reports text */
+            if !out.is_empty() {
+                stack.push(Value::Str(out));
+            }
+        }
         Instr::Collide(mode) => {
             if let Some(on) = mode {
                 state.system.collide_enabled = *on;
@@ -1528,6 +1563,16 @@ const MAX_CALL_DEPTH: usize = 32;
 /// ones take their defaults), pushes a call frame, runs the body lines
 /// through the ordinary compile/execute pipeline, and returns the last
 /// line's value.
+/// `QM POTENTIAL` needs to evaluate a user function at each grid point,
+/// and it lives in another module.
+pub fn call_user_function_public(
+    name: &str,
+    args: Vec<Value>,
+    state: &mut SimState,
+) -> Result<Value, String> {
+    call_user_function(name, args, state)
+}
+
 fn call_user_function(name: &str, args: Vec<Value>, state: &mut SimState) -> Result<Value, String> {
     let f = state.functions.get(name).cloned().expect("caller checked");
     if args.len() > f.params.len() {

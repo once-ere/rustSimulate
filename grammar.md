@@ -875,6 +875,65 @@ refused, a missing non-default argument fails as
 arguments fail naming the signature, and the depth cap fails as
 `function call depth limit (32) exceeded`.
 
+### 5.10 `QM` — one-dimensional quantum mechanics
+
+The `QM` family solves the two problems a 1-D quantum solver is for:
+**bound states** in an arbitrary potential, and **time evolution** of a
+wavepacket. A session carries one quantum problem, built up command by
+command.
+
+| command | meaning |
+|---|---|
+| `QM` | report what is currently set up |
+| `QM GRID <x_min> <x_max> <n>` | the domain and its `n` interior points |
+| `QM POTENTIAL ZERO` | free particle |
+| `QM POTENTIAL BARRIER <v0>, <x1>, <x2>` | `v0` on `[x1, x2]`, zero elsewhere |
+| `QM POTENTIAL WELL <depth>, <x1>, <x2>` | `-depth` on `[x1, x2]` |
+| `QM POTENTIAL <function>` | sample a `DEF`ined `V(x)` onto the grid |
+| `QM MASS <m>` / `QM HBAR <h>` | both default to 1 |
+| `QM STATES <k>` | the `k` lowest bound-state energies |
+| `QM STATE <n>` | load bound state `n` as psi |
+| `QM PACKET <x0> <sigma> <k0>` | a normalised Gaussian wavepacket |
+| `QM STEP <dt>` / `QM RUN <t> [STEPS <n>]` | Crank–Nicolson propagation |
+| `QM NORM`, `QM ENERGY`, `QM POSITION`, `QM MOMENTUM` | observables |
+| `QM PROB <a> <b>` | probability of being found in `[a, b]` |
+| `QM DENSITY` | `\|psi\|²` as a list |
+| `QM RESET` | forget the quantum problem |
+
+Four things are worth knowing before you start, because each will
+otherwise cost you an afternoon.
+
+**The walls are infinite and they reflect.** `QM GRID` pins psi to zero
+just outside the domain, which is exactly right for bound states and a
+trap for scattering: a packet that reaches a wall bounces back and
+corrupts your transmission number. `QM PACKET` and `QM RUN` therefore
+*watch for it* and print a warning when probability accumulates within
+5 % of either wall. Take the warning seriously — widen the domain.
+
+**The potential is sampled when the command runs.** `QM POTENTIAL v`
+evaluates `v(x)` at each grid point once and stores the numbers. Editing
+`v` afterwards changes nothing until you re-issue the command. The
+status line says so.
+
+**Separate negative arguments with commas.** `QM POTENTIAL WELL 5 -2 2`
+reads `5 - 2` as subtraction and then finds only two arguments where
+three were wanted. Write `5, -2, 2` — or `5 (-2) 2`. Space separation
+is fine when everything is positive, which is the usual case.
+
+**Why `BARRIER` and `WELL` are built in.** This language has no
+comparison operators, so a piecewise potential cannot be written as a
+`DEF` at all — and a square barrier is *the* canonical 1-D problem. They
+are a deliberate workaround for a language limitation, not a preference
+for built-ins. Any smooth potential should be a `DEF`.
+
+Bound states are found by diagonalising a dense `n x n` matrix with the
+cyclic Jacobi method, which is `O(n³)`: comfortable to a few hundred
+points, slow past about a thousand. Propagation is `O(n)` per step and
+has no such limit, so a scattering run can afford a much finer grid than
+a bound-state calculation.
+
+---
+
 ## 6. The notebook (cells, editing, magics)
 
 ### 6.1 Cells
@@ -994,7 +1053,7 @@ write. When the program ends, the value on top of the stack becomes
 
 ---
 
-## 9. Fifteen worked examples
+## 9. Sixteen worked examples
 
 All transcripts below are genuine program output (interactive sessions
 are shown as they appear when typed by hand).
@@ -1675,6 +1734,87 @@ There is no Hermite polynomial of order 2.5. The alternative — silently
 computing \(H_2\) — would hand you a plausible number with no
 indication anything went wrong, and you would carry it through the rest
 of the calculation.
+
+---
+
+### Example 16 — quantum mechanics: bound states, then tunnelling
+
+The `QM` family solves an actual quantum problem in the notebook. Start
+with the harmonic oscillator, whose answer everyone knows: with
+\(\hbar = m = \omega = 1\) the spectrum is \(E_n = n + \tfrac12\).
+The potential is an ordinary user function.
+
+```
+In[1]:= def v(x) { 0.5 * x * x }
+Out[1]= function v(1 parameter(s)) defined — 1 body line(s)
+In[2]:= qm grid -8 8 250
+Out[2]= grid [-8, 8] with 250 interior points, h = 0.063745 (potential and psi cleared)
+In[3]:= qm potential v
+Out[3]= potential `v` sampled at 250 points, V in [0.000507928445580228, 31.49207155441977] (psi cleared)
+In[4]:= qm states 4
+Out[4]= 4 lowest bound state(s):
+  E[0] = 0.499872985615
+  E[1] = 1.499364798834
+  E[2] = 2.498348101796
+  E[3] = 3.496822505539
+```
+
+0.4999, 1.4994, 2.4983, 3.4968 against an exact 0.5, 1.5, 2.5, 3.5. The
+error grows with `n` — that is not noise, it is the three-point stencil:
+higher states oscillate faster and a coarse grid resolves them less
+well, with the error tracking \(2n^2+2n+1\).
+
+Now the sharpest test available. A stationary state is *stationary*, so
+loading one and propagating it must change nothing:
+
+```
+In[5]:= qm state 1
+Out[5]= psi = bound state 1, E = 1.499364798834, t reset to 0
+In[6]:= qm energy
+Out[6]= 1.499364798833686
+In[7]:= qm run 4 steps 400
+Out[7]= t = 4 (400 step(s) of dt = 0.01), <E> = 1.499364798834, norm drift = 4.219e-15
+In[8]:= qm energy
+Out[8]= 1.499364798833692
+```
+
+Four hundred Crank–Nicolson steps moved the energy by 6e-15 — one bit —
+and the norm by 4e-15. The Cayley operator is unitary for *any* time
+step, so that drift measures the linear solver rather than `dt`; and the
+energy holding still couples the eigensolver to the propagator, so it
+would break if either were wrong or if they disagreed about the
+Hamiltonian.
+
+Now tunnelling, the problem with no classical analogue. A packet of
+central energy \(E_0 = k_0^2/2 = 2\) is fired at a barrier of height
+2.5 — *above* its energy, so classically nothing gets through:
+
+```
+In[1]:= qm grid -100 100 2000
+Out[1]= grid [-100, 100] with 2000 interior points, h = 0.099950 (potential and psi cleared)
+In[2]:= qm potential barrier 2.5 0 1
+Out[2]= potential `barrier 2.5 on [0, 1]` sampled at 2000 points, V in [0, 2.5] (psi cleared)
+In[3]:= qm packet -25 2 2
+Out[3]= psi = Gaussian packet at x0 = -25, sigma = 2, k0 = 2, t = 0
+In[4]:= qm run 30 steps 3000
+Out[4]= t = 30 (3000 step(s) of dt = 0.01), <E> = 2.023971780446, norm drift = 3.018e-13
+In[5]:= qm prob 1 100
+Out[5]= 0.327563019391693
+In[6]:= qm prob -100 0
+Out[6]= 0.672436408645103
+```
+
+**33 % of the particle got through a barrier it did not have the energy
+to cross.** The two channels add to 1.000000 — nothing was lost, and
+nothing reached a wall (there was no warning). The domain is 200 wide
+precisely so the reflected packet has nowhere to bounce from within
+`t = 30`.
+
+Note the grid sizes. Bound states used 250 points because that
+calculation diagonalises a dense matrix and costs \(O(n^3)\);
+scattering used 2000 because propagation is \(O(n)\) per step and can
+afford the resolution. Choosing both to be the same would waste one or
+starve the other.
 
 ---
 
