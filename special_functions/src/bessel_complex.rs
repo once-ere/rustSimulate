@@ -851,6 +851,14 @@ pub fn bessel_i_nu(nu: f64, z: C) -> Result<C, String> {
 
 /// `Y_nu(z)` for real order and complex `z`.
 ///
+/// **Prefer [`crate::bessel_cnu::bessel_y_cnu`] unless `|z|` is small.**
+/// This is one route, not a selector: for non-integer `nu` it forms
+/// `[J_nu cos(nu pi) - J_{-nu}] / sin(nu pi)`, and `J_{-nu}` comes from
+/// an ascending series whose terms reach `exp(|z|)`. Past `|z| ~ 30`
+/// that has consumed every digit and the result is not merely
+/// inaccurate but wrong — 3.09e4 relative at `nu = 36.8, z = 54.46`.
+/// The selector routes around it and is accurate to 4.8e-13 there.
+///
 /// Non-integer order uses the reflection
 /// `Y_nu = [J_nu cos(nu pi) - J_{-nu}] / sin(nu pi)` (DLMF 10.2.3).
 /// **Near an integer that formula is 0/0**, so orders within
@@ -881,6 +889,18 @@ pub fn bessel_y_nu(nu: f64, z: C) -> Result<C, String> {
     let jp = bessel_j_nu(nu, z)?;
     let jm = bessel_j_nu(-nu, z)?;
     Ok((jp * c - jm) * (1.0 / s))
+    // NOTE (Stage 2I): this route is BADLY wrong for non-integer `nu`
+    // once `|z|` is large enough that the ascending series for
+    // `J_{-nu}` has cancelled away its digits — measured, a relative
+    // error of 3.09e4 at `nu = 36.8, z = 54.46`, and 2.18 at
+    // `nu = 36.8, z = 47.84`, adjudicated by the J-Y Wronskian against
+    // Cephes (whose residual there is 2.2e-23 to our 3.7e-3).
+    //
+    // It carries no guard yet because calibrating one honestly needs a
+    // sweep that has not been run. Until then, USE
+    // `crate::bessel_cnu::bessel_y_cnu`, which compares error estimates
+    // across routes and is accurate to 4.8e-13 at exactly those points
+    // — see `the_selector_is_accurate_where_the_raw_reflection_is_not`.
 }
 
 /// `K_nu(z)` for real order and complex `z`.

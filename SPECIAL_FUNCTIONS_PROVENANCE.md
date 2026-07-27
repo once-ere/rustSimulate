@@ -161,7 +161,7 @@ record is separate and detailed:
 
 ## 4. Test results, and what they actually establish
 
-**560 passed workspace-wide; zero failures; zero build warnings;
+**561 passed workspace-wide; zero failures; zero build warnings;
 `cargo clippy --workspace --all-targets` reports zero errors and zero
 warnings.**
 
@@ -368,10 +368,35 @@ Unit tests prove the pieces; three examples prove they do the job:
   served. The band named here is what the same measurement exposed as
   genuinely uncovered: before Stage 24 those points were accepted with
   error estimates up to **1e14 times too small**.
-- **A ridge near `z/ν ≈ 1.3`**, where `Y` reaches about 1e-7 at
-  moderate order — just outside the turning-point expansion's
-  validated neighbourhood (`|1 − x| ≤ 0.25`) and just inside where the
-  Debye coefficients begin to grow.
+- **`bessel_complex::bessel_y_nu` is wrong, not merely inaccurate, for
+  non-integer `ν` past `|z| ≈ 30`.** Stage 2I measured what was
+  recorded here as "a ridge near `z/ν ≈ 1.3` where `Y` reaches about
+  1e-7 at moderate order". That entry understated it by four decades:
+  the error is **3.09e4** relative at `ν = 36.8, z/ν = 1.48` and
+  **2.18** at `z/ν = 1.30`. The 1e-7 figure was simply the value at
+  `ν = 20.5`, where the sweep that produced it stopped.
+
+  The cause is in the ingredient, not the combination:
+  `Y_ν = [J_ν cos νπ − J_{−ν}]/sin νπ`, and `J_{−36.8}(54.5)` comes
+  from an ascending series whose terms reach `e^54 ≈ 3e23` to produce a
+  result of order 0.1.
+
+  Adjudicated by the J–Y Wronskian against Cephes — our residual
+  3.7e-3, Cephes 2.2e-23. **Cephes is right here**, the reverse of
+  Stages 15 and 19 where it was the looser party; which one is correct
+  has to be measured each time rather than assumed from precedent.
+
+  **`bessel_cnu::bessel_y_cnu` is unaffected** and accurate to 4.8e-13
+  at exactly those points, because it compares error estimates across
+  routes. `the_selector_is_accurate_where_the_raw_reflection_is_not`
+  pins both halves — the selector's accuracy and the raw route's
+  failure — so neither can change silently.
+
+  No guard has been added to the raw route yet: calibrating one
+  honestly needs a sweep that has not been run, and a hastily-tuned
+  threshold is the failure mode this project exists to avoid. The
+  function's documentation now says plainly that it is one route rather
+  than a selector, and points at the selector.
 - **A wider number type.** For `z` well below `ν`, `J` is below the
   smallest double and `Y` above the largest. The expansions determine
   those values; `f64` cannot carry them, and the routines say so and

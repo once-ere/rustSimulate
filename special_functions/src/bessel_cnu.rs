@@ -446,6 +446,57 @@ mod tests {
         }
     }
 
+    /// **The ridge, measured.** The selector is accurate exactly where
+    /// the raw reflection route is not.
+    ///
+    /// `SPECIAL_FUNCTIONS_PROVENANCE.md` carried this as "a ridge near
+    /// `z/nu ~ 1.3` where `Y` reaches about 1e-7 at moderate order".
+    /// Stage 2I measured it and the entry understated it badly: on
+    /// `bessel_complex::bessel_y_nu` the error is **3.09e4** relative at
+    /// `nu = 36.8, z/nu = 1.48` and **2.18** at `z/nu = 1.30`. The 1e-7
+    /// figure was the value at `nu = 20.5`, which is where the sweep
+    /// that recorded it happened to stop.
+    ///
+    /// The cause is inside the ingredient, not the combination:
+    /// `Y_nu = [J_nu cos(nu pi) - J_{-nu}]/sin(nu pi)`, and `J_{-36.8}`
+    /// at `z = 54` comes from an ascending series whose terms reach
+    /// `exp(54) ~ 3e23` to produce a result of order 0.1.
+    ///
+    /// The J-Y Wronskian adjudicated it against Cephes: our residual
+    /// 3.7e-3, Cephes 2.2e-23. Cephes is right and the raw route is
+    /// wrong — the reverse of Stages 15 and 19, where Cephes was the
+    /// looser party. Which one is right has to be measured each time.
+    ///
+    /// This pins the part that is verified: the selector compares
+    /// estimates across routes and lands on one that works.
+    #[test]
+    fn the_selector_is_accurate_where_the_raw_reflection_is_not() {
+        for &(nu, frac) in &[(36.8_f64, 1.48_f64), (36.8, 1.30), (20.5, 1.48), (12.3, 1.35)] {
+            let z = nu * frac;
+            let got = bessel_y_cnu(C::real(nu), C::real(z))
+                .unwrap_or_else(|e| panic!("nu = {nu}, z/nu = {frac}: {e}"));
+            let want = spec_math::cephes64::yv(nu, z);
+            let rel = (got.re - want).abs() / want.abs();
+            assert!(
+                rel < 1e-9,
+                "nu = {nu}, z/nu = {frac}: selector gave {} against Cephes {want} ({rel:.2e})",
+                got.re
+            );
+            // ...and the raw route really is the broken one, so this
+            // test cannot quietly stop being about anything.
+            let raw = crate::bessel_complex::bessel_y_nu(nu, C::real(z)).unwrap();
+            let raw_rel = (raw.re - want).abs() / want.abs();
+            if nu > 30.0 {
+                assert!(
+                    raw_rel > 1.0,
+                    "the raw reflection route is supposed to be badly wrong at nu = {nu}, \
+                     z/nu = {frac}; it gave {raw_rel:.2e}. If it has been fixed, this test \
+                     and the note on bessel_y_nu both need updating."
+                );
+            }
+        }
+    }
+
     /// The J-Y Wronskian `J_{nu+1} Y_nu - J_nu Y_{nu+1} = 2/(pi z)`
     /// (DLMF 10.5.2) holds for **every** order, complex included, and
     /// its right-hand side does not involve the order at all. That makes
