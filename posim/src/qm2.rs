@@ -463,7 +463,17 @@ pub fn exec_qm2(
             let g = ham.grid.clone();
             let per_frame = 10usize;
             let dt = total / (frames * per_frame) as f64;
+            // See the note in qm.rs: an animation that ignores the
+            // drive produces a silently wrong picture.
+            let drive = state.qm2.drive.clone();
             let prop = Propagator2::new(ham.clone(), dt)?;
+            let mut driven = match &drive {
+                Some((shape, _, _)) => {
+                    Some(DrivenPropagator2::new(ham.clone(), shape.clone(), dt)?)
+                }
+                None => None,
+            };
+            let t_start = state.qm2.time;
 
             // Downsample both axes: a browser cannot use more than a few
             // hundred cells per side, and the file grows as their product.
@@ -478,7 +488,16 @@ pub fn exec_qm2(
             let n0 = w.norm();
             for f in 0..frames {
                 if f > 0 {
-                    prop.run(&mut w, per_frame)?;
+                    advance_2d(
+                        &mut w,
+                        &prop,
+                        driven.as_mut(),
+                        drive.as_ref().map(|(_, _, t)| t.as_str()),
+                        state,
+                        per_frame,
+                        dt,
+                        t_start + dt * ((f - 1) * per_frame) as f64,
+                    )?;
                 }
                 worst = worst.max((w.norm() / n0 - 1.0).abs());
                 let d = w.density();
@@ -537,6 +556,41 @@ pub fn exec_qm2(
                 rows.len()
             ))
         }
+    }
+}
+
+/// Advance a 2-D wavefunction by `steps`, honouring a drive if set.
+#[allow(clippy::too_many_arguments)]
+fn advance_2d(
+    w: &mut Wavefunction2,
+    prop: &Propagator2,
+    driven: Option<&mut DrivenPropagator2>,
+    time_name: Option<&str>,
+    state: &mut SimState,
+    steps: usize,
+    dt: f64,
+    t0: f64,
+) -> Result<(), String> {
+    match (driven, time_name) {
+        (Some(dp), Some(name)) => {
+            for k in 0..steps {
+                let mid = t0 + dt * (k as f64 + 0.5);
+                let v = crate::vm::call_user_function_public(
+                    name,
+                    vec![Value::Num(mid)],
+                    state,
+                )?;
+                let amp = match v {
+                    Value::Num(y) => y,
+                    other => {
+                        return Err(format!("`{name}(t)` must return a number, got {other}"))
+                    }
+                };
+                dp.step(w, |_| amp)?;
+            }
+            Ok(())
+        }
+        _ => prop.run(w, steps),
     }
 }
 

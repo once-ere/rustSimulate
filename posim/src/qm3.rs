@@ -22,6 +22,7 @@
 //! Asking for more is refused up front rather than left to exhaust
 //! memory.
 
+use quantum::isosurface::marching_tetrahedra;
 use quantum::qm3d::{
     Axis, BoundStates3, DrivenPropagator3, Grid3, Hamiltonian3, Propagator3, Wavefunction3,
 };
@@ -56,6 +57,9 @@ pub enum Qm3Cmd {
     /// Pops frames, then total time; writes an HTML page showing the
     /// three marginal densities.
     Animate(String),
+    /// Pops the level fraction, the frame count, then the total time;
+    /// writes an HTML page with a rotatable isosurface.
+    Iso(String),
 }
 
 /// The 3-D problem carried by a session.
@@ -492,7 +496,17 @@ pub fn exec_qm3(
             let g = ham.grid.clone();
             let per_frame = 8usize;
             let dt = total / (frames * per_frame) as f64;
+            // See the note in qm.rs: ignoring the drive here made every
+            // frame identical, which is a silently wrong picture.
+            let drive = state.qm3.drive.clone();
             let prop = Propagator3::new(ham.clone(), dt)?;
+            let mut driven = match &drive {
+                Some((shape, _, _)) => {
+                    Some(DrivenPropagator3::new(ham.clone(), shape.clone(), dt)?)
+                }
+                None => None,
+            };
+            let t_start = state.qm3.time;
 
             // Three MARGINALS per frame rather than the volume: a volume
             // cannot be drawn on a 2-D canvas without an isosurface or
@@ -510,7 +524,16 @@ pub fn exec_qm3(
             };
             for f in 0..frames {
                 if f > 0 {
-                    prop.run(&mut w, per_frame)?;
+                    advance_3d(
+                        &mut w,
+                        &prop,
+                        driven.as_mut(),
+                        drive.as_ref().map(|(_, _, t)| t.as_str()),
+                        state,
+                        per_frame,
+                        dt,
+                        t_start + dt * ((f - 1) * per_frame) as f64,
+                    )?;
                 }
                 worst = worst.max((w.norm() / n0 - 1.0).abs());
                 xy.push(format!("[{}]", enc(&w.marginal(Axis::Z))));
@@ -543,10 +566,179 @@ pub fn exec_qm3(
             ))
         }
 
+        Qm3Cmd::Iso(path) => {
+            let level_frac = pop_num(stack)?;
+            let frames = pop_count(stack, "the frame count")?;
+            let total = pop_num(stack)?;
+            if frames == 0 {
+                return Err("QM3 ISO: ask for at least one frame".to_string());
+            }
+            if !total.is_finite() || total <= 0.0 {
+                return Err(format!("QM3 ISO: total time must be positive, got {total}"));
+            }
+            if !level_frac.is_finite() || level_frac <= 0.0 || level_frac >= 1.0 {
+                return Err(format!(
+                    "QM3 ISO: the level must be a fraction of the peak density, strictly \
+                     between 0 and 1, got {level_frac}"
+                ));
+            }
+            let ham = state.qm3.hamiltonian()?;
+            let mut w = state.qm3.wavefunction()?.clone();
+            let g = ham.grid.clone();
+            let per_frame = 8usize;
+            let dt = total / (frames * per_frame).max(1) as f64;
+            // See the note in qm.rs: ignoring the drive here made every
+            // frame identical, which is a silently wrong picture.
+            let drive = state.qm3.drive.clone();
+            let prop = Propagator3::new(ham.clone(), dt)?;
+            let mut driven = match &drive {
+                Some((shape, _, _)) => {
+                    Some(DrivenPropagator3::new(ham.clone(), shape.clone(), dt)?)
+                }
+                None => None,
+            };
+            let t_start = state.qm3.time;
+
+            // Meshing every grid point would put megabytes of triangles
+            // in the page. Subsample to at most this many per axis; the
+            // eye cannot use more through an orthographic projection.
+            const MAX_AXIS: usize = 28;
+            let sx = g.nx.div_ceil(MAX_AXIS).max(1);
+            let sy = g.ny.div_ceil(MAX_AXIS).max(1);
+            let sz = g.nz.div_ceil(MAX_AXIS).max(1);
+            let cols: Vec<usize> = (0..g.nx).step_by(sx).collect();
+            let rows: Vec<usize> = (0..g.ny).step_by(sy).collect();
+            let laps: Vec<usize> = (0..g.nz).step_by(sz).collect();
+            let dims = (cols.len(), rows.len(), laps.len());
+            if dims.0 < 2 || dims.1 < 2 || dims.2 < 2 {
+                return Err("QM3 ISO: the grid is too small to build a surface".to_string());
+            }
+
+            let mut meshes = Vec::with_capacity(frames);
+            let mut times = Vec::with_capacity(frames);
+            let mut tri_total = 0usize;
+            for f in 0..frames {
+                if f > 0 {
+                    advance_3d(
+                        &mut w,
+                        &prop,
+                        driven.as_mut(),
+                        drive.as_ref().map(|(_, _, t)| t.as_str()),
+                        state,
+                        per_frame,
+                        dt,
+                        t_start + dt * ((f - 1) * per_frame) as f64,
+                    )?;
+                }
+                let d = w.density();
+                let mut sub = Vec::with_capacity(dims.0 * dims.1 * dims.2);
+                let mut peak = 0.0_f64;
+                for &iz in &laps {
+                    for &iy in &rows {
+                        for &ix in &cols {
+                            let v = d[g.idx(ix, iy, iz)];
+                            peak = peak.max(v);
+                            sub.push(v);
+                        }
+                    }
+                }
+                let m = marching_tetrahedra(
+                    &sub,
+                    dims,
+                    (g.x(cols[0]), g.y(rows[0]), g.z(laps[0])),
+                    (
+                        g.hx() * sx as f64,
+                        g.hy() * sy as f64,
+                        g.hz() * sz as f64,
+                    ),
+                    peak * level_frac,
+                )?;
+                tri_total += m.triangle_count();
+                let verts = m
+                    .vertices
+                    .iter()
+                    .map(|p| format!("{:.3},{:.3},{:.3}", p[0], p[1], p[2]))
+                    .collect::<Vec<_>>()
+                    .join(",");
+                let tris = m
+                    .triangles
+                    .iter()
+                    .map(|t| format!("{},{},{}", t[0], t[1], t[2]))
+                    .collect::<Vec<_>>()
+                    .join(",");
+                meshes.push(format!("{{v:[{verts}],t:[{tris}]}}"));
+                times.push(format!("{:.4}", state.qm3.time + dt * (f * per_frame) as f64));
+            }
+            state.qm3.time += total;
+            state.qm3.psi = Some(w);
+
+            let span = (g.x_max - g.x_min)
+                .max(g.y_max - g.y_min)
+                .max(g.z_max - g.z_min);
+            let label = state
+                .qm3
+                .potential_name
+                .clone()
+                .unwrap_or_else(|| "unnamed".to_string());
+            let html = render_html_iso(
+                &meshes.join(",\n"),
+                &times.join(","),
+                &label,
+                level_frac,
+                span,
+                dims,
+            );
+            std::fs::write(path, &html)
+                .map_err(|e| format!("QM3 ISO: cannot write `{path}`: {e}"))?;
+            Ok(format!(
+                "wrote {path} — {frames} isosurface(s) at {:.0}% of peak density over t = {total}, \
+                 meshed on {}x{}x{}, {tri_total} triangles total. Drag to rotate.",
+                level_frac * 100.0,
+                dims.0,
+                dims.1,
+                dims.2
+            ))
+        }
+
         Qm3Cmd::Reset => {
             state.qm3 = Qm3State::fresh();
             Ok("3-D quantum state cleared".to_string())
         }
+    }
+}
+
+/// Advance a 3-D wavefunction by `steps`, honouring a drive if set.
+#[allow(clippy::too_many_arguments)]
+fn advance_3d(
+    w: &mut Wavefunction3,
+    prop: &Propagator3,
+    driven: Option<&mut DrivenPropagator3>,
+    time_name: Option<&str>,
+    state: &mut SimState,
+    steps: usize,
+    dt: f64,
+    t0: f64,
+) -> Result<(), String> {
+    match (driven, time_name) {
+        (Some(dp), Some(name)) => {
+            for k in 0..steps {
+                let mid = t0 + dt * (k as f64 + 0.5);
+                let v = crate::vm::call_user_function_public(
+                    name,
+                    vec![Value::Num(mid)],
+                    state,
+                )?;
+                let amp = match v {
+                    Value::Num(y) => y,
+                    other => {
+                        return Err(format!("`{name}(t)` must return a number, got {other}"))
+                    }
+                };
+                dp.step(w, |_| amp)?;
+            }
+            Ok(())
+        }
+        _ => prop.run(w, steps),
     }
 }
 
@@ -674,6 +866,156 @@ function loop(ts) {{
 }}
 document.getElementById('play').onclick=e=>{{playing=!playing;e.target.textContent=playing?'Pause':'Play';}};
 document.getElementById('rew').onclick=()=>{{i=0;draw();}};
+scrub.oninput=e=>{{i=+e.target.value;playing=false;
+  document.getElementById('play').textContent='Play';draw();}};
+draw(); requestAnimationFrame(loop);
+</script></body></html>
+"##
+    )
+}
+
+/// The rotatable isosurface page, self-contained.
+///
+/// Rendered by a **software rasteriser on a 2-D canvas**, not WebGL.
+/// WebGL would be faster and is technically self-contained, but it can
+/// fail silently on a machine with no GPU or a blocked context, and then
+/// the page shows nothing at all. A painter's-algorithm rasteriser over
+/// a few thousand triangles is fast enough here, works everywhere, and
+/// can be checked by reading pixels back.
+#[allow(clippy::too_many_arguments)]
+fn render_html_iso(
+    meshes: &str,
+    times: &str,
+    label: &str,
+    level_frac: f64,
+    span: f64,
+    dims: (usize, usize, usize),
+) -> String {
+    let (dx, dy, dz) = dims;
+    let pct = level_frac * 100.0;
+    format!(
+        r##"<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>posim — 3-D isosurface</title>
+<style>
+ :root {{ color-scheme: light dark; }}
+ body {{ margin:0; font:14px/1.5 ui-sans-serif,system-ui,sans-serif;
+        background:#0e1116; color:#e6e6e6; }}
+ header {{ padding:14px 18px; border-bottom:1px solid #263042; }}
+ h1 {{ margin:0; font-size:16px; font-weight:600; }}
+ .sub {{ color:#8b98ad; font-size:12px; margin-top:3px; }}
+ #wrap {{ padding:14px 18px; }}
+ canvas {{ width:100%; max-width:680px; height:auto; display:block; cursor:grab;
+           background:#11151c; border:1px solid #263042; border-radius:6px; }}
+ canvas:active {{ cursor:grabbing; }}
+ .row {{ display:flex; gap:12px; align-items:center; margin-top:12px; flex-wrap:wrap; }}
+ button {{ background:#1b2330; color:#e6e6e6; border:1px solid #33405a;
+           border-radius:5px; padding:6px 14px; cursor:pointer; font:inherit; }}
+ button:hover {{ background:#243149; }}
+ input[type=range] {{ flex:1; min-width:180px; }}
+ .stat {{ font-variant-numeric:tabular-nums; color:#9fb3d0; }}
+ .note {{ margin-top:10px; font-size:12px; color:#8b98ad; max-width:60em; }}
+</style></head><body>
+<header>
+  <h1>3-D isosurface — |&psi;|&sup2; at {pct:.0}% of peak</h1>
+  <div class="sub">potential: <b>{label}</b> &middot; meshed on {dx}&times;{dy}&times;{dz}
+  by marching tetrahedra &middot; generated by posim</div>
+</header>
+<div id="wrap">
+  <canvas id="c" width="680" height="520"></canvas>
+  <div class="row">
+    <button id="play">Pause</button>
+    <button id="reset">Reset view</button>
+    <input type="range" id="scrub" min="0" value="0">
+    <span class="stat" id="stat"></span>
+  </div>
+  <div class="note">
+    Drag to rotate. The surface encloses the region where the probability
+    density exceeds {pct:.0}&nbsp;% of its peak in that frame, so it tracks
+    the packet's <em>shape</em> rather than its absolute weight. Meshes are
+    watertight and consistently oriented; shading is Lambertian from the
+    triangle normals.
+  </div>
+</div>
+<script>
+const M=[
+{meshes}
+];
+const T=[{times}];
+const SPAN={span};
+const c=document.getElementById('c'), g=c.getContext('2d');
+const scrub=document.getElementById('scrub'); scrub.max=M.length-1;
+let i=0, playing=M.length>1, yaw=0.6, pitch=-0.35, drag=null;
+
+function rot(p) {{
+  const [x,y,z]=p;
+  const cy=Math.cos(yaw), sy=Math.sin(yaw);
+  const x1=x*cy - z*sy, z1=x*sy + z*cy;
+  const cp=Math.cos(pitch), sp=Math.sin(pitch);
+  const y2=y*cp - z1*sp, z2=y*sp + z1*cp;
+  return [x1, y2, z2];
+}}
+
+function draw() {{
+  const m=M[i];
+  g.fillStyle='#11151c'; g.fillRect(0,0,c.width,c.height);
+  const s=Math.min(c.width, c.height) / (SPAN*1.15);
+  const ox=c.width/2, oy=c.height/2;
+  const nv=m.v.length/3;
+  const px=new Float64Array(nv), py=new Float64Array(nv), pz=new Float64Array(nv);
+  for (let k=0;k<nv;k++) {{
+    const r=rot([m.v[3*k], m.v[3*k+1], m.v[3*k+2]]);
+    px[k]=ox + r[0]*s; py[k]=oy - r[1]*s; pz[k]=r[2];
+  }}
+  const nt=m.t.length/3;
+  const order=new Array(nt);
+  for (let k=0;k<nt;k++) {{
+    const a=m.t[3*k], b=m.t[3*k+1], d=m.t[3*k+2];
+    order[k]=[k, (pz[a]+pz[b]+pz[d])/3];
+  }}
+  order.sort((p,q)=>p[1]-q[1]);           // painter's algorithm: far first
+  const L=[0.4,0.6,0.7];                  // light direction, normalised below
+  const ln=Math.hypot(L[0],L[1],L[2]);
+  let drawn=0;
+  for (const [k] of order) {{
+    const a=m.t[3*k], b=m.t[3*k+1], d=m.t[3*k+2];
+    const ux=px[b]-px[a], uy=py[b]-py[a], uz=pz[b]-pz[a];
+    const vx=px[d]-px[a], vy=py[d]-py[a], vz=pz[d]-pz[a];
+    let nx=uy*vz-uz*vy, ny=uz*vx-ux*vz, nz=ux*vy-uy*vx;
+    const nl=Math.hypot(nx,ny,nz); if (nl===0) continue;
+    nx/=nl; ny/=nl; nz/=nl;
+    if (nz>0) continue;                   // back-face cull (screen y is flipped)
+    const lam=Math.abs((nx*L[0]+ny*L[1]+nz*L[2])/ln);
+    const t=0.18+0.82*lam;
+    g.fillStyle=`rgb(${{Math.round(50+150*t)}},${{Math.round(90+140*t)}},${{Math.round(150+105*t)}})`;
+    g.beginPath();
+    g.moveTo(px[a],py[a]); g.lineTo(px[b],py[b]); g.lineTo(px[d],py[d]); g.closePath();
+    g.fill();
+    drawn++;
+  }}
+  document.getElementById('stat').textContent =
+    `t = ${{(+T[i]).toFixed(2)}}   frame ${{i+1}}/${{M.length}}   ` +
+    `${{nt}} triangles (${{drawn}} front-facing)`;
+  scrub.value=i;
+}}
+
+c.addEventListener('pointerdown', e => {{ drag={{x:e.clientX, y:e.clientY}}; c.setPointerCapture(e.pointerId); }});
+c.addEventListener('pointermove', e => {{
+  if (!drag) return;
+  yaw += (e.clientX-drag.x)*0.01; pitch += (e.clientY-drag.y)*0.01;
+  pitch = Math.max(-1.5, Math.min(1.5, pitch));
+  drag={{x:e.clientX, y:e.clientY}}; draw();
+}});
+c.addEventListener('pointerup', e => {{ drag=null; c.releasePointerCapture(e.pointerId); }});
+
+let last=0;
+function loop(ts) {{
+  if (playing && M.length>1 && ts-last>90) {{ i=(i+1)%M.length; last=ts; draw(); }}
+  requestAnimationFrame(loop);
+}}
+document.getElementById('play').onclick=e=>{{playing=!playing;e.target.textContent=playing?'Pause':'Play';}};
+document.getElementById('reset').onclick=()=>{{yaw=0.6;pitch=-0.35;draw();}};
 scrub.oninput=e=>{{i=+e.target.value;playing=false;
   document.getElementById('play').textContent='Play';draw();}};
 draw(); requestAnimationFrame(loop);
@@ -850,6 +1192,52 @@ mod tests {
         let h = 12.0 / 17.0;
         let total: f64 = vals.iter().sum::<f64>() * h * h;
         assert!((total - 1.0).abs() < 1e-4, "marginal integrates to {total}, want 1");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    /// **An animation must honour the drive.** The first version of
+    /// ISO and ANIMATE used the static propagator, so with a drive set
+    /// every frame came out identical — a silently wrong picture, which
+    /// is worse than an error. Caught by checking that the isosurface
+    /// centroid actually moved; it did not.
+    #[test]
+    fn iso_and_animate_honour_the_drive() {
+        let dir = std::env::temp_dir().join("posim_qm3_drive_anim");
+        std::fs::create_dir_all(&dir).unwrap();
+        let p = dir.join("i.html").to_string_lossy().to_string();
+        run(&[
+            "def v(x, y, z) { 0.5 * (x * x + y * y + z * z) }",
+            "def dip(x, y, z) { x }",
+            "def f(t) { 0.8 * cos(0.7 * t) }",
+            "qm3 grid -7 7 24, -7 7 24, -7 7 24",
+            "qm3 potential v",
+            "qm3 state 0",
+            "qm3 drive dip, f",
+            &format!("qm3 iso \"{p}\" 6 frames 6 level 0.2"),
+        ]);
+        let html = std::fs::read_to_string(&p).unwrap();
+        // pull each frame's vertex list and compare mean x
+        let mut xs = Vec::new();
+        for chunk in html.split("{v:[").skip(1) {
+            let verts = chunk.split(']').next().unwrap();
+            let n: Vec<f64> = verts
+                .split(',')
+                .filter_map(|t| t.trim().parse::<f64>().ok())
+                .collect();
+            if n.len() < 9 {
+                continue;
+            }
+            let mean_x: f64 = n.iter().step_by(3).sum::<f64>() / (n.len() / 3) as f64;
+            xs.push(mean_x);
+        }
+        assert!(xs.len() >= 4, "expected several frames, parsed {}", xs.len());
+        let spread = xs.iter().cloned().fold(f64::NEG_INFINITY, f64::max)
+            - xs.iter().cloned().fold(f64::INFINITY, f64::min);
+        assert!(
+            spread > 0.2,
+            "the isosurface did not move under a drive: mean x spread {spread} over {:?}",
+            xs
+        );
         std::fs::remove_dir_all(&dir).ok();
     }
 

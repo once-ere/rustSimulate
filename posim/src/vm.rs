@@ -523,6 +523,12 @@ three-dimensional quantum mechanics (ADI; see grammar.md):
                             drawn flat without an isosurface or a
                             ray-caster; a marginal is a real observable
                             and each integrates to the norm
+  QM3 ISO \"<file>\" <t> [FRAMES <n>] [LEVEL <frac>]
+                            a rotatable ISOSURFACE of |psi|^2 at LEVEL
+                            times the peak density (default 0.25).
+                            Marching tetrahedra, meshed in Rust;
+                            software-rasterised in the browser, so no
+                            WebGL is needed. Drag the canvas to rotate
   QM3 RESET
   QM RESET                  forget the quantum problem
                             NOTE: separate negative arguments with

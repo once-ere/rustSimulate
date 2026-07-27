@@ -533,7 +533,20 @@ pub fn exec_qm(
             // animation is smooth AND the physics is resolved.
             let per_frame = 20usize;
             let dt = total / (frames * per_frame) as f64;
+            // An animation MUST honour the drive. Using the static
+            // propagator here made every frame identical when a drive
+            // was set — a silently wrong picture, which is worse than an
+            // error. Found by checking that the isosurface centroid
+            // actually moved between frames; it did not.
+            let drive = state.qm.drive.clone();
             let prop = Propagator::new(ham.clone(), dt)?;
+            let mut driven = match &drive {
+                Some((shape, _, _)) => {
+                    Some(DrivenPropagator::new(ham.clone(), shape.clone(), dt)?)
+                }
+                None => None,
+            };
+            let t_start = state.qm.time;
 
             // Downsample along x so the file stays small; the eye cannot
             // use 2000 points across a plot anyway.
@@ -553,7 +566,16 @@ pub fn exec_qm(
             let mut worst_drift = 0.0_f64;
             for f in 0..frames {
                 if f > 0 {
-                    prop.run(&mut w, per_frame)?;
+                    advance_1d(
+                        &mut w,
+                        &prop,
+                        driven.as_mut(),
+                        drive.as_ref().map(|(_, _, t)| t.as_str()),
+                        state,
+                        per_frame,
+                        dt,
+                        t_start + dt * ((f - 1) * per_frame) as f64,
+                    )?;
                 }
                 let nn = w.norm();
                 worst_drift = worst_drift.max((nn / n0 - 1.0).abs());
@@ -681,6 +703,43 @@ pub fn exec_qm(
             state.qm = QmState::default();
             Ok("quantum state cleared".to_string())
         }
+    }
+}
+
+/// Advance a 1-D wavefunction by `steps`, honouring a drive if one is
+/// set. Split out because three call sites need it and each must not
+/// quietly fall back to the static propagator.
+#[allow(clippy::too_many_arguments)]
+fn advance_1d(
+    w: &mut Wavefunction,
+    prop: &Propagator,
+    driven: Option<&mut DrivenPropagator>,
+    time_name: Option<&str>,
+    state: &mut SimState,
+    steps: usize,
+    dt: f64,
+    t0: f64,
+) -> Result<(), String> {
+    match (driven, time_name) {
+        (Some(dp), Some(name)) => {
+            for k in 0..steps {
+                let mid = t0 + dt * (k as f64 + 0.5);
+                let v = crate::vm::call_user_function_public(
+                    name,
+                    vec![Value::Num(mid)],
+                    state,
+                )?;
+                let amp = match v {
+                    Value::Num(y) => y,
+                    other => {
+                        return Err(format!("`{name}(t)` must return a number, got {other}"))
+                    }
+                };
+                dp.step(w, |_| amp)?;
+            }
+            Ok(())
+        }
+        _ => prop.run(w, steps),
     }
 }
 

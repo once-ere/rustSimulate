@@ -1201,6 +1201,7 @@ be worse than a third word.
 | `QM3 DRIVE <shape> <modulation>` / `OFF` | time-dependent `V(x,y,z,t)` |
 | `QM3 ABSORB <width> <strength> [<power>]` / `OFF` | absorbing faces on all six sides |
 | `QM3 ANIMATE "<file>" <t> [FRAMES <n>]` | three marginal densities, animated |
+| `QM3 ISO "<file>" <t> [FRAMES <n>] [LEVEL <frac>]` | rotatable isosurface at `frac` of peak density |
 | `QM3 RESET` | forget the 3-D problem |
 
 The scheme is the 2-D one with a third direction, Strang-composed so
@@ -1273,6 +1274,52 @@ Verified in a browser on a driven 34³ run: all three marginals integrate
 to 1.000000 in every sampled frame, the `P(x, y)` peak travels along x
 while its y coordinate does not move, and `P(y, z)` does not move at all
 — which is exactly right for a drive along x.
+
+#### Isosurfaces
+
+Marginals cannot show correlation between axes; an isosurface can.
+`QM3 ISO` extracts the surface where `|psi|²` equals a chosen fraction
+of its peak, and ships a rotatable view.
+
+**Marching tetrahedra, not marching cubes.** Marching cubes needs a
+256-entry table mapping corner-sign patterns to triangle lists — and
+that table *is* the algorithm, so a single wrong entry gives a surface
+with a hole that looks fine from most angles. Marching tetrahedra needs
+no table: split each cube into six tetrahedra, and a tetrahedron has
+only `2^4 = 16` sign patterns, which reduce to three cases derivable in
+a sentence. The classic marching-cubes ambiguity, where two cubes
+triangulate a shared face incompatibly and leave a crack, cannot arise,
+because a tetrahedron's faces are triangles and a triangle's crossing
+pattern is unique.
+
+The extractor is a library function with quantitative tests, not a
+display helper. For a sphere and an ellipsoid — whose area and volume
+are known exactly — it checks the enclosed volume by the divergence
+theorem, the surface area, convergence under refinement, and that the
+mesh is **watertight and consistently oriented**: every directed edge
+exactly once, its reverse exactly once. A hole leaves an unmatched edge;
+a flipped triangle leaves a duplicate.
+
+Two defects that testing found rather than inspection:
+
+* On a non-cubic grid the surface passed exactly through sample points
+  (`hy` and `hz` landed on 0, `hx` on 1.5, and the radius was 1.5). The
+  crossing then interpolates to `t = 0`, several grid edges produce
+  coincident-but-separately-indexed vertices, and the triangles between
+  them collapse — pinholes at exactly those points. Ten broken edges out
+  of ~31 800. Fixed by nudging the *level*, not the samples, and only
+  when an exact hit occurs.
+* Splitting a quad into two triangles and orienting each independently
+  lets a near-degenerate one flip while its partner does not, so the
+  shared diagonal is traversed twice the same way. The two halves now
+  share one winding decision.
+
+Rendering is a **software rasteriser on a 2-D canvas**, not WebGL.
+WebGL would be faster and is technically self-contained, but it can fail
+silently where there is no GPU or the context is blocked, and then the
+page shows nothing. A painter's-algorithm rasteriser over a few thousand
+triangles is fast enough, works everywhere, and can be checked by
+reading pixels back — which is how it was verified here.
 
 #### The 3-D oscillator
 

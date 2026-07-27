@@ -118,6 +118,7 @@
 //!           | "PROB" expr expr expr expr
 //!           | "ABSORB" ( "OFF" | expr expr [ expr ] )
 //!           | "ANIMATE" STRING expr [ "FRAMES" expr ]
+//!           | "ISO" STRING expr [ "FRAMES" expr ] [ "LEVEL" expr ]
 //!           | "RESET" ;
 //!
 //! qm3cmd   := [ "STATUS" ]
@@ -129,6 +130,7 @@
 //!           | "DRIVE" ( "OFF" | IDENT [ "," ] IDENT )
 //!           | "ABSORB" ( "OFF" | expr expr [ expr ] )
 //!           | "ANIMATE" STRING expr [ "FRAMES" expr ]
+//!           | "ISO" STRING expr [ "FRAMES" expr ] [ "LEVEL" expr ]
 //!           | "RESET" ;
 //!
 //! (* QM2 is a SEPARATE family rather than a mode on QM: a 2-D problem
@@ -788,12 +790,42 @@ impl Parser {
                 }
                 Qm3Cmd::Animate(path)
             }
+            "iso" | "isosurface" => {
+                let path = match self.next() {
+                    Some(Token { kind: TokKind::Str(p), .. }) => p,
+                    Some(t) => {
+                        return Err(format!(
+                            "parse error at column {}: QM3 ISO needs a quoted file path, found {}",
+                            t.col, t.kind
+                        ))
+                    }
+                    None => return Err("QM3 ISO: expected a quoted file path".to_string()),
+                };
+                self.expr(&mut prog)?;
+                let word = |me: &Self, w: &str| {
+                    matches!(me.peek(), Some(Token { kind: TokKind::Ident(x), .. })
+                        if x.eq_ignore_ascii_case(w))
+                };
+                if word(self, "frames") {
+                    self.pos += 1;
+                    self.expr(&mut prog)?;
+                } else {
+                    prog.push(Instr::Push(Value::Num(20.0)));
+                }
+                if word(self, "level") {
+                    self.pos += 1;
+                    self.expr(&mut prog)?;
+                } else {
+                    prog.push(Instr::Push(Value::Num(0.25)));
+                }
+                Qm3Cmd::Iso(path)
+            }
             "reset" => Qm3Cmd::Reset,
             other => {
                 return Err(format!(
                     "QM3: unknown subcommand `{other}` (grid, potential, drive, packet, \
                      states, state, step, run, norm, energy, centroid, prob, absorb, \
-                     animate, status, reset)"
+                     animate, iso, status, reset)"
                 ))
             }
         };

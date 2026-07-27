@@ -1283,6 +1283,7 @@ A third family, for the same reason \kw{qm2} is separate from \kw{qm}.
 \code{QM3 DRIVE <shape> <modulation> | OFF} & time-dependent $V(x,y,z,t)$\\
 \code{QM3 ABSORB <w> <s> [<p>] | OFF} & absorbing faces, all six sides\\
 \code{QM3 ANIMATE "<file>" <t> [FRAMES <n>]} & three marginal densities, animated\\
+\code{QM3 ISO "<file>" <t> [FRAMES <n>] [LEVEL <f>]} & rotatable isosurface\\
 \code{QM3 RESET} & forget the 3-D problem\\
 \end{tabular}
 \end{center}
@@ -1340,6 +1341,38 @@ Verified in a browser on a driven $34^3$ run: all three marginals
 integrate to $1.000000$ in every sampled frame, the $P(x,y)$ peak travels
 along $x$ while its $y$ coordinate does not move, and $P(y,z)$ does not
 move at all --- exactly right for a drive along $x$.
+
+\subsubsection*{Isosurfaces}
+
+Marginals cannot show correlation between axes; an isosurface can.
+\code{QM3 ISO} extracts the surface where $|\psi|^2$ equals a chosen
+fraction of its peak.
+
+\textbf{Marching tetrahedra, not marching cubes.} Marching cubes needs a
+256-entry table mapping corner-sign patterns to triangle lists --- and
+that table \emph{is} the algorithm, so one wrong entry gives a surface
+with a hole that looks fine from most angles. Marching tetrahedra needs
+no table: six tetrahedra per cube, $2^4=16$ sign patterns, three cases up
+to symmetry. The classic ambiguity where two cubes triangulate a shared
+face incompatibly cannot arise, because a tetrahedron's faces are
+triangles.
+
+The extractor is a library function with quantitative tests: for a sphere
+and an ellipsoid it checks enclosed volume by the divergence theorem,
+surface area, convergence under refinement, and that the mesh is
+\textbf{watertight and consistently oriented} --- every directed edge
+exactly once, its reverse exactly once.
+
+Two defects that testing found rather than inspection: samples lying
+\emph{exactly} on the isolevel produced coincident vertices and pinholes
+(fixed by nudging the level, not the samples); and orienting a split
+quad's two triangles independently let one flip and open the shared
+diagonal (they now share one winding decision).
+
+Rendering is a \textbf{software rasteriser on a 2-D canvas}, not WebGL:
+WebGL can fail silently without a GPU and then the page shows nothing,
+whereas a painter's-algorithm rasteriser works everywhere and can be
+verified by reading pixels back.
 
 \subsubsection*{The 3-D oscillator}
 
