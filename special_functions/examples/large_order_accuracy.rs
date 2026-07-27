@@ -11,9 +11,11 @@
 //! The remedy is an expansion in `1/nu` instead: the Debye polynomials
 //! and DLMF 10.19 / 10.41, which produce the small number directly.
 //!
-//! The turning point `z ~ nu` needed nothing — it was already at 1e-14,
-//! which is why the Airy-type expansion of DLMF 10.20 is not here. That
-//! claim is the third table below.
+//! The turning point `z ~ nu` has its own expansion — Olver's uniform
+//! Airy-type one, DLMF 10.20. An earlier version of this example argued
+//! it was unnecessary because `z/nu` from 0.95 to 1.1 already measured
+//! 1e-14. **That sampling was too coarse.** At 0.85 and 0.90 the error
+//! reached 1.4e-9, and the third table below is now what it fixed.
 //!
 //! Run: cargo run -p special_functions --release --example large_order_accuracy
 
@@ -71,26 +73,47 @@ fn main() {
     println!("2.4e246 — numbers returned with confident small error estimates.\n");
 
     // -----------------------------------------------------------------
-    println!("\nWhy the Airy-type expansion of DLMF 10.20 is not here.\n");
-    println!("It is the uniform expansion THROUGH the turning point x = 1. So the");
-    println!("question is whether anything at x ~ 1 needs fixing. Measured:\n");
-    println!("{:>8} {:>10} {:>10} {:>10} {:>10} {:>10}", "nu", "x/nu=0.95", "0.98", "1.00", "1.02", "1.10");
-    for nu in [100.5f64, 200.5, 400.5, 1000.5] {
-        print!("{nu:>8.1}");
-        for fr in [0.95f64, 0.98, 1.0, 1.02, 1.10] {
-            let x = nu * fr;
-            print!(" {}", cell(bessel_j_scaled_nu(nu, C::real(x)), jv(nu, x)));
-        }
-        println!();
+    println!("\nThe turning-point band, and what DLMF 10.20 changed there.\n");
+    println!("The numbers on the right are what the other routes gave before");
+    println!("Olver's expansion was added; on the left is what they give now.\n");
+    println!(
+        "{:>8} {:>10} {:>12} | {:>10} {:>12}",
+        "nu", "x/nu=0.85", "was", "x/nu=0.95", "was"
+    );
+    let was: [(f64, f64, f64); 4] = [
+        (100.5, 1.4e-9, 2.4e-14),
+        (200.5, 3.7e-11, 1.0e-12),
+        (400.5, 4.4e-15, 1.3e-10),
+        (1000.5, 7.3e-15, 1.3e-10),
+    ];
+    // Two things landed together and both were needed. Adding the
+    // expansion was not enough on its own: the Hankel route was winning
+    // the selection with an estimate that ignored the rounding a
+    // hundred-step order recurrence accumulates, claiming 1.4e-11 while
+    // delivering 1.4e-9. Flooring that estimate at `steps * eps` is what
+    // let the better method be chosen.
+    for (nu, w85, w95) in was {
+        let c85 = cell(bessel_j_scaled_nu(nu, C::real(nu * 0.85)), jv(nu, nu * 0.85));
+        let c95 = cell(bessel_j_scaled_nu(nu, C::real(nu * 0.95)), jv(nu, nu * 0.95));
+        println!("{nu:>8.1} {c85} {w85:>12.1e} | {c95} {w95:>12.1e}");
     }
-    println!("\nNothing there is worse than 1e-10, and most is 1e-14. Olver's");
-    println!("expansion truncated at A_0, B_0 carries a relative error of O(nu^-2)");
-    println!("— about 6e-6 at nu = 400 — so adding it would LOWER the floor in the");
-    println!("region it covers. It is the right tool for a library whose target is");
-    println!("1e-6; it is the wrong tool for one holding 1e-13 everywhere else.\n");
-    println!("What it would genuinely add is coverage where the value is outside");
-    println!("f64 anyway (the 'no f64' cells above), which no expansion can fix");
-    println!("without a different number type.");
+    println!("\nThree to four orders, in exactly the band a turning-point");
+    println!("expansion is for. The earlier claim that 10.20 had nothing to fix");
+    println!("came from sampling 0.95 to 1.1 and not 0.85 to 0.95 — the argument");
+    println!("was sound, the measurement behind it was not.\n");
+    println!("Two changes were needed, not one. The expansion alone did not help");
+    println!("at nu = 100.5: the Hankel route kept winning the selection with an");
+    println!("estimate that ignored the rounding a hundred-step order recurrence");
+    println!("accumulates — it claimed 1.4e-11 and delivered 1.4e-9. A better");
+    println!("method is only used if the comparison that picks it is honest.\n");
+    println!("Its own accuracy is O(nu^-6) with three terms kept, and the hard");
+    println!("part was not the expansion but its coefficients: A_k and B_k are");
+    println!("sums of terms each singular at the turning point, cancelling exactly.");
+    println!("Near zeta = 0 they come from Taylor series generated at 70 digits;");
+    println!("A_1(0) = -1/225 and zeta'(1) = -2^(1/3) are known independently and");
+    println!("both come out right.\n");
+    println!("What no expansion can fix is the 'no f64' cells: there the value is");
+    println!("determined and the number type is the limit.");
 
     // -----------------------------------------------------------------
     println!("\n\nThe Debye truncation estimate, which is what chooses the method.\n");

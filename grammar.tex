@@ -776,14 +776,30 @@ value is outside} \code{f64}. For $z$ well below $\nu$, $J$ is smaller
 than the smallest double and $Y$ larger than the largest, and the error
 says so and quotes the logarithm.
 
-The uniform \textbf{Airy-type} expansion of DLMF 10.20 --- uniform
-\emph{through} the turning point $z \sim \nu$ --- is \textbf{not}
-implemented, and the reason is measured rather than assumed: across
-$z/\nu$ from 0.95 to 1.1 the existing routes already give $10^{-14}$, so
-there is nothing there to fix. Truncated at its first two coefficients
-Olver's expansion carries a relative error of $O(\nu^{-2})$ --- about
-$6\times10^{-6}$ at $\nu = 400$ --- so adding it would widen coverage
-while lowering the floor. Complex \emph{order} is also still absent.
+\textbf{The turning point has its own expansion.} Olver's uniform
+Airy-type expansion (DLMF 10.20) replaces the elementary prefactor with
+an Airy function, the exact local model of where the equation stops
+oscillating:
+\[
+  J_\nu(\nu x) \sim \Big(\tfrac{4\zeta}{1-x^2}\Big)^{1/4}
+    \Big[\tfrac{\mathrm{Ai}(\nu^{2/3}\zeta)}{\nu^{1/3}}
+        \sum_k \tfrac{A_k(\zeta)}{\nu^{2k}}
+      + \tfrac{\mathrm{Ai}'(\nu^{2/3}\zeta)}{\nu^{5/3}}
+        \sum_k \tfrac{B_k(\zeta)}{\nu^{2k}}\Big].
+\]
+Its coefficients are built from the same Debye polynomials, and every
+term in them is singular at $\zeta = 0$ with the singularities
+cancelling exactly --- which is why near the turning point they come
+from Taylor series in $1-x$ generated at 70 digits instead. Two of the
+resulting constants are known independently and match:
+$A_1(0) = -1/225$ and $\zeta'(1) = -2^{1/3}$.
+
+An earlier version of this manual argued that 10.20 was unnecessary,
+because across $z/\nu$ from 0.95 to 1.1 the other routes already gave
+$10^{-14}$. \textbf{That measurement was too coarse and the conclusion
+was wrong.} At $z/\nu = 0.85$ and $0.90$ --- not sampled --- the error
+reached $1.4\times10^{-9}$. With 10.20 in the mix the whole band is
+$10^{-14}$. Complex \emph{order} remains absent.
 
 Measured, not asserted:
 \begin{lstlisting}

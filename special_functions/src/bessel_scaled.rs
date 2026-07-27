@@ -68,10 +68,11 @@
 //! quoting the logarithm, which is a different statement from "nothing
 //! was accurate enough" and the more useful one.
 //!
-//! The uniform **Airy-type** expansion of DLMF 10.20, which is uniform
-//! *through* the turning point `z ~ nu`, is not implemented — measured,
-//! there is nothing there for it to fix. See the note in
-//! [`crate::debye`] and `examples/large_order_accuracy.rs`.
+//! The uniform **Airy-type** expansion of DLMF 10.20 covers the turning
+//! point itself and is in [`crate::airy_uniform`]; it is offered here as
+//! a further candidate and wins in the band around `z ~ 0.85 nu` to
+//! `0.98 nu`, where it is three to four orders better than anything
+//! else available.
 
 use crate::bessel_complex::{
     bessel_i_c, bessel_i_nu, bessel_j_c, bessel_j_nu, bessel_k_nu, bessel_y_nu,
@@ -440,10 +441,16 @@ fn hankel_pair_best(nu: f64, z: C) -> (C, C, f64) {
     // estimate must carry the factor; on the real axis it is 1 and
     // nothing changes.
     let recessive = (2.0 * z.im.abs()).min(700.0).exp();
+    // A recurrence of `steps` stages accumulates rounding, so its floor
+    // is `steps * eps` and not `eps`. Measured: at nu = 100.5, x = 85.4
+    // the route claimed 1.4e-11 and delivered 1.4e-9 — exactly the
+    // hundred steps it had taken — and on that claim it was beating the
+    // Airy-type expansion, which was giving 3.7e-15 there.
+    let floor = steps as f64 * 1e-16;
     (
         recur_up(nu, z, a1, b1, base, steps - 1, -1.0),
         recur_up(nu, z, a2, b2, base, steps - 1, -1.0),
-        err * recessive,
+        (err * recessive).max(floor),
     )
 }
 
@@ -796,10 +803,16 @@ fn jy_debye_candidates(nu: f64, z: C) -> (Candidate, Candidate) {
         return (None, None);
     }
     let (j, y) = crate::debye::jy_debye(nu, z.re);
+    let (aj, ay) = crate::airy_uniform::jy_airy(nu, z.re);
     let e = |u: crate::debye::Uniform| {
         (u.value, (u.err * LARGE_ORDER_SAFETY).max(EVAL_FLOOR))
     };
-    (j.map(e), y.map(e))
+    // Olver's Airy-type expansion (DLMF 10.20) is offered alongside the
+    // Debye one. They are uniformly valid in complementary places — the
+    // Debye expansions away from the turning point, the Airy-type one
+    // through it — and both report optimal-truncation estimates, so the
+    // selector picks between them on measured terms.
+    (better(j.map(e), aj.map(e)), better(y.map(e), ay.map(e)))
 }
 
 /// The DLMF 10.41 uniform expansions for `I` and `K`, as candidates in
@@ -1213,6 +1226,36 @@ mod tests {
         let (s, err) = asym_sum(0.5, C::real(3.0), C::ONE);
         assert_eq!(err, 0.0, "nu = 1/2 should terminate exactly");
         assert_eq!(s, C::ONE, "and its sum is 1");
+    }
+
+    /// The Airy-type expansion must actually be selected in the band it
+    /// was added for. Adding a method the selector never picks is worth
+    /// nothing, and that is exactly what happened until the order
+    /// recurrence's error estimate was floored by its step count.
+    #[test]
+    fn the_airy_type_route_is_chosen_across_the_turning_point() {
+        for &(nu, frac) in &[
+            (40.5_f64, 0.70_f64),
+            (100.5, 0.85),
+            (200.5, 0.95),
+            (400.5, 0.95),
+            (1000.5, 0.95),
+        ] {
+            let x = nu * frac;
+            let chosen = bessel_j_scaled_nu(nu, C::real(x)).unwrap().re;
+            let airy = crate::airy_uniform::jy_airy(nu, x).0.unwrap().value.re;
+            assert!(
+                (chosen - airy).abs() <= 1e-14 * airy.abs(),
+                "at nu={nu}, x/nu={frac} the selector took {chosen} \
+                 rather than the Airy-type value {airy}"
+            );
+            // ... and it is the right answer, not merely the chosen one.
+            let want = spec_math::cephes64::jv(nu, x);
+            assert!(
+                (chosen - want).abs() <= 1e-11 * want.abs(),
+                "at nu={nu}, x/nu={frac}: {chosen} vs cephes {want}"
+            );
+        }
     }
 
     /// The refusal must be reachable, and it must distinguish the two

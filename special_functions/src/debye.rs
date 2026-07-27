@@ -62,20 +62,19 @@
 //!
 //! # The Airy-type expansion of DLMF 10.20
 //!
-//! Olver's turning-point expansion replaces `Ai(nu^(2/3) zeta)` for the
-//! oscillatory-to-recessive transition and is uniformly valid **through**
-//! `x = 1`. It is not implemented here, for a reason that is measured
-//! rather than assumed: across `x` from 0.98 to 1.5 the existing routes
-//! already deliver 1e-14 to 1e-15 against Cephes at every order tried up
-//! to 1000, so there is nothing there for it to fix. What it would fix
-//! is the narrow band `0.9 < x < 0.97` at `nu >~ 400`, where the Debye
-//! series has begun to lose terms and the Hankel route has begun to
-//! cancel. Even there Olver's expansion truncated at `A_0, B_0` carries
-//! a relative error of `O(nu^-2)` — about `6e-6` at `nu = 400` — which
-//! is well below the accuracy this crate holds everywhere else, so
-//! adding it would widen coverage while lowering the floor. The band is
-//! reported as an error instead, and `examples/large_order_accuracy.rs`
-//! prints exactly where it is.
+//! Olver's turning-point expansion is in [`crate::airy_uniform`], and
+//! the two are complementary: this one is uniform away from `x = 1`,
+//! that one **through** it.
+//!
+//! It is worth recording that this module originally argued 10.20 was
+//! unnecessary, on the strength of a measurement across `x` from 0.98 to
+//! 1.5 that showed 1e-14 everywhere. **That measurement was too coarse
+//! and the conclusion was wrong.** Sampling 0.85 and 0.90 as well shows
+//! a band the existing routes reached only to 1e-9 — at `nu = 100.5,
+//! x = 0.85` the error was 1.4e-9 and at `nu = 200.5, x = 0.95` it was
+//! 1.0e-12. With 10.20 those became 2.0e-15 and 1.8e-14. The argument
+//! about `O(nu^-2)` was also wrong: it applies to the expansion
+//! truncated at `A_0, B_0`, and three terms are kept, giving `O(nu^-6)`.
 
 use crate::complex::Complex64 as C;
 
@@ -130,6 +129,16 @@ fn table() -> &'static Vec<Vec<f64>> {
     use std::sync::OnceLock;
     static T: OnceLock<Vec<Vec<f64>>> = OnceLock::new();
     T.get_or_init(debye_coeffs)
+}
+
+/// `U_k(p)`, for the Airy-type expansion of [`crate::airy_uniform`],
+/// which is built from the same polynomials.
+pub(crate) fn u_poly(k: usize, p: C) -> C {
+    let mut v = C::ZERO;
+    for &c in table()[k].iter().rev() {
+        v = v * p + C::real(c);
+    }
+    v
 }
 
 /// `sum_k sign^k U_k(p) / nu^k`, truncated where the terms stop
