@@ -46,6 +46,23 @@ FORBIDDEN_OBJECTS='[[:space:]](obsolete_or_historic|SolveIt|SolveIt_2026_MFC)(/|
 # Recipes by name (CLEANROOM_PROVENANCE.md, THIRD_PARTY.md), and a check
 # that cannot tell "mentions" from "contains" is a check that cries wolf.
 CODE_SIGNATURES='bessj0|bessj1|nrutil|gsl_linalg_solve|gsl_vector_|NR_END|FREE_ARG'
+
+# A LIVE claim about the current tree's test count, as opposed to a
+# dated historical record. Three stages running (2B, 2C, 2D) turned on
+# documentation that was accurate when written and false when read, so
+# the rule is mechanised rather than written down again as an action.
+#
+# The distinction matters and is the same one CODE_SIGNATURES makes:
+# EXPORT_PROVENANCE.md legitimately RECORDS "104 passed" as the state at
+# export time, and TUNNELING_RESULTS.md records 304 for its round. Those
+# are history and must not be rewritten. Only the two canonical phrasings
+# below assert something about the tree *now*, and only those are checked.
+LIVE_COUNT='(expect ([0-9]+) passed|([0-9]+) passed workspace-wide)'
+
+# Claims that were true once and are now false. Each is a real sentence
+# that shipped, with the stage that retired it; the gate exists so they
+# cannot quietly return.
+RETIRED_CLAIMS='remains unfixed|complex Airy is not implemented|no complex arithmetic anywhere|10\.20 is not the right tool|MAX_EVENTS_PER_OUTPUT'
 SOURCE_EXT='\.(rs|c|h|cpp|hpp|cc|f|f90|py)$'
 
 echo "Certifying $(pwd)"
@@ -75,6 +92,12 @@ selftest "history-object detector" \
          "9da888ae98f3ac8b3e997384da2654a298f5dcd3 obsolete_or_historic/SolveIt/QM/QMEvolve.h" \
          "$FORBIDDEN_OBJECTS"
 selftest "code-signature detector" "float bessj0(float x)" "$CODE_SIGNATURES"
+selftest "live-count detector"    "cargo test --workspace   # expect 104 passed" "$LIVE_COUNT"
+selftest "live-count detector 2"  "**256 passed workspace-wide**; zero failures" "$LIVE_COUNT"
+selftest "retired-claim detector" "This is a real defect and remains unfixed." "$RETIRED_CLAIMS"
+# ...and the stripping must not swallow an UNquoted assertion:
+selftest "retired-claim survives stripping" \
+         "$(printf 'a defect that remains unfixed' | sed 's/"[^"]*"//g')" "$RETIRED_CLAIMS"
 
 # ---- 1. no forbidden path tracked at the tip --------------------------
 n=$(git ls-files | grep -cE "$FORBIDDEN_PATHS")
@@ -164,6 +187,56 @@ rm -f /tmp/cert_clippy.$$
 if cargo test --workspace >/tmp/cert_test.$$ 2>&1; then
   p=$(grep -E 'test result' /tmp/cert_test.$$ | awk '{s+=$4} END {print s}')
   pass "all tests pass ($p assertions across the workspace)"
+
+  # ---- 6. documentation claims about THIS tree ------------------------
+  #
+  # Stages 2B, 2C and 2D each found prose that was accurate when written
+  # and false by the time it was read — including EXPORT_PROVENANCE.md,
+  # the document a reader uses to AUDIT the release, still saying a
+  # repaired defect "remains unfixed" and to expect 104 tests against
+  # 556. The lesson was written down as an action three times; this is
+  # it mechanised.
+  stale=""
+  while IFS= read -r hit; do
+    [ -z "$hit" ] && continue
+    file=${hit%%:*}
+    n=$(printf '%s\n' "$hit" | grep -oE "$LIVE_COUNT" | grep -oE '[0-9]+' | head -1)
+    [ -z "$n" ] && continue
+    if [ "$n" != "$p" ]; then
+      stale="$stale\n        $file claims $n tests; the tree has $p"
+    fi
+  done <<EOF
+$(git ls-files '*.md' | while read -r f; do grep -nE "$LIVE_COUNT" "$f" 2>/dev/null | sed "s|^|$f:|"; done)
+EOF
+  if [ -z "$stale" ]; then
+    pass "documented test counts match the tree ($p)"
+  else
+    bad "documentation states a test count this tree does not have:"
+    printf "$stale\n"
+  fi
+
+  # Claims retired by a later stage must not come back. These are real
+  # sentences that shipped and became false; the pattern is the record.
+  #
+  # QUOTING one is not asserting it. Both PROJECT_STATUS.md and
+  # airy_uniform.rs quote their retired sentence *while explaining that
+  # it was retired*, which is exactly the behaviour this project wants —
+  # so quoted spans are stripped before matching, the same "mentions vs
+  # contains" distinction CODE_SIGNATURES makes by only reading source.
+  # Without it the gate would punish the honest write-up.
+  revived=$(git ls-files '*.md' '*.rs' | grep -v '^sundials_rs/' | grep -v '^vendor/' \
+            | while read -r f; do
+                if sed 's/"[^"]*"//g' "$f" | grep -qE "$RETIRED_CLAIMS"; then printf '%s\n' "$f"; fi
+              done)
+  if [ -z "$revived" ]; then
+    pass "no retired claim has reappeared"
+  else
+    bad "a claim retired by an earlier stage is back:"
+    printf '%s\n' "$revived" | sed 's/^/        /'
+    printf '%s\n' "$revived" | while read -r f; do
+      sed 's/"[^"]*"//g' "$f" | grep -nE "$RETIRED_CLAIMS" | sed "s|^|          $f:|"
+    done | head -6
+  fi
 else
   bad "tests FAILED"
   grep -A4 'panicked' /tmp/cert_test.$$ | head -20 | sed 's/^/        /'

@@ -220,7 +220,7 @@ been the thing that was wrong.
 
 | | |
 |---|---|
-| workspace tests | **230 passed, 0 failed** (was 212 before Stage 1) |
+| workspace tests | **556 passed workspace-wide**, 0 failed (212 before Stage 1) |
 | build warnings | **0** |
 | `unsafe` in `special_functions` | none — `#![forbid(unsafe_code)]` at the crate root |
 | external dependencies | none |
@@ -358,6 +358,32 @@ cleanup did:
 ### The standing rule this produces
 
 **Never trust a gitignore pattern that has not been interrogated.**
+### The gate for stale documentation (added Stage 2E)
+
+Three stages running found prose that was accurate when written and
+false by the time it was read — including this file, which claimed 230
+workspace tests against 556, and `EXPORT_PROVENANCE.md`, the document a
+reader uses to *audit* the release, still saying a repaired defect
+"remains unfixed" and telling them to expect 104 tests.
+
+The lesson was written down as an action three times. Stage 2E
+mechanised it, as two gates in `scripts/certify_clean.sh`:
+
+* **documented test counts match the tree.** Only the two canonical
+  live phrasings are checked — `expect N passed` and
+  `N passed workspace-wide`. A dated historical record ("104 passed at
+  export time") is history and must not be rewritten; the check that
+  cannot tell a record from a claim is the check that cries wolf.
+* **no retired claim has reappeared.** A list of real sentences that
+  shipped and became false, with the stage that retired each.
+  **Quoting one is not asserting it** — both `PROJECT_STATUS.md` and
+  `airy_uniform.rs` quote their retired sentence while explaining that
+  it was retired, which is exactly the wanted behaviour, so quoted
+  spans are stripped before matching.
+
+Both carry self-tests in the existing style, and both were verified to
+FAIL on deliberately reintroduced staleness before being trusted.
+
 Adding an ignore rule for anything sensitive is not complete until
 
 ```

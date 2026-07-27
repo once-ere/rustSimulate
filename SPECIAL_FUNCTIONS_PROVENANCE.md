@@ -161,7 +161,7 @@ record is separate and detailed:
 
 ## 4. Test results, and what they actually establish
 
-**256 tests pass workspace-wide; zero failures; zero build warnings;
+**556 passed workspace-wide; zero failures; zero build warnings;
 `cargo clippy --workspace --all-targets` reports zero errors and zero
 warnings.**
 
