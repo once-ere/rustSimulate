@@ -380,6 +380,50 @@ mod tests {
     /// complex order and at a magnitude the series cannot reach. Its
     /// right-hand side involves neither the order nor any Bessel
     /// function, so it judges them without a reference.
+    /// `FLOOR` is what stops a route claiming an accuracy its own
+    /// arithmetic cannot deliver.
+    ///
+    /// Stage 2F's mutation probe dropped it from 5e-14 to 1e-300 and the
+    /// whole suite still passed — nothing asserted the constant's value.
+    /// That is the exact shape of the Stage 16 defect it exists to
+    /// prevent: an estimate that bottoms out too low wins every
+    /// comparison in the selector, and a worse route is chosen.
+    ///
+    /// It binds where optimal truncation reports **zero**, and there is
+    /// a place that happens exactly: at `nu = 1/2` the `1/z` Hankel
+    /// series *terminates*, so the first omitted term is identically 0
+    /// and the estimate would be 0 too. Stage 15 found that
+    /// `0 x 1e14 = 0` let this route win every comparison it entered.
+    ///
+    /// The value is still not exact — a `powf` prefactor, an `exp` and a
+    /// complex sum are evaluated in `f64` — so the honest estimate is the
+    /// floor, and the closed form `J_{1/2}(z) = sqrt(2/(pi z)) sin z`
+    /// says what the error really is.
+    #[test]
+    fn the_estimate_floor_binds_where_truncation_reports_zero() {
+        let nu = C::real(0.5);
+        for &(r, th) in &[(18.0_f64, 0.7_f64), (40.0, -0.4), (120.0, 0.0)] {
+            let z = C::from_polar(r, th);
+            let (j, e) = j_asym(nu, z).expect("the 1/z route reaches nu = 1/2");
+
+            // The series terminates here, so the reported estimate is
+            // the floor and nothing else.
+            assert!(
+                e >= FLOOR,
+                "at nu = 1/2 truncation reports 0, so the estimate must be the floor, got {e:.2e}"
+            );
+
+            // And the floor must actually cover the error made.
+            let sin = ((C::I * z).exp() - (C::I * z * -1.0).exp()) * (C::I * 2.0).inv();
+            let want = (C::real(2.0 / std::f64::consts::PI) * z.inv()).powf(0.5) * sin;
+            let actual = (j - want).abs() / want.abs();
+            assert!(
+                actual <= e,
+                "|z| = {r}: the routine claims {e:.2e} and is wrong by {actual:.2e}"
+            );
+        }
+    }
+
     #[test]
     fn the_wronskian_holds_far_beyond_the_series() {
         for &(a, b) in &[(1.3_f64, 0.0_f64), (2.0, 3.0), (0.0, 6.0), (-1.5, 2.5)] {

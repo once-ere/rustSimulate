@@ -680,3 +680,43 @@ fn a_settling_ball_is_caught_by_the_zeno_guard_and_terminates() {
     assert!((y - 0.5).abs() < 5e-2, "the ball should settle at y = 0.5, got {y}");
     assert!(v < 1.0, "and it should be nearly at rest, got |v| = {v}");
 }
+
+/// `MAX_EVENTS_IN_BURST` must be large enough to let genuinely
+/// simultaneous contacts resolve elastically.
+///
+/// Stage 2F's mutation probe dropped it from 64 to 1 and the suite still
+/// passed: `a_settling_ball_is_caught_by_the_zeno_guard_and_terminates`
+/// checks that the guard *fires*, and nothing checked that it does not
+/// fire too early. Escalating after a single event turns the second
+/// contact of any simultaneous pair plastic.
+///
+/// A ball driven into the corner where two static slabs meet produces
+/// two contacts at the same instant — one burst, two events — and an
+/// elastic corner reflection must reverse both velocity components and
+/// preserve the speed exactly.
+#[test]
+fn simultaneous_contacts_stay_elastic() {
+    let mut wall_x = cuboid(1, 1.0, [0.5, 4.0, 4.0], Vec3::new(-1.5, 0.0, 0.0), Vec3::zeros());
+    wall_x.set_inverse_mass(0.0);
+    wall_x.set_inverse_inertia_tensor(Mat3::zeros());
+    let mut wall_y = cuboid(2, 1.0, [4.0, 0.5, 4.0], Vec3::new(0.0, -1.5, 0.0), Vec3::zeros());
+    wall_y.set_inverse_mass(0.0);
+    wall_y.set_inverse_inertia_tensor(Mat3::zeros());
+    // Symmetric approach: the ball reaches both faces at the same time.
+    let ball = sphere(0, 1.0, 0.25, Vec3::new(2.0, 2.0, 0.0), Vec3::new(-3.0, -3.0, 0.0));
+    let mut sys = free_system(vec![ball, wall_x, wall_y]);
+
+    let speed0 = sys.objects[0].get_velocity().norm();
+    let report = integrate::run(&mut sys, 2.0, 20).expect("run");
+    assert!(report.ncollisions >= 2, "the corner should give two contacts");
+
+    let v = sys.objects[0].get_velocity();
+    assert!(
+        (v.norm() - speed0).abs() < 1e-9 * speed0,
+        "an elastic corner reflection must preserve speed: {} -> {}",
+        speed0,
+        v.norm()
+    );
+    // Both components reversed: the ball leaves the way it came.
+    assert!(v.x > 0.0 && v.y > 0.0, "it should be heading back out, got {v:?}");
+}

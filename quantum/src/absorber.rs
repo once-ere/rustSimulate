@@ -440,6 +440,50 @@ mod tests {
         assert!((lib - escape_at(CELLS_PER_LENGTH)).abs() < 1e-12 * lib);
     }
 
+    /// The SHIPPED resolution, not a locally rolled one.
+    ///
+    /// `the_result_is_converged_in_the_cell_count` builds its own
+    /// geometry to measure the 1/n^2 law, so Stage 2F's probe could drop
+    /// `CELLS_PER_LENGTH` from 200 to 8 and the suite still passed — the
+    /// convergence was pinned but the constant in use was not. This
+    /// compares what `leak` actually returns against a computation 16
+    /// times finer.
+    #[test]
+    fn the_shipped_resolution_is_accurate_enough() {
+        use crate::transfer::scatter;
+        let ramp = Ramp { width: 6.0, power: 2.0 };
+        for &(eta, k) in &[(3.0_f64, 2.0_f64), (10.0, 1.0), (1.0, 4.0)] {
+            let shipped = leak(ramp, eta, k, 1.0, 1.0).unwrap().escaped();
+
+            let fine = 16.0 * CELLS_PER_LENGTH;
+            let n_ramp = ((ramp.width * fine).ceil() as usize).max(16);
+            let d = ramp.width / n_ramp as f64;
+            let n_pad = ((((2.0 * std::f64::consts::PI / k).max(ramp.width * 0.25)) / d).ceil()
+                as usize)
+                .max(4);
+            let pad = n_pad as f64 * d;
+            let v: Vec<C> = (0..n_ramp + 2 * n_pad)
+                .map(|i| {
+                    if i >= n_pad && i < n_pad + n_ramp {
+                        let x = ((i - n_pad) as f64 + 0.5) * d;
+                        C::new(0.0, -eta * (x / ramp.width).powf(ramp.power))
+                    } else {
+                        C::ZERO
+                    }
+                })
+                .collect();
+            let s = scatter(&v, -pad, ramp.width + pad, 0.5 * k * k, 1.0, 1.0).unwrap();
+            let reference = s.reflection + s.transmission;
+
+            let rel = (shipped - reference).abs() / reference.max(1e-300);
+            assert!(
+                rel < 1e-4,
+                "eta = {eta}, k = {k}: the shipped resolution gives {shipped:.6e} against \
+                 {reference:.6e} at 16x — {rel:.1e} relative"
+            );
+        }
+    }
+
     #[test]
     fn it_refuses_bad_input() {
         assert!(leak(Ramp { width: 0.0, power: 2.0 }, 1.0, 1.0, 1.0, 1.0).is_err());
