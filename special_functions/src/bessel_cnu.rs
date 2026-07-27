@@ -59,12 +59,16 @@
 //! `|z| ~ |nu|` — the region neither of the others reaches. It needed
 //! complex Airy, which is why it arrived two stages after the rest.
 //!
-//! What is left is the **Debye region at complex order**: `|z|` a few
-//! times `|nu|`, where the `1/z` expansion is refused because `|4 nu^2|`
-//! is not small compared with `|z|`, the ascending series has cancelled,
-//! and `x = z/nu` is too far from 1 for the turning-point expansion.
-//! DLMF 10.19 covers it for real order; extending that is the next
-//! thing, and the routines report the gap rather than guessing in it.
+//! [`crate::debye::jy_debye_c`] covers the **Debye region** on both
+//! sides of the turning point — `|z|` a few times `|nu|`, and `|z|`
+//! below it — at complex order, so the band that had no method at all
+//! now has one.
+//!
+//! What remains is a sliver: `|nu|` small but not tiny (roughly 4 to 8)
+//! with `|z|` a few times larger, where the `1/z` expansion is refused
+//! for `|4 nu^2|` and the Debye one is refused for being a `1/nu`
+//! series at an order too small to trust. Both refusals are deliberate
+//! and both are measured; the routines report the gap.
 
 use crate::bessel_complex::{bessel_i_nu, bessel_j_nu, bessel_k_nu, bessel_y_nu};
 use crate::complex::Complex64 as C;
@@ -147,6 +151,14 @@ fn accept(c: Cand, what: &str, nu: C, z: C) -> Result<C, String> {
 /// This is the region neither the ascending series nor the `1/z`
 /// expansions reach — `|z|` comparable to `|nu|`, both complex — and
 /// which Stage 18 recorded as needing complex Airy. It has that now.
+/// `J` and `Y` from the Debye expansions at complex order — the band
+/// `|z|` a few times `|nu|`, on either side of the turning point.
+fn debye_candidates(nu: C, z: C) -> (Cand, Cand) {
+    let (j, y) = crate::debye::jy_debye_c(nu, z);
+    let f = |u: crate::debye::Uniform| u.value.is_finite().then_some((u.value, u.err.max(1e-16)));
+    (j.and_then(f), y.and_then(f))
+}
+
 fn airy_candidates(nu: C, z: C) -> (Cand, Cand) {
     match crate::airy_uniform::jy_airy_c(nu, z) {
         Some((j, y)) => (
@@ -276,7 +288,8 @@ pub fn bessel_j_cnu(nu: C, z: C) -> Result<C, String> {
     let s = series_candidate(ser, z.abs() - z.im.abs() + order_term(nu, z));
     let a = crate::bessel_cnu_large::j_asym(nu, z);
     let u = airy_candidates(nu, z).0;
-    accept(better(better(s, a), u), "bessel_j_cnu", nu, z)
+    let d = debye_candidates(nu, z).0;
+    accept(better(better(better(s, a), u), d), "bessel_j_cnu", nu, z)
 }
 
 /// `I_nu(z)` for complex order.
@@ -315,7 +328,8 @@ pub fn bessel_y_cnu(nu: C, z: C) -> Result<C, String> {
         );
         let a = crate::bessel_cnu_large::y_asym(nu, z);
         let u = airy_candidates(nu, z).1;
-        return accept(better(better(s, a), u), "bessel_y_cnu", nu, z);
+        let d = debye_candidates(nu, z).1;
+        return accept(better(better(better(s, a), u), d), "bessel_y_cnu", nu, z);
     }
     if is_real(nu) {
         return bessel_y_nu(nu.re, z);
@@ -330,7 +344,8 @@ pub fn bessel_y_cnu(nu: C, z: C) -> Result<C, String> {
     let s = series_candidate(ser, z.abs() - z.im.abs() + order_term(nu, z));
     let a = crate::bessel_cnu_large::y_asym(nu, z);
     let u = airy_candidates(nu, z).1;
-    accept(better(better(s, a), u), "bessel_y_cnu", nu, z)
+    let d = debye_candidates(nu, z).1;
+    accept(better(better(better(s, a), u), d), "bessel_y_cnu", nu, z)
 }
 
 /// `K_nu(z)` for complex order, by

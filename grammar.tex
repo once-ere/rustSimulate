@@ -973,12 +973,34 @@ a Taylor series does not care whether its variable is real. What did
 \emph{not} continue to complex $x$ are the closed forms outside that
 neighbourhood, where 10.20 is the wrong tool anyway.
 
-\textbf{What is left is the Debye region at complex order}: $|z|$ a few
-times $|\nu|$, where the $1/z$ expansion is refused because $|4\nu^2|$
-is not small compared with $|z|$, the ascending series has cancelled,
-and $x = z/\nu$ is too far from 1 for the turning-point expansion. DLMF
-10.19 covers it for real order. The routines report that gap rather than
-guessing in it.
+\textbf{The Debye region is covered too}, on both sides of the turning
+point and at complex order as well as real. With $t = \sqrt{1-x^2}$,
+$\alpha = \ln((1+t)/x)$, $q = 1/t$ and $x = z/\nu$,
+\[
+  F_\pm(\nu,x) = \frac{e^{\pm\nu(t-\alpha)}}{\sqrt{2\pi\nu t}}
+    \sum_k \frac{(\pm1)^k U_k(q)}{\nu^k}
+\]
+reads two ways. For $|x| < 1$ these are DLMF 10.19.3/4 directly,
+$J = F_+$ and $Y = -2F_-$. For $|x| > 1$ --- the \textbf{oscillatory}
+region, where $t$ turns imaginary --- they continue into the Hankel
+functions instead, $H^{(1)} = 2F_+$ and $H^{(2)} = 2iF_-$, so
+$J = F_+ + iF_-$ and $Y = -iF_+ - F_-$. That flip is the Stokes
+phenomenon, and \textbf{the constants were identified by experiment
+rather than transcribed}: continuing $F_+$ past $x = 1$ and dividing by
+each of $J$, $Y$, $H^{(1)}$, $H^{(2)}$ in turn showed
+$F_+/H^{(1)} = \tfrac12$.
+
+That band had no method at all, at real order as well as complex.
+\code{bessel\_y\_z(20, 60)} used to return $10^8$; it is now correct to
+$2\times10^{-14}$, and across orders 8 to 150 and $z/\nu$ from 2 to 30
+the whole band is $10^{-14}$ or better.
+
+What remains is a sliver: $|\nu|$ between about 4 and 8 with $|z|$ a few
+times larger, where the $1/z$ route is refused for $|4\nu^2|$ and the
+Debye one for being a $1/\nu$ series at too small an order. Both
+refusals are deliberate and measured. There is also a narrow ridge near
+$z/\nu \approx 1.3$ where $Y$ reaches only about $10^{-7}$ at moderate
+order.
 
 \subsubsection*{Airy functions, complex argument}
 

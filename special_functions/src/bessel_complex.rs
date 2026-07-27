@@ -232,6 +232,12 @@ pub fn bessel_j_c(n: i32, z: C) -> Result<C, String> {
     if let Some(v) = j_via_asym(n, z) {
         return Ok(v);
     }
+    if let Some(v) = j_via_debye(n, z) {
+        return Ok(v);
+    }
+    if let Some(v) = j_via_airy(n, z) {
+        return Ok(v);
+    }
     if n < 0 {
         return Err(format!("bessel_j_c: order n must be >= 0, got {n}"));
     }
@@ -406,6 +412,12 @@ pub fn bessel_y_c(n: i32, z: C) -> Result<C, String> {
     if let Some(v) = y_via_asym(n, z) {
         return Ok(v);
     }
+    if let Some(v) = y_via_debye(n, z) {
+        return Ok(v);
+    }
+    if let Some(v) = y_via_airy(n, z) {
+        return Ok(v);
+    }
     Ok(bessel_y_array_c(n as usize, z)?[n as usize])
 }
 
@@ -453,6 +465,72 @@ fn y_via_asym(n: i32, z: C) -> Option<C> {
     let loss = z.abs() - z.im.abs();
     let series_err = if loss > 700.0 { f64::INFINITY } else { 1e-16 * loss.exp() };
     (e < series_err).then_some(v)
+}
+
+/// A value with the estimate of its relative error, or nothing.
+type Valued = Option<(C, f64)>;
+
+/// `J_n(z)` and `Y_n(z)` by the uniform **Airy-type** expansion of DLMF
+/// 10.20, for real `z` either side of the turning point `z = n`.
+///
+/// The Debye expansions lose their grip as `z/n` approaches 1 — their
+/// coefficients are polynomials in `1/sqrt(1 - (z/n)^2)` — and this is
+/// what covers the gap between them. Measured, `Y_20(26)` was 9.9e-6
+/// without it and 1e-14 with it.
+fn jy_via_airy(n: i32, z: C) -> (Valued, Valued) {
+    if n <= 0 || z.im != 0.0 || z.re <= 0.0 {
+        return (None, None);
+    }
+    let (j, y) = crate::airy_uniform::jy_airy(n as f64, z.re);
+    let f = |u: crate::debye::Uniform| {
+        (u.value.is_finite() && u.err.is_finite()).then_some((u.value, u.err.max(1e-16)))
+    };
+    (j.and_then(f), y.and_then(f))
+}
+
+fn j_via_airy(n: i32, z: C) -> Option<C> {
+    let (v, e) = jy_via_airy(n, z).0?;
+    let loss = z.im.abs();
+    let miller = if loss > 700.0 { f64::INFINITY } else { 1e-16 * loss.exp() };
+    (e < miller).then_some(v)
+}
+
+fn y_via_airy(n: i32, z: C) -> Option<C> {
+    let (v, e) = jy_via_airy(n, z).1?;
+    let loss = z.abs() - z.im.abs();
+    let series = if loss > 700.0 { f64::INFINITY } else { 1e-16 * loss.exp() };
+    (e < series).then_some(v)
+}
+
+/// `J_n(z)` and `Y_n(z)` by the **Debye** expansions, for the band
+/// where nothing else applies.
+///
+/// The `1/z` expansions refuse when `|4 n^2|` is not small compared
+/// with `|z|`; the ascending series has cancelled by then; and `z/n` is
+/// too far from 1 for the turning-point expansion. That band —
+/// `|z|` a few times `n` — had no method at all. At `n = 20, z = 60`
+/// it made `Y_20(60)` come back as `1e8`; it is now 2e-14.
+fn jy_via_debye(n: i32, z: C) -> (Valued, Valued) {
+    if n < 0 || !z.is_finite() || z.abs() == 0.0 {
+        return (None, None);
+    }
+    let (j, y) = crate::debye::jy_debye_c(C::real(n as f64), z);
+    let f = |u: crate::debye::Uniform| u.value.is_finite().then_some((u.value, u.err.max(1e-16)));
+    (j.and_then(f), y.and_then(f))
+}
+
+fn j_via_debye(n: i32, z: C) -> Option<C> {
+    let (v, e) = jy_via_debye(n, z).0?;
+    let loss = z.im.abs();
+    let miller = if loss > 700.0 { f64::INFINITY } else { 1e-16 * loss.exp() };
+    (e < miller).then_some(v)
+}
+
+fn y_via_debye(n: i32, z: C) -> Option<C> {
+    let (v, e) = jy_via_debye(n, z).1?;
+    let loss = z.abs() - z.im.abs();
+    let series = if loss > 700.0 { f64::INFINITY } else { 1e-16 * loss.exp() };
+    (e < series).then_some(v)
 }
 
 /// `J_n(z)` near the **imaginary axis**, from `I` on the rotated

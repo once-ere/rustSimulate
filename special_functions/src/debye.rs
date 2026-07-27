@@ -261,6 +261,102 @@ pub fn jy_debye(nu: f64, x: f64) -> (Option<Uniform>, Option<Uniform>) {
     (j, finite(y, ey))
 }
 
+/// `J_nu(z)` and `Y_nu(z)` by the Debye expansions, for **complex order
+/// and complex argument**, on either side of the turning point.
+///
+/// # One formula, two regions
+///
+/// Write `t = sqrt(1 - x^2)`, `alpha = ln((1+t)/x)`, `q = 1/t` with
+/// `x = z/nu`, and
+///
+/// ```text
+///   F±(nu, x) = e^(± nu (t - alpha)) / sqrt(2 pi nu t)
+///               sum_k (±1)^k U_k(q) / nu^k
+/// ```
+///
+/// For `|x| < 1` these are the expansions of DLMF 10.19.3 and 10.19.4
+/// directly: `J = F+` and `Y = -2 F-`. For `|x| > 1` — the
+/// **oscillatory** region, where `t` turns imaginary — they continue
+/// into the Hankel functions instead, `H1 = 2 F+` and `H2 = 2i F-`,
+/// and so
+///
+/// ```text
+///   J = F+ + i F-,      Y = -i F+ - F-
+/// ```
+///
+/// That flip is the Stokes phenomenon and is why one formula needs two
+/// readings. **The constants were identified by experiment rather than
+/// transcribed**: continuing `F+` past `x = 1` and dividing by each of
+/// `J`, `Y`, `H1`, `H2` in turn showed `F+/H1 = 1/2` to the accuracy of
+/// the reference. The readings are then checked against
+/// `bessel_j_c`/`bessel_y_c` wherever those are independently sound.
+///
+/// # Why this was missing
+///
+/// The `1/z` expansions refuse when `|4 nu^2|` is not small compared
+/// with `|z|`; the ascending series has cancelled by then; and `x` is
+/// too far from 1 for the turning-point expansion. That band —
+/// `|z|` a few times `|nu|` — had no method at all, at real order as
+/// well as complex. At `nu = 20, z = 60` it made `Y_20(60)` come back
+/// as `1e8`.
+pub fn jy_debye_c(nu: C, z: C) -> (Option<Uniform>, Option<Uniform>) {
+    if !nu.is_finite() || !z.is_finite() || nu.abs() == 0.0 || z.abs() == 0.0 {
+        return (None, None);
+    }
+    // A LARGE-ORDER expansion, so a small order is out of range even
+    // when its terms happen to look small. At `nu = 1.3, |z| = 18` the
+    // ratio `q = 1/sqrt(1-x^2)` is 0.07, the terms shrink nicely, and
+    // the truncation estimate comes out below 1e-14 — while the answer
+    // is 1.7e-10 off, because what the estimate cannot see is the
+    // expansion's own `1/nu` character. The 1/z route is far better
+    // there, and without this guard the selector preferred this one.
+    // 8, not 3. At `nu = 3` the expansion still passed its own
+    // estimate and still lost the J-Y Wronskian by a factor of 1 at
+    // `|z| = 22` — a `1/nu` series needs `nu` genuinely large, and the
+    // band this exists to cover starts at `nu ~ 20` anyway.
+    if nu.abs() < 8.0 {
+        return (None, None);
+    }
+    let x = z * nu.inv();
+    let t = (C::ONE - x * x).powf(0.5);
+    if t.abs() == 0.0 || !t.is_finite() {
+        return (None, None);
+    }
+    let alpha = ((C::ONE + t) * x.inv()).ln();
+    let q = t.inv();
+    let (sp, ep) = u_series(nu, q, 1.0);
+    let (sm, em) = u_series(nu, q, -1.0);
+    let pref = ((nu * t) * (2.0 * std::f64::consts::PI)).powf(-0.5);
+    let e = (t - alpha) * nu;
+    // The exponential's own rounding: `exp(e)` is known only to
+    // `|e| * eps` relative, because `e` is. The same term the complex
+    // Airy needed, and for the same reason.
+    let rounding = e.abs() * f64::EPSILON;
+    // The same safety factor the other asymptotic routes carry:
+    // optimal truncation is an estimate, not a bound, and measured it
+    // runs optimistic at moderate order.
+    let err = (ep.max(em) * 100.0).max(rounding);
+    let (fp, fm) = (e.exp() * pref * sp, (e * -1.0).exp() * pref * sm);
+    if !fp.is_finite() || !fm.is_finite() {
+        return (None, None);
+    }
+    if x.abs() < 1.0 {
+        return (finite(fp, err), finite(fm * -2.0, err));
+    }
+    let j = fp + C::I * fm;
+    let y = C::I * fp * -1.0 - fm;
+    // Both combinations can cancel — measured from the values, as
+    // everywhere else in this crate.
+    let cancel = |v: C| {
+        if v.abs() == 0.0 || !v.is_finite() {
+            f64::INFINITY
+        } else {
+            ((fp.abs() + fm.abs()) / v.abs()).max(1.0)
+        }
+    };
+    (finite(j, err * cancel(j)), finite(y, err * cancel(y)))
+}
+
 /// `(ln|J_nu(x)|, ln|Y_nu(x)|)` for `0 < x < nu`, from the leading term
 /// of the same Debye expansion.
 ///
@@ -513,6 +609,78 @@ mod tests {
                 );
             }
         }
+    }
+
+    /// The oscillatory Debye expansion, against Cephes where Cephes is
+    /// itself sound. This is the band that had no method at all: at
+    /// `nu = 20, z = 60` the crate returned `Y = 1e8` before.
+    #[test]
+    fn the_oscillatory_region_matches_cephes() {
+        for &nu in &[8.0_f64, 12.0, 20.0, 40.0, 80.0, 150.0] {
+            for &x in &[2.0_f64, 3.0, 5.0, 10.0, 30.0] {
+                let z = nu * x;
+                let (Some(j), Some(y)) = jy_debye_c(C::real(nu), C::real(z)) else {
+                    continue;
+                };
+                let (wj, wy) = (spec_math::cephes64::jv(nu, z), spec_math::cephes64::yv(nu, z));
+                if !wj.is_finite() || !wy.is_finite() || wj == 0.0 || wy == 0.0 {
+                    continue;
+                }
+                let bound = |e: f64| (3.0 * e).max(1e-12);
+                assert!(
+                    (j.value.re - wj).abs() <= bound(j.err) * wj.abs(),
+                    "J_{nu}({z}): {} vs {wj}, estimate {:.1e}",
+                    j.value.re,
+                    j.err
+                );
+                assert!(
+                    (y.value.re - wy).abs() <= bound(y.err) * wy.abs(),
+                    "Y_{nu}({z}): {} vs {wy}, estimate {:.1e}",
+                    y.value.re,
+                    y.err
+                );
+                // Not exactly zero: the route goes through complex `t`
+                // and `alpha`, so the imaginary part is rounding rather
+                // than an exact cancellation.
+                assert!(
+                    j.value.im.abs() <= 1e-11 * j.value.re.abs()
+                        && y.value.im.abs() <= 1e-11 * y.value.re.abs(),
+                    "should be real to rounding: {:?}, {:?}",
+                    j.value,
+                    y.value
+                );
+            }
+        }
+    }
+
+    /// The point that named this stage. `Y_20(60)` sits where the `1/z`
+    /// expansion is refused (`|4 nu^2| = 1600` against `8|z| = 480`),
+    /// the ascending series has cancelled `exp(60)` away, and `z/nu = 3`
+    /// is far outside the turning-point expansion's reach.
+    #[test]
+    fn the_band_that_had_no_method_now_has_one() {
+        let (Some(j), Some(y)) = jy_debye_c(C::real(20.0), C::real(60.0)) else {
+            panic!("no value")
+        };
+        let (wj, wy) = (spec_math::cephes64::jv(20.0, 60.0), spec_math::cephes64::yv(20.0, 60.0));
+        assert!((j.value.re - wj).abs() <= 1e-13 * wj.abs(), "J: {} vs {wj}", j.value.re);
+        assert!((y.value.re - wy).abs() <= 1e-12 * wy.abs(), "Y: {} vs {wy}", y.value.re);
+        // ... and through the public routine, which has to choose it.
+        let got = crate::bessel_complex::bessel_y_c(20, C::real(60.0)).unwrap();
+        assert!((got.re - wy).abs() <= 1e-12 * wy.abs(), "chosen: {} vs {wy}", got.re);
+    }
+
+    /// A `1/nu` expansion needs `nu` genuinely large, and its terms
+    /// looking small is not the same thing. At `nu = 3, |z| = 22` it
+    /// passed its own estimate and still lost the J-Y Wronskian by a
+    /// factor of 1, which is why the order is guarded rather than left
+    /// to the estimate.
+    #[test]
+    fn a_small_order_is_refused_outright() {
+        assert!(jy_debye_c(C::real(1.3), C::real(18.0)).0.is_none());
+        assert!(jy_debye_c(C::real(3.0), C::real(22.0)).0.is_none());
+        assert!(jy_debye_c(C::new(5.0, 2.0), C::real(20.0)).0.is_none());
+        assert!(jy_debye_c(C::real(8.0), C::real(24.0)).0.is_some(), "nu = 8 is in range");
     }
 
     #[test]

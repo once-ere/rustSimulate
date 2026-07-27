@@ -144,6 +144,7 @@ record is separate and detailed:
 | `bessel_cnu_large` | native | The `1/z` asymptotics of DLMF 10.17.5/6 and 10.40.1/2 at **complex order** — the order enters only as `μ = 4ν²`, polynomially, so they extend unchanged — plus the DLMF 10.41 uniform expansions in the sector `\|arg ν\| < π/2` (10.41.5). Two validity facts the truncation estimate cannot see are checked separately: `\|4ν²\| ≤ 2\|z\|`, and the `exp(π\|Im ν\| − 2Re z)` size of the term 10.40.1 drops | DLMF 10.17.5, 10.17.6, 10.40.1, 10.40.2, 10.41.3–10.41.5 |
 | `airy_uniform` (complex order) | native | DLMF 10.20 at complex order, restricted to `\|1 − z/ν\| ≤ 0.25`. Needed no new mathematics: near the turning point `ζ`, the prefactor and `A_k`, `B_k` all come from the generated `w = 1 − x` Taylor series, which are complex-safe by construction. The closed forms outside that neighbourhood do **not** continue naively — `ζ`'s two branch formulas meet at `x = 1` and the principal ⅔ power does not carry across — but 10.20 is the wrong tool there anyway | DLMF 10.20.4, 10.20.5 |
 | `airy_uniform` | native | Olver's uniform Airy-type expansion, DLMF 10.20.4/10.20.5, valid **through** the turning point `z = ν`. `ζ(x)` from 10.20.2/3; `A_k`, `B_k` from 10.20.10/11 built on the same Debye polynomials, with `λ_j`, `μ_j` from 10.20.12/13. Their closed forms cancel catastrophically as `ζ → 0` (each term is `O(w^{−3(2k+1)/2})` where the sum is `O(1)`), so near the turning point they come from Taylor series in `w = 1−x` **generated at 70 decimal digits** and verified in-crate against the closed forms. `A₁(0) = −1/225` and `ζ'(1) = −2^{1/3}` are known independently and both come out right | DLMF 10.20.2–10.20.5, 10.20.10–10.20.13 |
+| `debye` (oscillatory) | native | The same `F±` formulas continued past `x = 1`, where they read as the Hankel functions instead of `J` and `Y`: `H1 = 2F₊`, `H2 = 2iF₋`, so `J = F₊ + iF₋` and `Y = −iF₊ − F₋`. **Those constants were identified by experiment**, by continuing `F₊` and dividing by each of `J`, `Y`, `H1`, `H2` in turn, then checked against `bessel_j_c`/`bessel_y_c` wherever those are independently sound. Works at complex order; guarded to `\|ν\| ≥ 8`, since a `1/ν` series' terms looking small is not the same as `ν` being large | DLMF 10.19.3, 10.19.4, 10.19.6 |
 | `debye` | native | The Debye polynomials `U_k(p)` by the exact recurrence `U_{k+1} = ½p²(1−p²)U_k' + ⅛∫₀^p(1−5t²)U_k` (DLMF 10.41.9), carried out on coefficient vectors rather than transcribed; then the uniform large-order expansions `I_ν`, `K_ν` (10.41.3/4) and the Debye `J_ν`, `Y_ν` for `z < ν` (10.19.3/4). Optimal truncation supplies the error estimate, so these compete with the `1/z` routes on measured terms | DLMF 10.19.3, 10.19.4, 10.41.3, 10.41.4, 10.41.9, 10.41.10 |
 | `bessel_scaled` | native | The asymptotic expansions `e^{-iz}H1 ~ sqrt(2/πz)e^{-i(νπ/2+π/4)}S(i)`, `e^zK ~ sqrt(π/2z)S(1)`, `e^{-z}I ~ S(-1)/sqrt(2πz)` with `a_k = a_{k-1}(4ν²-(2k-1)²)/8k`; `J` and `Y` from the Hankel pair without forming the envelope; optimal truncation supplying its own error estimate, which then **selects between the asymptotic and the ascending series by comparing estimates**; upward order recurrence for `K`, `Y`, `H1`, `H2`; the I–K Wronskian with a continued-fraction ratio anchoring `I` at large order | DLMF 10.6.1, 10.17.5, 10.17.6, 10.28.2, 10.29.1, 10.34.1, 10.27.6, 10.40.1, 10.40.2 |
 | `hankel` | native | `H1 = J + iY`, `H2 = J - iY` (DLMF 10.4.3) over both the integer- and non-integer-order routines; derivatives from `C'_ν = C_{ν-1} - (ν/z)C_ν` (DLMF 10.6.2), which holds for every cylinder function, with `C'_0 = -C_1` for the one order that would need `C_{-1}`; spherical `h1 = j_n + i y_n` (DLMF 10.47.5) on the real line | DLMF 10.2.5, 10.4.3, 10.5.4, 10.6.2, 10.27.8, 10.47.5, 10.49.6, 10.50.1 |
@@ -274,10 +275,13 @@ Unit tests prove the pieces; three examples prove they do the job:
   hard limits rather than performance advice. Where the order happens
   to be whole, the integer-order Miller routines reach much further
   along the real axis.
-- **The Debye region at complex order** — `|z|` a few times `|ν|`,
-  between where the `1/z` expansion is valid and where the
-  turning-point one applies. DLMF 10.19 covers it for real order;
-  extending it is what remains of chapter 10.
+- **A sliver at `4 ≲ |ν| ≲ 8` with `|z|` a few times larger**, where
+  the `1/z` route is refused for `|4ν²|` and the Debye one for being a
+  `1/ν` series at too small an order. Both refusals are deliberate.
+- **A ridge near `z/ν ≈ 1.3`**, where `Y` reaches about 1e-7 at
+  moderate order — just outside the turning-point expansion's
+  validated neighbourhood (`|1 − x| ≤ 0.25`) and just inside where the
+  Debye coefficients begin to grow.
 - **A wider number type.** For `z` well below `ν`, `J` is below the
   smallest double and `Y` above the largest. The expansions determine
   those values; `f64` cannot carry them, and the routines say so and

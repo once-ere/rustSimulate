@@ -873,12 +873,36 @@ series does not care whether its variable is real. What did *not*
 continue to complex `x` are the closed forms outside that
 neighbourhood, where 10.20 is the wrong tool anyway.
 
-**What is left is the Debye region at complex order**: `|z|` a few times
-`|nu|`, where the `1/z` expansion is refused because `|4 nu^2|` is not
-small compared with `|z|`, the ascending series has cancelled, and
-`x = z/nu` is too far from 1 for the turning-point expansion. DLMF 10.19
-covers it for real order. The routines report that gap rather than
-guessing in it.
+**The Debye region is covered too**, on both sides of the turning
+point and at complex order as well as real. Writing `t = sqrt(1-x^2)`,
+`alpha = ln((1+t)/x)` and `q = 1/t` with `x = z/nu`,
+
+```
+F±(nu,x) = e^(± nu (t - alpha)) / sqrt(2 pi nu t) sum_k (±1)^k U_k(q)/nu^k
+```
+
+reads two ways. For `|x| < 1` these are DLMF 10.19.3/4 directly:
+`J = F+`, `Y = -2 F-`. For `|x| > 1` — the **oscillatory** region, where
+`t` turns imaginary — they continue into the Hankel functions instead,
+`H1 = 2 F+` and `H2 = 2i F-`, so `J = F+ + i F-` and `Y = -i F+ - F-`.
+That flip is the Stokes phenomenon, and **the constants were identified
+by experiment rather than transcribed** — continuing `F+` past `x = 1`
+and dividing by each of `J`, `Y`, `H1`, `H2` in turn showed `F+/H1 = ½`.
+
+That band had no method at all, at real order as well as complex: it is
+where the `1/z` expansion is refused for `|4 nu^2|`, the ascending
+series has cancelled, and `x` is too far from 1 for the turning-point
+expansion. `bessel_y_z(20, 60)` used to return `1e8`; it is now correct
+to 2e-14, and across orders 8 to 150 and `z/nu` from 2 to 30 the whole
+band is 1e-14 or better.
+
+What remains is a sliver: `|nu|` between about 4 and 8 with `|z|` a few
+times larger, where the `1/z` route is refused for `|4 nu^2|` and the
+Debye one for being a `1/nu` series at an order too small to trust. Both
+refusals are deliberate and measured. There is also a narrow ridge near
+`z/nu ~ 1.3` where `Y` reaches only about 1e-7 at moderate order — just
+outside the turning-point expansion's validated neighbourhood and just
+inside where the Debye coefficients begin to grow.
 
 #### Airy functions, complex argument
 
