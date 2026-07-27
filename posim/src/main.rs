@@ -20,6 +20,7 @@ mod machine;
 mod notebook;
 mod parser;
 mod qm;
+mod qm2;
 mod scene;
 mod special;
 mod vm;

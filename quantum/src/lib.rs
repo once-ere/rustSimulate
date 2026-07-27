@@ -40,3 +40,4 @@
 #![allow(non_upper_case_globals)]
 
 pub mod qm1d;
+pub mod qm2d;

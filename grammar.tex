@@ -1099,6 +1099,69 @@ hundred points, slow past about a thousand. Propagation is $O(n)$ per
 step and has no such limit, so a scattering run can afford a much finer
 grid than a bound-state calculation.
 
+\subsection{\kw{qm2} --- two dimensions, by ADI}\label{sec:qm2}
+
+A \emph{separate} family from \kw{qm}, not a mode on it: a 2-D problem
+differs in almost every argument list, and a hidden mode that silently
+reinterprets your commands is worse than a second word.
+
+\begin{center}
+\begin{tabular}{lp{7.2cm}}
+\textbf{command} & \textbf{meaning}\\
+\hline
+\code{QM2} & report the current 2-D setup\\
+\code{QM2 GRID <x0> <x1> <nx>, <y0> <y1> <ny>} & domain and resolution per axis\\
+\code{QM2 POTENTIAL ZERO | <function>} & a \kw{def}ined $V(x,y)$\\
+\code{QM2 PACKET <x0> <y0>, <sx> <sy>, <kx> <ky>} & 2-D Gaussian packet\\
+\code{QM2 STEP <dt>} / \code{QM2 RUN <t> [STEPS <n>]} & ADI propagation\\
+\code{QM2 NORM | ENERGY | CENTROID} & observables\\
+\code{QM2 PROB <xa> <xb>, <ya> <yb>} & probability in a rectangle\\
+\code{QM2 ABSORB <w> <s> [<p>] | OFF} & absorbing edges, all four walls\\
+\code{QM2 ANIMATE "<file>" <t> [FRAMES <n>]} & heat-map animation\\
+\code{QM2 RESET} & forget the 2-D problem\\
+\end{tabular}
+\end{center}
+
+\subsubsection*{Why ADI, and why not the textbook ADI}
+
+In 1-D the Crank--Nicolson operator is tridiagonal, so one solve per step
+gives an exactly unitary propagator. \textbf{In 2-D it is not}: the
+five-point Laplacian couples each point to neighbours in both directions
+and the matrix is block-tridiagonal with bandwidth $n_x$, costing
+$O(n_x^3 n_y)$ per step to solve directly.
+
+ADI splits the step by direction, so each half-step is a \emph{set of
+independent tridiagonal solves} --- $n_y$ along $x$, then $n_x$ along
+$y$ --- and the cost falls to $O(n_x n_y)$.
+
+The textbook scheme is \textbf{Peaceman--Rachford}, implicit in $x$
+against an explicit $y$ and then swapped. It is second-order and
+unconditionally stable, but \textbf{not unitary}: the two half-steps use
+different operators, so the norm drifts at $O(dt^2)$ per step.
+
+This implementation applies a \textbf{Cayley transform in each direction
+separately}, composed by Strang splitting:
+\[
+  \psi(t+dt) = U_x(dt/2)\,U_y(dt)\,U_x(dt/2)\,\psi(t).
+\]
+Each $A_d = T_d + V/2$ is Hermitian, so each $U_d$ is exactly unitary and
+so is their product. \textbf{The norm is conserved to machine precision
+for any $dt$}, while the splitting error stays $O(dt^2)$ in the
+\emph{dynamics}. Norm conservation therefore remains a sharp check on the
+linear algebra, independent of the accuracy question.
+
+One subtlety: with $A_x=T_x+V/2$ and $A_y=T_y+V/2$ the commutator
+$[A_x,A_y]$ is non-zero \emph{even for a separable potential}, so a
+product eigenstate is not perfectly stationary. The drift is second order
+in $dt$ and the tests assert that scaling rather than a magnitude.
+
+\subsubsection*{Cost}
+
+Bound states are \textbf{not} provided in 2-D: on an $n_x\times n_y$ grid
+the Hamiltonian is $(n_x n_y)^2$, so a modest $200\times200$ grid gives a
+$40\,000\times40\,000$ dense matrix, far beyond the Jacobi eigensolver.
+Propagation has no such limit.
+
 \section{The notebook (cells, editing, magics)}
 
 \subsection{Cells}
@@ -1197,7 +1260,7 @@ simulator state, and every coupled invariant (mass$\leftrightarrow$inverse,
 inertia$\leftrightarrow$inverse, unit quaternions) is enforced on every
 write. When the program ends, the top of the stack becomes \code{Out[n]}.
 
-\section{Seventeen worked examples}
+\section{Eighteen worked examples}
 
 All transcripts are genuine program output.
 
@@ -2048,6 +2111,74 @@ quasi-bound energies, and those peaks are narrower than this packet's
 momentum spread ($\sigma=2$ gives $\Delta k=0.25$), which averages
 straight over them. A scan over $k_0$ from 1.4 to 2.9 rises
 monotonically with no peak. See \code{TUNNELING\_RESULTS.md}.
+
+\subsection{Example 18 --- the double slit, in two dimensions}
+
+The canonical 2-D quantum problem, and the notebook
+\code{dynamic\_notebooks/double\_slit.posim}. The wall is an ordinary
+user function of two arguments, built entirely from comparisons:
+
+\begin{lstlisting}
+In[1]:= def openings(y) { (y > 1.5) * (y < 2.5) + (y > -2.5) * (y < -1.5) }
+In[2]:= def slit(x, y) { 60 * (x > 0) * (x < 0.4) * (1 - openings(y)) }
+In[3]:= slit(0.2, 0)
+Out[3]= 60
+In[4]:= slit(0.2, 2)
+Out[4]= 0
+\end{lstlisting}
+
+\begin{lstlisting}
+In[8]:= qm2 grid -12 24 450, -16 16 400
+In[10]:= qm2 absorb 4, 8
+In[11]:= qm2 packet -4.5, 0, 1.2 4, 8 0
+In[12]:= qm2 energy
+Out[12]= 31.008336923103123
+In[15]:= qm2 run 2.6 steps 800
+Out[15]= t = 2.6 (800 ADI step(s) of dt = 0.00325), <E> = 30.990650438623, norm drift = 7.796e-1
+In[18]:= qm2 norm
+Out[18]= 0.220410865359174
+\end{lstlisting}
+
+Those three lines together say something worth pausing on:
+\textbf{78\,\% of the probability was absorbed at the walls, and the
+energy moved by 0.06\,\%}. The absorber removed the reflected wave ---
+the wall is 60 high against a packet of energy 32, so most of it bounces
+--- without touching the energy of what remains. $\langle E\rangle$ is
+$\langle\psi|H|\psi\rangle/\langle\psi|\psi\rangle$, divided by the norm
+on purpose; undivided it would have fallen with the norm and looked like
+an energy leak.
+
+The fringes, counted in bands on a screen at $11<x<19$:
+
+\begin{center}
+\begin{tabular}{lll}
+\textbf{band} & \textbf{P} & \textbf{expected}\\
+\hline
+$0\pm0.5$ & \textbf{0.01577} & central maximum\\
+0.5--1.5 & 0.00452 & first minimum, $y=1.46$\\
+2.5--3.5 & \textbf{0.01742} & first maximum, $y=2.96$\\
+3.5--4.5 & 0.00471 & second minimum, $y=4.56$\\
+5.5--6.5 & \textbf{0.01399} & second maximum, $y=6.32$\\
+\end{tabular}
+\end{center}
+
+With slit separation $d=4$ and $\lambda=2\pi/k=0.785$, maxima sit at
+$\sin\theta = m\lambda/d$ with the screen $L\approx14.8$ from the slits,
+giving 2.96 and 6.32. \textbf{Every predicted maximum and minimum lands
+in the right band.}
+
+Two corrections got there. A first attempt used $k=4$, $d=2$, putting the
+first maximum at $52^\circ$ --- off the screen, so the scan showed a
+featureless lobe. A second launched the packet \emph{inside} the
+absorber, and 86\,\% of it was eaten before reaching the slits.
+
+\begin{lstlisting}
+In[28]:= qm2 animate "double_slit.html" 3 frames 100
+\end{lstlisting}
+
+A self-contained heat-map page. Its own in-page analysis of the final
+frame finds fringe maxima at $y=0.04$ and $y=3.23$, matching the band
+scan and the theory independently of the Rust that produced it.
 
 \section{Error message tour}
 

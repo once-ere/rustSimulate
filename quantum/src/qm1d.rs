@@ -425,16 +425,30 @@ impl Wavefunction {
         acc.re * h
     }
 
-    /// `<H>`.
+    /// `<H> = <psi|H|psi> / <psi|psi>`.
+    ///
+    /// Divided by the norm ON PURPOSE. For a unit-norm state the two
+    /// agree, but an absorbing potential makes the norm decay, and the
+    /// raw integral then decays with it — reporting a falling "energy"
+    /// for a packet whose energy has not changed. An earlier version
+    /// omitted the division and showed 6.83 for a k = 8 packet whose
+    /// energy is 32, purely because 78 % of it had been absorbed.
     pub fn energy(&self, ham: &Hamiltonian) -> f64 {
         let hpsi = ham.apply(&self.psi);
         let h = self.grid.h();
-        self.psi
+        let num: f64 = self
+            .psi
             .iter()
             .zip(&hpsi)
             .map(|(p, q)| (p.conj() * *q).re)
             .sum::<f64>()
-            * h
+            * h;
+        let den = self.norm();
+        if den > 0.0 {
+            num / den
+        } else {
+            f64::NAN
+        }
     }
 
     /// Probability of finding the particle in `[a, b]`.
@@ -908,6 +922,63 @@ mod tests {
             rel < 0.02,
             "absorbing domain gave T = {t_cap}, reference {t_ref} ({:.2}% off)",
             100.0 * rel
+        );
+    }
+
+    /// `<E>` must be the true expectation value, so an absorber that
+    /// removes half the packet must not appear to remove half its
+    /// energy.
+    ///
+    /// Measured at PARTIAL absorption on purpose. Once almost
+    /// everything is gone the remnant is the low-energy tail — a CAP
+    /// absorbs high-k components better (see
+    /// `examples/absorber_tuning.rs`), so `<E>` genuinely does fall
+    /// then, and that is physics rather than a normalisation bug.
+    #[test]
+    fn energy_is_normalised_so_absorption_does_not_fake_a_drop() {
+        let g = Grid::new(-40.0, 40.0, 1200).unwrap();
+        let ham = Hamiltonian::from_fn(g.clone(), |_| 0.0, 1.0, 1.0)
+            .unwrap()
+            .with_absorber(14.0, 3.0, 2.0)
+            .unwrap();
+        let k0 = 3.0_f64;
+        let mut w = Wavefunction::gaussian(g, 0.0, 1.5, k0).unwrap();
+        let e0 = w.energy(&ham);
+        assert!(
+            (e0 - k0 * k0 / 2.0).abs() / (k0 * k0 / 2.0) < 0.05,
+            "E0 = {e0}, expected near {}",
+            k0 * k0 / 2.0
+        );
+
+        // step until roughly half the packet is gone
+        let prop = Propagator::new(ham.clone(), 0.005).unwrap();
+        let mut guard = 0;
+        while w.norm() > 0.5 && guard < 20 {
+            prop.run(&mut w, 200).unwrap();
+            guard += 1;
+        }
+        let n = w.norm();
+        assert!((0.2..0.75).contains(&n), "wanted partial absorption, norm = {n}");
+
+        let e1 = w.energy(&ham);
+        // The claim the division makes is RELATIVE: energy must be
+        // retained far better than norm. Measured here, norm falls to
+        // 0.42 while E keeps 0.84 of its value — the residual 16 % is
+        // the CAP preferentially eating high-k components, which is
+        // physics. Without the division E would have tracked the norm
+        // exactly.
+        let keep = e1 / e0;
+        assert!(keep > 0.75, "E went {e0} -> {e1} (kept {keep}) at norm {n}");
+        assert!(
+            keep > 1.5 * n,
+            "E retention {keep} should far exceed norm retention {n}"
+        );
+        // ...and the point of the division: the RAW integral did fall
+        // with the norm, so an undivided energy would have looked wrong.
+        let raw = e1 * n;
+        assert!(
+            raw < 0.8 * e0,
+            "the raw integral {raw} should track the norm, not the energy"
         );
     }
 

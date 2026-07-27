@@ -261,7 +261,7 @@ peak appeared.
 
 | | |
 |---|---|
-| workspace tests | **288 passed, 0 failed** |
+| workspace tests | **304 passed, 0 failed** |
 | build warnings | 0 |
 | `clippy --workspace --all-targets` | 0 errors, 0 warnings |
 | certification gates | 9/9 from a fresh clone |
@@ -270,13 +270,40 @@ New in this round: six comparison operators, `QM ABSORB`, `QM ANIMATE`,
 the `absorber_tuning` example, the tunnelling notebook, and 9 tests
 covering them.
 
+## 7. Stage 4 — two dimensions, by ADI
+
+See [dynamic_notebooks/double_slit.posim](dynamic_notebooks/double_slit.posim)
+and grammar.md §5.11 / Example 18. Summary of what it establishes:
+
+* **ADI by Strang-split Cayley factors**, not Peaceman–Rachford. Each
+  direction gets its own Cayley transform, so every factor is exactly
+  unitary and the norm is machine-precision conserved for *any* `dt`,
+  with the splitting error confined to the dynamics. Peaceman–Rachford
+  would tangle the two together in one drifting number.
+* **Double-slit fringes match theory.** With `d = 4`, `λ = 0.785`,
+  screen at `L ≈ 14.8`: predicted maxima at y = 0, 2.96, 6.32 and minima
+  at 1.46, 4.56. Measured band maxima at 0, 2.5–3.5, 5.5–6.5 and minima
+  at 0.5–1.5, 3.5–4.5. Every one lands in the right band.
+* **A bug this exposed:** `energy()` returned `∫ψ*Hψ` without dividing by
+  the norm. Fine for a unit-norm state, wrong under an absorber — the
+  double-slit run reported `<E> = 6.83` for a packet of energy 32 purely
+  because 78 % had been absorbed. Now `<ψ|H|ψ>/<ψ|ψ>`, and the same run
+  reports 30.99 against an initial 31.01.
+* **Two setup errors recorded rather than hidden:** a first attempt put
+  the first interference maximum at 52°, off-screen, so no fringes
+  appeared at all; a second launched the packet *inside* the absorber and
+  lost 86 % of it before the slits.
+
 ### Not done
 
+* Bound states in 2-D. On an `nx × ny` grid the Hamiltonian is
+  `(nx·ny)²` — a 200×200 grid gives a 40 000² dense matrix, far beyond
+  the Jacobi eigensolver. Propagation has no such limit.
 * Resonance peaks in the double barrier remain unresolved (§5).
 * The absorber is tuned by hand; there is no automatic selection from
   the packet's energy, though `absorber_tuning` gives the data for one.
 * Transmission is measured by integrating the density in a region, not
   by projecting onto outgoing plane waves — fine for well-separated
   packets, wrong if they overlap the barrier when you measure.
-* Still one dimension. A 2-D Crank–Nicolson operator is not tridiagonal,
-  so it needs ADI or a sparse iterative solver.
+* Three dimensions. The same ADI structure extends, but memory grows as
+  the cube of the linear resolution.

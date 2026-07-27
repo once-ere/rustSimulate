@@ -270,6 +270,7 @@ pub enum Instr {
     /// Graphical scene window command (see [`SceneCmd`]).
     Scene(SceneCmd),
     Qm(crate::qm::QmCmd),
+    Qm2(crate::qm2::Qm2Cmd),
     /// Comparisons. Each pops two values and pushes 1.0 or 0.0 — the
     /// language has numbers and no boolean type, and 1/0 is what makes
     /// an indicator function like `(x > a) * (x < b)` work as a
@@ -323,6 +324,8 @@ pub struct SimState {
     pub functions: BTreeMap<String, FuncDef>,
     /// The one-dimensional quantum problem, if any.
     pub qm: crate::qm::QmState,
+    /// The two-dimensional quantum problem, if any.
+    pub qm2: crate::qm2::Qm2State,
     /// User names registered with `NEW ... AS name` → object index
     /// (kept renumbered by DEL / BOX OFF).
     pub names: BTreeMap<String, usize>,
@@ -346,6 +349,7 @@ impl Default for SimState {
             globals: BTreeMap::new(),
             functions: BTreeMap::new(),
             qm: crate::qm::QmState::default(),
+            qm2: crate::qm2::Qm2State::fresh(),
             names: BTreeMap::new(),
             env_stack: Vec::new(),
         }
@@ -454,6 +458,22 @@ one-dimensional quantum mechanics (see grammar.md):
   QM ANIMATE \"<file>\" <t> [FRAMES <n>]
                             propagate and write a self-contained HTML
                             animation of |psi|^2; open it in a browser
+two-dimensional quantum mechanics (ADI; see grammar.md):
+  QM2                       report the current 2-D setup
+  QM2 GRID <x0> <x1> <nx>, <y0> <y1> <ny>
+  QM2 POTENTIAL ZERO | <function of x,y>
+  QM2 PACKET <x0> <y0>, <sx> <sy>, <kx> <ky>
+  QM2 RUN <t> [STEPS <n>] | QM2 STEP <dt>
+                            Strang-split Cayley ADI: each direction is
+                            its own Cayley transform, so the propagator
+                            is EXACTLY unitary for any dt, with the
+                            splitting error confined to the dynamics
+  QM2 NORM | ENERGY | CENTROID
+  QM2 PROB <xa> <xb>, <ya> <yb>
+  QM2 ABSORB <width> <strength> [<power>] | QM2 ABSORB OFF
+  QM2 ANIMATE \"<file>\" <t> [FRAMES <n>]
+                            heat-map animation of |psi(x,y)|^2
+  QM2 RESET
   QM RESET                  forget the quantum problem
                             NOTE: separate negative arguments with
                             commas — `well 5 -2 2` reads `5 - 2` as
@@ -1100,6 +1120,12 @@ fn exec_one(instr: &Instr, state: &mut SimState, stack: &mut Vec<Value>) -> Resu
             let b = pop(stack)?;
             let a = pop(stack)?;
             stack.push(Value::Num(compare(*op, a, b)?));
+        }
+        Instr::Qm2(cmd) => {
+            let out = crate::qm2::exec_qm2(cmd, state, stack)?;
+            if !out.is_empty() {
+                stack.push(Value::Str(out));
+            }
         }
         Instr::Qm(cmd) => {
             let out = crate::qm::exec_qm(cmd, state, stack)?;

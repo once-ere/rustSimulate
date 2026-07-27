@@ -35,8 +35,9 @@ pub enum Keyword {
     Reset,
     /* the rigid bounding box */
     Box,
-    /* one-dimensional quantum mechanics */
+    /* one- and two-dimensional quantum mechanics */
     Qm,
+    Qm2,
     /* graphical scene commands */
     Scene,
     Create,
@@ -100,6 +101,7 @@ impl Keyword {
             "box" => Some(Keyword::Box),
             "reset" => Some(Keyword::Reset),
             "qm" => Some(Keyword::Qm),
+            "qm2" => Some(Keyword::Qm2),
             "scene" => Some(Keyword::Scene),
             "create" => Some(Keyword::Create),
             "close" | "destroy" => Some(Keyword::Close),

@@ -1009,6 +1009,78 @@ a bound-state calculation.
 
 ---
 
+### 5.11 `QM2` — two dimensions, by ADI
+
+A **separate family** from `QM`, not a mode on it. A 2-D problem differs
+in almost every argument list — the grid, a potential of two arguments,
+a two-component packet, a rectangular region — so overloading `QM` would
+have meant arity guessing or a hidden mode that silently reinterprets
+your commands. A second word is cheaper than either.
+
+| command | meaning |
+|---|---|
+| `QM2` | report the current 2-D setup |
+| `QM2 GRID <x0> <x1> <nx>, <y0> <y1> <ny>` | domain and resolution per axis |
+| `QM2 POTENTIAL ZERO` / `<function>` | a `DEF`ined `V(x, y)` |
+| `QM2 PACKET <x0> <y0>, <sx> <sy>, <kx> <ky>` | 2-D Gaussian packet |
+| `QM2 STEP <dt>` / `QM2 RUN <t> [STEPS <n>]` | ADI propagation |
+| `QM2 NORM`, `QM2 ENERGY`, `QM2 CENTROID` | observables |
+| `QM2 PROB <xa> <xb>, <ya> <yb>` | probability in a rectangle |
+| `QM2 ABSORB <width> <strength> [<power>]` / `OFF` | absorbing edges on all four walls |
+| `QM2 ANIMATE "<file>" <t> [FRAMES <n>]` | heat-map animation |
+| `QM2 RESET` | forget the 2-D problem |
+
+#### Why ADI, and why not the textbook ADI
+
+In 1-D the Crank–Nicolson operator is tridiagonal, so one solve per step
+gives an exactly unitary propagator. **In 2-D it is not.** The five-point
+Laplacian couples each point to neighbours in both directions, and the
+matrix is block-tridiagonal with bandwidth `nx`; solving it directly
+costs `O(nx³ ny)` per step.
+
+ADI splits the step by direction, so each half-step is a *set of
+independent tridiagonal solves* — `ny` along x, then `nx` along y — and
+the cost falls back to `O(nx·ny)`, the same order as 1-D.
+
+The textbook scheme is **Peaceman–Rachford**, which is implicit in x
+against an explicit y and then swaps. It is second-order and
+unconditionally stable, but it is **not unitary**: the two half-steps use
+different operators, so the norm drifts at `O(dt²)` per step.
+
+This implementation instead applies a **Cayley transform in each
+direction separately**, composed by Strang splitting:
+
+```
+psi(t+dt) = U_x(dt/2) U_y(dt) U_x(dt/2) psi(t)
+```
+
+Each `A_d = T_d + V/2` is Hermitian, so each `U_d` is exactly unitary,
+and a product of unitaries is unitary. **The norm is conserved to
+machine precision for any `dt`**, exactly as in 1-D, while the splitting
+error stays `O(dt²)` in the *dynamics*.
+
+That separation matters for testing more than for physics: norm
+conservation remains a sharp check on the linear algebra, entirely
+independent of the accuracy question, instead of the two being tangled
+in one drifting number.
+
+One subtlety worth knowing: with `A_x = T_x + V/2` and `A_y = T_y + V/2`
+the commutator `[A_x, A_y]` is non-zero **even for a separable
+potential**, so a product eigenstate is not perfectly stationary. The
+drift is second order in `dt` and the test suite asserts that scaling
+rather than a magnitude. Splitting `V` by axis would cancel it, but a
+general `V` does not decompose that way, so the even split is the honest
+default.
+
+#### Cost
+
+Bound states are **not** provided in 2-D. On an `nx × ny` grid the
+Hamiltonian is `(nx·ny)²`, so a modest 200 × 200 grid gives a 40 000 ×
+40 000 dense matrix — far beyond the Jacobi eigensolver. Propagation has
+no such limit: the double-slit run below uses 180 000 points comfortably.
+
+---
+
 ## 6. The notebook (cells, editing, magics)
 
 ### 6.1 Cells
@@ -1128,7 +1200,7 @@ write. When the program ends, the value on top of the stack becomes
 
 ---
 
-## 9. Seventeen worked examples
+## 9. Eighteen worked examples
 
 All transcripts below are genuine program output (interactive sessions
 are shown as they appear when typed by hand).
@@ -1991,6 +2063,99 @@ A scan over k₀ from 1.4 to 2.9 rises monotonically — 0.017, 0.101,
 [TUNNELING_RESULTS.md](TUNNELING_RESULTS.md) for the full run log,
 including the narrower-packet scan and why the negative result is
 recorded rather than tuned away.
+
+---
+
+### Example 18 — the double slit, in two dimensions
+
+The canonical 2-D quantum problem, and the notebook
+[dynamic_notebooks/double_slit.posim](dynamic_notebooks/double_slit.posim).
+The wall is an ordinary user function of two arguments, built entirely
+from comparisons:
+
+```
+In[1]:= def openings(y) { (y > 1.5) * (y < 2.5) + (y > -2.5) * (y < -1.5) }
+In[2]:= def slit(x, y) { 60 * (x > 0) * (x < 0.4) * (1 - openings(y)) }
+In[3]:= slit(0.2, 0)
+Out[3]= 60
+In[4]:= slit(0.2, 2)
+Out[4]= 0
+```
+
+A slab at `0 < x < 0.4`, height 60, with the two slit windows subtracted
+out. Solid between and beyond the slits, open inside them.
+
+```
+In[8]:= qm2 grid -12 24 450, -16 16 400
+In[10]:= qm2 absorb 4, 8
+In[11]:= qm2 packet -4.5, 0, 1.2 4, 8 0
+In[12]:= qm2 energy
+Out[12]= 31.008336923103123
+In[15]:= qm2 run 2.6 steps 800
+Out[15]= t = 2.6 (800 ADI step(s) of dt = 0.0032500000000000003), <E> = 30.990650438623, norm drift = 7.796e-1
+In[18]:= qm2 norm
+Out[18]= 0.220410865359174
+```
+
+Note what those last three lines say together: **78 % of the probability
+was absorbed at the walls, and the energy moved by 0.06 %**. The
+absorber removed the reflected wave — the wall is 60 high against a
+packet of energy 32, so most of it bounces — without touching the energy
+of what remains. `<E>` is `<psi|H|psi>/<psi|psi>`, divided by the norm on
+purpose; without that division it would have fallen by the same factor
+as the norm and looked like an energy leak.
+
+The fringes, counted in horizontal bands on a screen at `11 < x < 19`:
+
+```
+In[19]:= qm2 prob 11 19, -0.5 0.5
+Out[19]= 0.015766137658856
+In[20]:= qm2 prob 11 19, 0.5 1.5
+Out[20]= 0.004524177973091
+In[21]:= qm2 prob 11 19, 1.5 2.5
+Out[21]= 0.009164400220520
+In[22]:= qm2 prob 11 19, 2.5 3.5
+Out[22]= 0.017416488189805
+In[23]:= qm2 prob 11 19, 3.5 4.5
+Out[23]= 0.004708263315463
+In[24]:= qm2 prob 11 19, 4.5 5.5
+Out[24]= 0.006459341509654
+In[25]:= qm2 prob 11 19, 5.5 6.5
+Out[25]= 0.013993383178187
+In[26]:= qm2 prob 11 19, 6.5 7.5
+Out[26]= 0.005019205668634
+```
+
+| band | P | expected |
+|---|---|---|
+| 0 ± 0.5 | **0.01577** | central maximum |
+| 0.5–1.5 | 0.00452 | first minimum, y = 1.46 |
+| 2.5–3.5 | **0.01742** | first maximum, y = 2.96 |
+| 3.5–4.5 | 0.00471 | second minimum, y = 4.56 |
+| 5.5–6.5 | **0.01399** | second maximum, y = 6.32 |
+
+With slit separation \(d = 4\) and \(\lambda = 2\pi/k = 0.785\), the
+maxima sit at \(\sin\theta = m\lambda/d\) and the screen is
+\(L \approx 14.8\) from the slits, giving 2.96 and 6.32. **Every
+predicted maximum and minimum lands in the right band.**
+
+Getting there took two corrections worth recording. A first attempt used
+\(k = 4\) and \(d = 2\), putting the first maximum at 52° — off the
+screen, so the scan showed a featureless central lobe and no fringes at
+all. A second attempt launched the packet at `x = -7` with an absorber
+of width 5, i.e. *inside* the absorber, and 86 % of it was eaten before
+it reached the slits.
+
+Finally, the picture:
+
+```
+In[28]:= qm2 animate "double_slit.html" 3 frames 100
+```
+
+A self-contained heat-map page — brightness is \(|\psi|^2\), the red
+band is the wall. Its own in-page analysis of the final frame finds
+fringe maxima at y = 0.04 and y = 3.23, matching the band scan and the
+theory independently of the Rust code that produced it.
 
 ---
 

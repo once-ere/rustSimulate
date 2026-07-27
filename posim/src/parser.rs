@@ -106,6 +106,21 @@
 //!    SUBTRACTION, yielding two arguments where three were wanted.
 //!    `5, -2, 2` is unambiguous. *)
 //!
+//! qm2cmd   := [ "STATUS" ]
+//!           | "GRID" expr expr expr expr expr expr
+//!           | "POTENTIAL" ( "ZERO" | IDENT )    (* a DEF'd V(x, y)     *)
+//!           | "PACKET" expr expr expr expr expr expr
+//!           | "STEP" expr | "RUN" expr [ "STEPS" expr ]
+//!           | "NORM" | "ENERGY" | "CENTROID"
+//!           | "PROB" expr expr expr expr
+//!           | "ABSORB" ( "OFF" | expr expr [ expr ] )
+//!           | "ANIMATE" STRING expr [ "FRAMES" expr ]
+//!           | "RESET" ;
+//!
+//! (* QM2 is a SEPARATE family rather than a mode on QM: a 2-D problem
+//!    differs in almost every argument list, and a hidden mode that
+//!    silently reinterprets your commands is worse than a second word. *)
+//!
 //! unary    := "-" unary | atom ;
 //! atom     := NUMBER | IMAGINARY | STRING
 //!           | "[" expr { "," expr } "]" | "(" expr ")"
@@ -423,6 +438,10 @@ impl Parser {
                 self.pos += 1;
                 prog.extend(self.qm_command()?);
             }
+            TokKind::Keyword(Keyword::Qm2) => {
+                self.pos += 1;
+                prog.extend(self.qm2_command()?);
+            }
             TokKind::Keyword(Keyword::Reset) => {
                 self.pos += 1;
                 prog.push(Instr::Reset);
@@ -621,6 +640,126 @@ impl Parser {
             });
         }
         Ok(Path { root, field, comp })
+    }
+
+    /// `QM2 <word> [args]` — the two-dimensional family.
+    ///
+    /// Same conventions as [`Self::qm_command`]: the subcommand word is
+    /// an ident-or-keyword, and argument lists take optional commas.
+    /// Commas are worth using here even for positive values, because
+    /// the argument groups are naturally pairs and triples —
+    /// `qm2 grid -8 8 80, -8 8 80` reads as two axes rather than six
+    /// loose numbers.
+    fn qm2_command(&mut self) -> Result<Vec<Instr>, String> {
+        use crate::qm2::Qm2Cmd;
+        let mut prog = Vec::new();
+        if self.peek().is_none() {
+            return Ok(vec![Instr::Qm2(Qm2Cmd::Status)]);
+        }
+        let word = self.expect_field()?;
+        let args = |me: &mut Self, n: usize, p: &mut Vec<Instr>| -> Result<(), String> {
+            for i in 0..n {
+                if i > 0 {
+                    if let Some(Token { kind: TokKind::Comma, .. }) = me.peek() {
+                        me.pos += 1;
+                    }
+                }
+                me.expr(p)?;
+            }
+            Ok(())
+        };
+        let cmd = match word.as_str() {
+            "status" => Qm2Cmd::Status,
+            "grid" => {
+                args(self, 6, &mut prog)?;
+                Qm2Cmd::Grid
+            }
+            "potential" => Qm2Cmd::Potential(self.expect_field()?),
+            "packet" => {
+                args(self, 6, &mut prog)?;
+                Qm2Cmd::Packet
+            }
+            "step" => {
+                args(self, 1, &mut prog)?;
+                Qm2Cmd::Step
+            }
+            "run" => {
+                self.expr(&mut prog)?;
+                let has_steps = matches!(
+                    self.peek(),
+                    Some(Token { kind: TokKind::Keyword(Keyword::Steps), .. })
+                );
+                if has_steps {
+                    self.pos += 1;
+                    self.expr(&mut prog)?;
+                } else {
+                    prog.push(Instr::Push(Value::Num(1.0)));
+                }
+                Qm2Cmd::Run
+            }
+            "norm" => Qm2Cmd::Norm,
+            "energy" => Qm2Cmd::Energy,
+            "centroid" | "position" => Qm2Cmd::Centroid,
+            "prob" | "probability" => {
+                args(self, 4, &mut prog)?;
+                Qm2Cmd::Prob
+            }
+            "absorb" => {
+                let off = matches!(
+                    self.peek(),
+                    Some(Token { kind: TokKind::Keyword(Keyword::Off), .. })
+                );
+                if off {
+                    self.pos += 1;
+                    Qm2Cmd::AbsorbOff
+                } else {
+                    args(self, 2, &mut prog)?;
+                    if self.peek().is_some() {
+                        if let Some(Token { kind: TokKind::Comma, .. }) = self.peek() {
+                            self.pos += 1;
+                        }
+                        self.expr(&mut prog)?;
+                    } else {
+                        prog.push(Instr::Push(Value::Num(2.0)));
+                    }
+                    Qm2Cmd::Absorb
+                }
+            }
+            "reset" => Qm2Cmd::Reset,
+            "animate" => {
+                let path = match self.next() {
+                    Some(Token { kind: TokKind::Str(p), .. }) => p,
+                    Some(t) => {
+                        return Err(format!(
+                            "parse error at column {}: QM2 ANIMATE needs a quoted file path, \
+                             found {}",
+                            t.col, t.kind
+                        ))
+                    }
+                    None => return Err("QM2 ANIMATE: expected a quoted file path".to_string()),
+                };
+                self.expr(&mut prog)?;
+                let has_frames = matches!(
+                    self.peek(),
+                    Some(Token { kind: TokKind::Ident(w), .. }) if w.eq_ignore_ascii_case("frames")
+                );
+                if has_frames {
+                    self.pos += 1;
+                    self.expr(&mut prog)?;
+                } else {
+                    prog.push(Instr::Push(Value::Num(80.0)));
+                }
+                Qm2Cmd::Animate(path)
+            }
+            other => {
+                return Err(format!(
+                    "QM2: unknown subcommand `{other}` (grid, potential, packet, step, run, \
+                     norm, energy, centroid, prob, absorb, animate, status, reset)"
+                ))
+            }
+        };
+        prog.push(Instr::Qm2(cmd));
+        Ok(prog)
     }
 
     /// `QM <word> [args]`.
