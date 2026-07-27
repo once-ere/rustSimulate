@@ -54,7 +54,7 @@ zeta-anchor@@special_functions@@special_functions/src/airy_uniform.rs@@let targe
 airy-sector@@special_functions@@special_functions/src/airy_uniform.rs@@if !near && x.arg().abs() > 0.8 {@@if !near && x.arg().abs() > 9.9 {@@the Stage 2D Airy sector guard
 tm-midpoint@@quantum@@quantum/src/transfer.rs@@(i as f64 + 0.5) * d)))@@(i as f64) * d)))@@midpoint sampling, which makes the transfer matrix 2nd order
 tm-guard@@quantum@@quantum/src/transfer.rs@@if e <= v_left.re {@@if false {@@the below-asymptote refusal (fixed in 2B; used to report R = 0)
-nash-phase@@quantum@@quantum/src/nash.rs@@        power = power * C::I;@@        power = power * C::ONE;@@the i^M phase sequence in the Jacobi-Anger stencil
+nash-phase@@quantum@@quantum/src/nash.rs@@coeff.push(power * jm);@@coeff.push(C::real(jm));@@the i^M phase in the Jacobi-Anger stencil coefficients
 nash-order@@quantum@@quantum/src/nash.rs@@None => order_for(lambda, f64::EPSILON)?,@@None => 2,@@the automatic Jacobi-Anger truncation order
 cap-cells@@quantum@@quantum/src/absorber.rs@@const CELLS_PER_LENGTH: f64 = 200.0;@@const CELLS_PER_LENGTH: f64 = 8.0;@@the absorber's cell resolution
 zeno-window@@physical_object@@physical_object/src/collide.rs@@pub const ZENO_GAP_RELATIVE: f64 = 1e-9;@@pub const ZENO_GAP_RELATIVE: f64 = 1e9;@@the Stage 2C burst window (everything becomes one burst again)
