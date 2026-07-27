@@ -693,6 +693,99 @@ impl Propagator2 {
     }
 }
 
+/// A 2-D propagator for `H(t) = H_0 + f(t) g(x, y)` — the ADI
+/// counterpart of [`crate::qm1d::DrivenPropagator`], with the same
+/// factorisation and the same midpoint sampling.
+pub struct DrivenPropagator2 {
+    ham: Hamiltonian2,
+    shape: Vec<f64>,
+    dt: f64,
+    time: f64,
+}
+
+impl DrivenPropagator2 {
+    /// # Errors
+    /// Shape length mismatch, non-finite shape, or a zero `dt`.
+    pub fn new(ham: Hamiltonian2, shape: Vec<f64>, dt: f64) -> Result<Self, String> {
+        if shape.len() != ham.grid.len() {
+            return Err(format!(
+                "DrivenPropagator2: the drive shape has {} values but the grid has {}",
+                shape.len(),
+                ham.grid.len()
+            ));
+        }
+        if shape.iter().any(|v| !v.is_finite()) {
+            return Err("DrivenPropagator2: the drive shape has a non-finite value".to_string());
+        }
+        if !dt.is_finite() || dt == 0.0 {
+            return Err(format!("DrivenPropagator2: dt must be finite and non-zero, got {dt}"));
+        }
+        Ok(Self { ham, shape, dt, time: 0.0 })
+    }
+
+    pub fn time(&self) -> f64 {
+        self.time
+    }
+    pub fn dt(&self) -> f64 {
+        self.dt
+    }
+
+    fn hamiltonian_at(&self, amp: f64) -> Result<Hamiltonian2, String> {
+        if !amp.is_finite() {
+            return Err(format!("DrivenPropagator2: the modulation returned {amp}"));
+        }
+        let v: Vec<f64> = self
+            .ham
+            .potential
+            .iter()
+            .zip(&self.shape)
+            .map(|(v0, g)| v0 + amp * g)
+            .collect();
+        let mut h = Hamiltonian2::new(
+            self.ham.grid.clone(),
+            v,
+            self.ham.mass,
+            self.ham.hbar,
+        )?;
+        h.absorber = self.ham.absorber.clone();
+        Ok(h)
+    }
+
+    /// One ADI step with the modulation taken at the midpoint.
+    ///
+    /// # Errors
+    /// Grid mismatch, non-finite modulation, or a solve failure.
+    pub fn step<F: Fn(f64) -> f64>(
+        &mut self,
+        w: &mut Wavefunction2,
+        modulation: F,
+    ) -> Result<(), String> {
+        if w.grid != self.ham.grid {
+            return Err("step: the wavefunction and propagator use different grids".to_string());
+        }
+        let amp = modulation(self.time + 0.5 * self.dt);
+        Propagator2::new(self.hamiltonian_at(amp)?, self.dt)?.step(w)?;
+        self.time += self.dt;
+        Ok(())
+    }
+
+    /// `steps` steps.
+    ///
+    /// # Errors
+    /// As [`DrivenPropagator2::step`].
+    pub fn run<F: Fn(f64) -> f64 + Copy>(
+        &mut self,
+        w: &mut Wavefunction2,
+        steps: usize,
+        modulation: F,
+    ) -> Result<(), String> {
+        for _ in 0..steps {
+            self.step(w, modulation)?;
+        }
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1042,6 +1135,43 @@ mod tests {
             .with_absorber(2.0, 1.0, 2.0)
             .unwrap();
         assert!(ham.bound_states(2, 200).unwrap_err().contains("Hermitian"));
+    }
+
+    /// The 2-D driven oscillator: Ehrenfest is exact for a quadratic
+    /// potential with a linear drive in EACH direction independently,
+    /// so driving along x alone must move `<x>` on the classical
+    /// trajectory and leave `<y>` at zero. The second half is the real
+    /// content — it would fail if the ADI directions were crossed.
+    #[test]
+    fn a_2d_drive_moves_only_the_driven_axis() {
+        let g = Grid2::new(-9.0, 9.0, 72, -9.0, 9.0, 72).unwrap();
+        let ham =
+            Hamiltonian2::from_fn(g.clone(), |x, y| 0.5 * (x * x + y * y), 1.0, 1.0).unwrap();
+        let b = ham.bound_states(1, 300).unwrap();
+        let mut w =
+            Wavefunction2::new(g.clone(), b.states[0].iter().map(|&v| C::real(v)).collect())
+                .unwrap();
+        w.normalise().unwrap();
+
+        // g(x, y) = x: a dipole drive along x only
+        let mut shape = Vec::with_capacity(g.len());
+        for iy in 0..g.ny {
+            for ix in 0..g.nx {
+                let _ = iy;
+                shape.push(g.x(ix));
+            }
+        }
+        let (f0, om) = (0.3_f64, 0.7_f64);
+        let dt = 0.005;
+        let mut prop = DrivenPropagator2::new(ham, shape, dt).unwrap();
+        prop.run(&mut w, 1000, move |t| f0 * (om * t).cos()).unwrap();
+
+        let t = dt * 1000.0;
+        let exact = -f0 / (1.0 - om * om) * ((om * t).cos() - t.cos());
+        let (cx, cy) = w.centroid();
+        assert!((cx - exact).abs() < 0.02, "<x> = {cx}, classical {exact}");
+        assert!(cy.abs() < 1e-9, "<y> = {cy}, must not move — the drive is along x only");
+        assert!((w.norm() - 1.0).abs() < 1e-10, "norm = {}", w.norm());
     }
 
     #[test]

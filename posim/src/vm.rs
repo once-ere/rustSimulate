@@ -271,6 +271,7 @@ pub enum Instr {
     Scene(SceneCmd),
     Qm(crate::qm::QmCmd),
     Qm2(crate::qm2::Qm2Cmd),
+    Qm3(crate::qm3::Qm3Cmd),
     /// Comparisons. Each pops two values and pushes 1.0 or 0.0 — the
     /// language has numbers and no boolean type, and 1/0 is what makes
     /// an indicator function like `(x > a) * (x < b)` work as a
@@ -326,6 +327,8 @@ pub struct SimState {
     pub qm: crate::qm::QmState,
     /// The two-dimensional quantum problem, if any.
     pub qm2: crate::qm2::Qm2State,
+    /// The three-dimensional quantum problem, if any.
+    pub qm3: crate::qm3::Qm3State,
     /// User names registered with `NEW ... AS name` → object index
     /// (kept renumbered by DEL / BOX OFF).
     pub names: BTreeMap<String, usize>,
@@ -350,6 +353,7 @@ impl Default for SimState {
             functions: BTreeMap::new(),
             qm: crate::qm::QmState::default(),
             qm2: crate::qm2::Qm2State::fresh(),
+            qm3: crate::qm3::Qm3State::fresh(),
             names: BTreeMap::new(),
             env_stack: Vec::new(),
         }
@@ -477,6 +481,8 @@ two-dimensional quantum mechanics (ADI; see grammar.md):
                             its own Cayley transform, so the propagator
                             is EXACTLY unitary for any dt, with the
                             splitting error confined to the dynamics
+  QM2 DRIVE <shape> <modulation> | QM2 DRIVE OFF
+                            time-dependent V(x,y,t), as in 1-D
   QM2 STATES <k>            the k lowest bound-state energies, by
                             matrix-free Lanczos with deflation. The 2-D
                             Hamiltonian is (nx*ny)^2, far too big to
@@ -491,6 +497,25 @@ two-dimensional quantum mechanics (ADI; see grammar.md):
   QM2 ANIMATE \"<file>\" <t> [FRAMES <n>]
                             heat-map animation of |psi(x,y)|^2
   QM2 RESET
+three-dimensional quantum mechanics (ADI; see grammar.md):
+  QM3                       report the current 3-D setup
+  QM3 GRID <x0> <x1> <nx>, <y0> <y1> <ny>, <z0> <z1> <nz>
+  QM3 POTENTIAL ZERO | <function of x,y,z>
+  QM3 PACKET <x0> <y0> <z0>, <sx> <sy> <sz>, <kx> <ky> <kz>
+  QM3 RUN <t> [STEPS <n>] | QM3 STEP <dt>
+                            five directional sweeps per step:
+                            U_x(dt/2) U_y(dt/2) U_z(dt) U_y(dt/2) U_x(dt/2)
+                            — still exactly unitary
+  QM3 STATES <k> | QM3 STATE <n>
+                            bound states. Practical to about 40^3: the
+                            eigensolver stores its whole Krylov basis,
+                            so it is REFUSED on larger grids rather than
+                            left to exhaust memory. Propagation has no
+                            such limit
+  QM3 NORM | ENERGY | CENTROID
+  QM3 PROB <xa> <xb>, <ya> <yb>, <za> <zb>
+  QM3 ABSORB <width> <strength> [<power>] | QM3 ABSORB OFF
+  QM3 RESET
   QM RESET                  forget the quantum problem
                             NOTE: separate negative arguments with
                             commas — `well 5 -2 2` reads `5 - 2` as
@@ -1138,6 +1163,12 @@ fn exec_one(instr: &Instr, state: &mut SimState, stack: &mut Vec<Value>) -> Resu
             let b = pop(stack)?;
             let a = pop(stack)?;
             stack.push(Value::Num(compare(*op, a, b)?));
+        }
+        Instr::Qm3(cmd) => {
+            let out = crate::qm3::exec_qm3(cmd, state, stack)?;
+            if !out.is_empty() {
+                stack.push(Value::Str(out));
+            }
         }
         Instr::Qm2(cmd) => {
             let out = crate::qm2::exec_qm2(cmd, state, stack)?;

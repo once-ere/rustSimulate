@@ -38,6 +38,7 @@ pub enum Keyword {
     /* one- and two-dimensional quantum mechanics */
     Qm,
     Qm2,
+    Qm3,
     /* graphical scene commands */
     Scene,
     Create,
@@ -102,6 +103,7 @@ impl Keyword {
             "reset" => Some(Keyword::Reset),
             "qm" => Some(Keyword::Qm),
             "qm2" => Some(Keyword::Qm2),
+            "qm3" => Some(Keyword::Qm3),
             "scene" => Some(Keyword::Scene),
             "create" => Some(Keyword::Create),
             "close" | "destroy" => Some(Keyword::Close),

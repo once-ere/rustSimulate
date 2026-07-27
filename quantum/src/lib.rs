@@ -41,3 +41,4 @@
 
 pub mod qm1d;
 pub mod qm2d;
+pub mod qm3d;

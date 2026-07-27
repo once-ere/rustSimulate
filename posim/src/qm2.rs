@@ -17,7 +17,9 @@
 //! qm2 animate "slit.html" 20 frames 80
 //! ```
 
-use quantum::qm2d::{BoundStates2, Grid2, Hamiltonian2, Propagator2, Wavefunction2};
+use quantum::qm2d::{
+    BoundStates2, DrivenPropagator2, Grid2, Hamiltonian2, Propagator2, Wavefunction2,
+};
 
 use crate::vm::{SimState, Value};
 
@@ -42,6 +44,9 @@ pub enum Qm2Cmd {
     /// Pops yb, ya, xb, xa.
     Prob,
     /// Pops power, strength, width.
+    /// `f(t) g(x, y)`: two DEF'd function names.
+    Drive(String, String),
+    DriveOff,
     Absorb,
     AbsorbOff,
     Reset,
@@ -64,6 +69,8 @@ pub struct Qm2State {
     pub psi: Option<Wavefunction2>,
     pub time: f64,
     pub absorber: Option<(f64, f64, f64)>,
+    /// A drive: sampled spatial shape, its name, and the modulation's.
+    pub drive: Option<(Vec<f64>, String, String)>,
     /// Cached bound states, so `QM2 STATE n` after `QM2 STATES k` does
     /// not pay for a second Lanczos run.
     pub states: Option<BoundStates2>,
@@ -265,7 +272,32 @@ pub fn exec_qm2(
             let ham = state.qm2.hamiltonian()?;
             let mut w = state.qm2.wavefunction()?.clone();
             let n0 = w.norm();
-            Propagator2::new(ham.clone(), dt)?.run(&mut w, steps)?;
+            match state.qm2.drive.clone() {
+                None => {
+                    Propagator2::new(ham.clone(), dt)?.run(&mut w, steps)?;
+                }
+                Some((shape, _, time_name)) => {
+                    let mut prop = DrivenPropagator2::new(ham.clone(), shape, dt)?;
+                    let t0 = state.qm2.time;
+                    for k in 0..steps {
+                        let mid = t0 + dt * (k as f64 + 0.5);
+                        let v = crate::vm::call_user_function_public(
+                            &time_name,
+                            vec![Value::Num(mid)],
+                            state,
+                        )?;
+                        let amp = match v {
+                            Value::Num(y) => y,
+                            other => {
+                                return Err(format!(
+                                    "QM2 RUN: `{time_name}(t)` must return a number, got {other}"
+                                ))
+                            }
+                        };
+                        prop.step(&mut w, |_| amp)?;
+                    }
+                }
+            }
             let n1 = w.norm();
             let drift = (n1 / n0 - 1.0).abs();
             let edge = w.edge_probability(0.05);
@@ -302,6 +334,48 @@ pub fn exec_qm2(
                 "{:.15}",
                 state.qm2.wavefunction()?.probability_in(xa, xb, ya, yb)
             ))
+        }
+
+        Qm2Cmd::Drive(shape_name, time_name) => {
+            let grid = state.qm2.grid.clone().ok_or("QM2 DRIVE: set a grid first")?;
+            for nm in [shape_name, time_name] {
+                if !state.functions.contains_key(nm) {
+                    return Err(format!(
+                        "QM2 DRIVE: no function `{nm}` — the shape is `DEF {nm}(x, y) {{ ... }}` \
+                         and the modulation is `DEF f(t) {{ ... }}`"
+                    ));
+                }
+            }
+            let mut shape = Vec::with_capacity(grid.len());
+            for iy in 0..grid.ny {
+                for ix in 0..grid.nx {
+                    let v = crate::vm::call_user_function_public(
+                        shape_name,
+                        vec![Value::Num(grid.x(ix)), Value::Num(grid.y(iy))],
+                        state,
+                    )?;
+                    match v {
+                        Value::Num(y) => shape.push(y),
+                        other => {
+                            return Err(format!(
+                                "QM2 DRIVE: `{shape_name}(x, y)` must return a number, got {other}"
+                            ))
+                        }
+                    }
+                }
+            }
+            state.qm2.drive = Some((shape, shape_name.clone(), time_name.clone()));
+            state.qm2.states = None;
+            Ok(format!(
+                "drive V(x,y,t) += {time_name}(t) * {shape_name}(x,y). Energy is NO LONGER \
+                 conserved; propagation stays unitary. QM2 STATES uses the STATIC potential."
+            ))
+        }
+
+        Qm2Cmd::DriveOff => {
+            state.qm2.drive = None;
+            state.qm2.states = None;
+            Ok("drive removed".to_string())
         }
 
         Qm2Cmd::Absorb => {

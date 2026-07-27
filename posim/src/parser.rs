@@ -111,6 +111,7 @@
 //!           | "GRID" expr expr expr expr expr expr
 //!           | "POTENTIAL" ( "ZERO" | IDENT )    (* a DEF'd V(x, y)     *)
 //!           | "PACKET" expr expr expr expr expr expr
+//!           | "DRIVE" ( "OFF" | IDENT [ "," ] IDENT )
 //!           | "STATES" expr | "STATE" expr
 //!           | "STEP" expr | "RUN" expr [ "STEPS" expr ]
 //!           | "NORM" | "ENERGY" | "CENTROID"
@@ -119,9 +120,19 @@
 //!           | "ANIMATE" STRING expr [ "FRAMES" expr ]
 //!           | "RESET" ;
 //!
+//! qm3cmd   := [ "STATUS" ]
+//!           | "GRID" expr{9} | "POTENTIAL" ( "ZERO" | IDENT )
+//!           | "PACKET" expr{9}
+//!           | "STATES" expr | "STATE" expr
+//!           | "STEP" expr | "RUN" expr [ "STEPS" expr ]
+//!           | "NORM" | "ENERGY" | "CENTROID" | "PROB" expr{6}
+//!           | "ABSORB" ( "OFF" | expr expr [ expr ] )
+//!           | "RESET" ;
+//!
 //! (* QM2 is a SEPARATE family rather than a mode on QM: a 2-D problem
 //!    differs in almost every argument list, and a hidden mode that
-//!    silently reinterprets your commands is worse than a second word. *)
+//!    silently reinterprets your commands is worse than a second word.
+//!    QM3 follows for the same reason. *)
 //!
 //! unary    := "-" unary | atom ;
 //! atom     := NUMBER | IMAGINARY | STRING
@@ -444,6 +455,10 @@ impl Parser {
                 self.pos += 1;
                 prog.extend(self.qm2_command()?);
             }
+            TokKind::Keyword(Keyword::Qm3) => {
+                self.pos += 1;
+                prog.extend(self.qm3_command()?);
+            }
             TokKind::Keyword(Keyword::Reset) => {
                 self.pos += 1;
                 prog.push(Instr::Reset);
@@ -644,6 +659,104 @@ impl Parser {
         Ok(Path { root, field, comp })
     }
 
+    /// `QM3 <word> [args]` — the three-dimensional family. Same
+    /// conventions as [`Self::qm2_command`]; argument groups come in
+    /// threes, so commas between axes are worth using.
+    fn qm3_command(&mut self) -> Result<Vec<Instr>, String> {
+        use crate::qm3::Qm3Cmd;
+        let mut prog = Vec::new();
+        if self.peek().is_none() {
+            return Ok(vec![Instr::Qm3(Qm3Cmd::Status)]);
+        }
+        let word = self.expect_field()?;
+        let args = |me: &mut Self, n: usize, p: &mut Vec<Instr>| -> Result<(), String> {
+            for i in 0..n {
+                if i > 0 {
+                    if let Some(Token { kind: TokKind::Comma, .. }) = me.peek() {
+                        me.pos += 1;
+                    }
+                }
+                me.expr(p)?;
+            }
+            Ok(())
+        };
+        let cmd = match word.as_str() {
+            "status" => Qm3Cmd::Status,
+            "grid" => {
+                args(self, 9, &mut prog)?;
+                Qm3Cmd::Grid
+            }
+            "potential" => Qm3Cmd::Potential(self.expect_field()?),
+            "packet" => {
+                args(self, 9, &mut prog)?;
+                Qm3Cmd::Packet
+            }
+            "states" => {
+                args(self, 1, &mut prog)?;
+                Qm3Cmd::States
+            }
+            "state" => {
+                args(self, 1, &mut prog)?;
+                Qm3Cmd::LoadState
+            }
+            "step" => {
+                args(self, 1, &mut prog)?;
+                Qm3Cmd::Step
+            }
+            "run" => {
+                self.expr(&mut prog)?;
+                let has_steps = matches!(
+                    self.peek(),
+                    Some(Token { kind: TokKind::Keyword(Keyword::Steps), .. })
+                );
+                if has_steps {
+                    self.pos += 1;
+                    self.expr(&mut prog)?;
+                } else {
+                    prog.push(Instr::Push(Value::Num(1.0)));
+                }
+                Qm3Cmd::Run
+            }
+            "norm" => Qm3Cmd::Norm,
+            "energy" => Qm3Cmd::Energy,
+            "centroid" | "position" => Qm3Cmd::Centroid,
+            "prob" | "probability" => {
+                args(self, 6, &mut prog)?;
+                Qm3Cmd::Prob
+            }
+            "absorb" => {
+                let off = matches!(
+                    self.peek(),
+                    Some(Token { kind: TokKind::Keyword(Keyword::Off), .. })
+                );
+                if off {
+                    self.pos += 1;
+                    Qm3Cmd::AbsorbOff
+                } else {
+                    args(self, 2, &mut prog)?;
+                    if self.peek().is_some() {
+                        if let Some(Token { kind: TokKind::Comma, .. }) = self.peek() {
+                            self.pos += 1;
+                        }
+                        self.expr(&mut prog)?;
+                    } else {
+                        prog.push(Instr::Push(Value::Num(2.0)));
+                    }
+                    Qm3Cmd::Absorb
+                }
+            }
+            "reset" => Qm3Cmd::Reset,
+            other => {
+                return Err(format!(
+                    "QM3: unknown subcommand `{other}` (grid, potential, packet, states, \
+                     state, step, run, norm, energy, centroid, prob, absorb, status, reset)"
+                ))
+            }
+        };
+        prog.push(Instr::Qm3(cmd));
+        Ok(prog)
+    }
+
     /// `QM2 <word> [args]` — the two-dimensional family.
     ///
     /// Same conventions as [`Self::qm_command`]: the subcommand word is
@@ -725,6 +838,22 @@ impl Parser {
                         prog.push(Instr::Push(Value::Num(2.0)));
                     }
                     Qm2Cmd::Absorb
+                }
+            }
+            "drive" => {
+                let off = matches!(
+                    self.peek(),
+                    Some(Token { kind: TokKind::Keyword(Keyword::Off), .. })
+                );
+                if off {
+                    self.pos += 1;
+                    Qm2Cmd::DriveOff
+                } else {
+                    let shape = self.expect_field()?;
+                    if let Some(Token { kind: TokKind::Comma, .. }) = self.peek() {
+                        self.pos += 1;
+                    }
+                    Qm2Cmd::Drive(shape, self.expect_field()?)
                 }
             }
             "states" => {

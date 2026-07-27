@@ -1166,6 +1166,7 @@ reinterprets your commands is worse than a second word.
 \code{QM2 STEP <dt>} / \code{QM2 RUN <t> [STEPS <n>]} & ADI propagation\\
 \code{QM2 NORM | ENERGY | CENTROID} & observables\\
 \code{QM2 PROB <xa> <xb>, <ya> <yb>} & probability in a rectangle\\
+\code{QM2 DRIVE <shape> <modulation> | OFF} & time-dependent $V(x,y,t)$\\
 \code{QM2 ABSORB <w> <s> [<p>] | OFF} & absorbing edges, all four walls\\
 \code{QM2 ANIMATE "<file>" <t> [FRAMES <n>]} & heat-map animation\\
 \code{QM2 RESET} & forget the 2-D problem\\
@@ -1263,6 +1264,71 @@ eigensolver has no exact stopping point, and a caller who cannot see how
 well a state converged cannot know whether to trust it.
 
 Propagation has no comparable limit.
+
+\subsection{\kw{qm3} --- three dimensions}\label{sec:qm3}
+
+A third family, for the same reason \kw{qm2} is separate from \kw{qm}.
+
+\begin{center}
+\begin{tabular}{lp{6.6cm}}
+\textbf{command} & \textbf{meaning}\\
+\hline
+\code{QM3 GRID <x0> <x1> <nx>, ..., <z0> <z1> <nz>} & domain and resolution per axis\\
+\code{QM3 POTENTIAL ZERO | <function>} & a \kw{def}ined $V(x,y,z)$\\
+\code{QM3 PACKET <x0> <y0> <z0>, ...} & 3-D Gaussian packet\\
+\code{QM3 STATES <k> | QM3 STATE <n>} & bound states\\
+\code{QM3 STEP <dt> | QM3 RUN <t> [STEPS <n>]} & ADI propagation\\
+\code{QM3 NORM | ENERGY | CENTROID} & observables\\
+\code{QM3 PROB <xa> <xb>, ..., <za> <zb>} & probability in a box\\
+\code{QM3 ABSORB <w> <s> [<p>] | OFF} & absorbing faces, all six sides\\
+\code{QM3 RESET} & forget the 3-D problem\\
+\end{tabular}
+\end{center}
+
+The scheme is the 2-D one with a third direction, Strang-composed so
+every factor stays an exact Cayley transform:
+\[
+  \psi(t+dt) = U_x(dt/2)\,U_y(dt/2)\,U_z(dt)\,U_y(dt/2)\,U_x(dt/2)\,\psi(t),
+\]
+with $A_d = T_d + V/3$. Five directional sweeps per step instead of
+three, each a set of independent tridiagonal solves, so a step is still
+$O(n_x n_y n_z)$ and \textbf{the norm is conserved to machine precision
+for any $dt$}.
+
+\subsubsection*{What changes in three dimensions is memory}
+
+A $100^3$ grid is a million points. One complex wavefunction is 16\,MB,
+which is fine --- but the 2-D propagator precomputes full-size band
+arrays, three per direction, and doing that here would cost about
+140\,MB before any work began. \kw{qm3} builds its bands \textbf{per
+line, on the fly}, so the only extra storage is
+$O(\max(n_x,n_y,n_z))$.
+
+\subsubsection*{The eigensolver has a ceiling, and says so}
+
+Propagation is comfortable past $64^3$. \code{QM3 STATES} is not:
+Lanczos reorthogonalises fully and stores its whole Krylov basis,
+costing $O(m^2 n)$ in time and $O(mn)$ in memory. The practical ceiling
+is about $\mathbf{40^3}$, and beyond it the command \textbf{refuses up
+front} rather than exhausting memory. Propagation on the same grid still
+works.
+
+\subsubsection*{The 3-D oscillator}
+
+\begin{lstlisting}
+In[4]:= qm3 states 4
+Out[4]= 4 lowest bound state(s) -- Lanczos, 245 iterations:
+  E[0] = 1.4738115042   residual 5.71e-8
+  E[1] = 2.4382167269   residual 2.51e-8
+  E[2] = 2.4382167269   residual 5.03e-8
+  E[3] = 2.4382167269   residual 5.69e-8
+\end{lstlisting}
+
+Against the exact $E=n_x+n_y+n_z+3/2$: $3/2$, then $5/2$ \textbf{three
+times}. The three excited values agree to ten digits --- that degeneracy
+is what deflation exists to resolve --- while both levels sit about 0.03
+below the continuum, which is second-order discretisation error at
+$h=0.52$.
 
 \section{The notebook (cells, editing, magics)}
 

@@ -21,6 +21,7 @@ mod notebook;
 mod parser;
 mod qm;
 mod qm2;
+mod qm3;
 mod scene;
 mod special;
 mod vm;
