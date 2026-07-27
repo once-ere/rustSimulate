@@ -38,3 +38,8 @@ session.posim
 /double_slit.html
 /vol3d.html
 /iso3d.html
+
+# Stage transcripts. NOT to be published: they are an internal record.
+# Leading `/`, not `./` — see the note above; `./Stages_output` would
+# ignore nothing. certify_clean.sh fails if anything here is tracked.
+/Stages_output/

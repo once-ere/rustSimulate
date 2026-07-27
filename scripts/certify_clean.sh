@@ -121,6 +121,24 @@ for p in obsolete_or_historic SolveIt SolveIt_2026_MFC; do
   fi
 done
 
+# ---- 4b. Stages_output must never be published ------------------------
+# An internal record of every stage response. It is deliberately not part
+# of the repository, and one mechanism is not evidence: the ignore rule is
+# interrogated, AND the index is checked for tracked files. Either failing
+# is a defect.
+if git check-ignore -q "Stages_output/probe.md"; then
+  pass "gitignore matches Stages_output/"
+else
+  bad "gitignore does NOT match Stages_output/ — the transcripts could be published"
+fi
+tracked_stages=$(git ls-files Stages_output/ | head -20)
+if [ -z "$tracked_stages" ]; then
+  pass "no Stages_output files tracked"
+else
+  bad "Stages_output files are TRACKED and would be pushed:"
+  echo "$tracked_stages" | sed 's/^/        /'
+fi
+
 # ---- 5. the build and test gates --------------------------------------
 if cargo build --workspace --release >/tmp/cert_build.$$ 2>&1; then
   w=$(grep -c '^warning' /tmp/cert_build.$$ || true)
