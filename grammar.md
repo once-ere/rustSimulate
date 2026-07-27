@@ -1601,10 +1601,12 @@ command.
 | `QM POTENTIAL WELL <depth>, <x1>, <x2>` | `-depth` on `[x1, x2]` |
 | `QM POTENTIAL <function>` | sample a `DEF`ined `V(x)` onto the grid |
 | `QM MASS <m>` / `QM HBAR <h>` | both default to 1 |
+| `QM METHOD CAYLEY` | Crank–Nicolson on the Dirichlet grid — the default |
+| `QM METHOD NASH [LIE\|STRANG]` | the Bessel-stencil split-operator scheme, **periodic** |
 | `QM STATES <k>` | the `k` lowest bound-state energies |
 | `QM STATE <n>` | load bound state `n` as psi |
 | `QM PACKET <x0> <sigma> <k0>` | a normalised Gaussian wavepacket |
-| `QM STEP <dt>` / `QM RUN <t> [STEPS <n>]` | Crank–Nicolson propagation |
+| `QM STEP <dt>` / `QM RUN <t> [STEPS <n>]` | propagate with the current `QM METHOD` |
 | `QM NORM`, `QM ENERGY`, `QM POSITION`, `QM MOMENTUM` | observables |
 | `QM PROB <a> <b>` | probability of being found in `[a, b]` |
 | `QM DENSITY` | `\|psi\|²` as a list |
@@ -1615,10 +1617,31 @@ command.
 | `QM ANIMATE "<file>" <t> [FRAMES <n>]` | write a self-contained HTML animation |
 | `QM RESET` | forget the quantum problem |
 
-Four things are worth knowing before you start, because each will
+Five things are worth knowing before you start, because each will
 otherwise cost you an afternoon.
 
-**The walls are infinite and they reflect.** `QM GRID` pins psi to zero
+**`QM METHOD` changes the boundary condition, not just the algorithm.**
+`CAYLEY` is Crank–Nicolson on the Dirichlet grid: the walls reflect.
+`NASH` is the Bessel-stencil split-operator scheme ported from the
+original C++, and it is **periodic** — a packet leaving the right edge
+re-enters at the left. The grid points and the potential samples are
+identical either way, so switching moves nothing; only the two ends
+change meaning. The status line always states which is in force.
+
+Because bound states are computed with Dirichlet walls, `QM STATES` and
+`QM STATE` are **refused** while the method is `NASH` rather than
+quietly handing you eigenstates of a different problem. `QM ABSORB` and
+`QM DRIVE` are likewise refused under `NASH`: the propagator takes a
+real, static potential, and an absorber is a complex one. Each refusal
+names the way out.
+
+`NASH` alone is first order in `dt` — that is what the original does, so
+it is the default. `NASH STRANG` is second order for essentially the
+same cost and is the better choice unless you are reproducing SolveIt
+output.
+
+**The walls are infinite and they reflect** — under `CAYLEY`, which is
+the default. `QM GRID` pins psi to zero
 just outside the domain, which is exactly right for bound states and a
 trap for scattering: a packet that reaches a wall bounces back and
 corrupts your transmission number. `QM PACKET` and `QM RUN` therefore

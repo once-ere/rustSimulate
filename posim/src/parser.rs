@@ -85,6 +85,7 @@
 //!                         | "WELL" expr expr expr
 //!                         | IDENT )              (* a DEF'd V(x)        *)
 //!           | "MASS" expr | "HBAR" expr
+//!           | "METHOD" ( "CAYLEY" | "NASH" [ "LIE" | "STRANG" ] )
 //!           | "STATES" expr | "STATE" expr
 //!           | "PACKET" expr expr expr
 //!           | "STEP" expr | "RUN" expr [ "STEPS" expr ]
@@ -105,7 +106,14 @@
 //!    Argument lists accept an optional comma between arguments. That
 //!    is not decoration: `QM POTENTIAL WELL 5 -2 2` parses `-2` as
 //!    SUBTRACTION, yielding two arguments where three were wanted.
-//!    `5, -2, 2` is unambiguous. *)
+//!    `5, -2, 2` is unambiguous.
+//!
+//!    QM METHOD selects the propagator, and with it the BOUNDARY
+//!    CONDITION: CAYLEY is Crank-Nicolson with Dirichlet walls that
+//!    reflect, NASH is the Bessel-stencil split-operator scheme and is
+//!    PERIODIC. The trailing word chooses the splitting — LIE is the
+//!    default and is what the original C++ does; STRANG is second order
+//!    in dt at essentially the same cost. *)
 //!
 //! qm2cmd   := [ "STATUS" ]
 //!           | "GRID" expr expr expr expr expr expr
@@ -1137,6 +1145,43 @@ impl Parser {
                 }
                 QmCmd::Animate(path)
             }
+            "method" => {
+                use crate::qm::{EvolveMethod, Splitting};
+                let which = self.expect_field()?;
+                match which.as_str() {
+                    "cayley" => QmCmd::Method(EvolveMethod::Cayley),
+                    "nash" => {
+                        // An optional trailing LIE or STRANG. LIE is the
+                        // default because this is a port and the default
+                        // has to be what the original does.
+                        let word = match self.peek() {
+                            Some(Token { kind: TokKind::Ident(w), .. }) => {
+                                Some(w.to_ascii_lowercase())
+                            }
+                            _ => None,
+                        };
+                        let sp = match word.as_deref() {
+                            Some("strang") => {
+                                self.pos += 1;
+                                Splitting::Strang
+                            }
+                            Some("lie") => {
+                                self.pos += 1;
+                                Splitting::Lie
+                            }
+                            _ => Splitting::Lie,
+                        };
+                        QmCmd::Method(EvolveMethod::Nash(sp))
+                    }
+                    other => {
+                        return Err(format!(
+                            "QM METHOD: unknown method `{other}` — use `cayley` \
+                             (Crank-Nicolson, Dirichlet walls) or `nash` \
+                             (Bessel stencil, periodic), optionally `nash strang`"
+                        ))
+                    }
+                }
+            }
             "drive" => {
                 let off = matches!(
                     self.peek(),
@@ -1183,10 +1228,12 @@ impl Parser {
             }
             "reset" => QmCmd::Reset,
             other => {
+                // Generated from the one authoritative list rather than
+                // hand-maintained beside it: a duplicated list is a
+                // list that drifts.
                 return Err(format!(
-                    "QM: unknown subcommand `{other}` (grid, potential, drive, mass, hbar, \
-                     states, state, packet, step, run, norm, energy, position, momentum, \
-                     prob, density, absorb, animate, status, reset)"
+                    "QM: unknown subcommand `{other}` ({})",
+                    crate::qm::QM_SUBCOMMANDS.join(", ")
                 ))
             }
         };

@@ -441,12 +441,18 @@ one-dimensional quantum mechanics (see grammar.md):
   QM POTENTIAL WELL <depth>, <x1>, <x2>
   QM POTENTIAL <function>   sample a DEF'd function of one argument
   QM MASS <m> | QM HBAR <h> default 1 each
+  QM METHOD CAYLEY          Crank-Nicolson, Dirichlet walls (default)
+  QM METHOD NASH [STRANG]   Bessel-stencil split-operator, PERIODIC.
+                            LIE (default) is the original scheme, first
+                            order in dt; STRANG is second order for the
+                            same cost. Bound states need CAYLEY.
   QM STATES <k>             the k lowest bound-state energies
   QM STATE <n>              load bound state n as psi
   QM PACKET <x0> <sigma> <k0>
                             a normalised Gaussian wavepacket
   QM STEP <dt> | QM RUN <t> [STEPS <n>]
-                            Crank-Nicolson propagation (unitary)
+                            propagate with the current QM METHOD; both
+                            methods are unitary at any step size
   QM NORM | QM ENERGY | QM POSITION | QM MOMENTUM
   QM PROB <a> <b>           probability in [a, b]
   QM DRIVE <shape> <modulation>

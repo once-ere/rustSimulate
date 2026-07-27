@@ -1724,11 +1724,13 @@ up command by command.
 \code{QM POTENTIAL WELL <depth>, <x1>, <x2>} & $-$\code{depth} on $[x_1,x_2]$\\
 \code{QM POTENTIAL <function>} & sample a \kw{def}ined $V(x)$ onto the grid\\
 \code{QM MASS <m>} / \code{QM HBAR <h>} & both default to 1\\
+\code{QM METHOD CAYLEY} & Crank--Nicolson on the Dirichlet grid --- the default\\
+\code{QM METHOD NASH [LIE|STRANG]} & the Bessel-stencil split-operator scheme, \textbf{periodic}\\
 \code{QM STATES <k>} & the $k$ lowest bound-state energies\\
 \code{QM STATE <n>} & load bound state $n$ as $\psi$\\
 \code{QM PACKET <x0> <sigma> <k0>} & a normalised Gaussian wavepacket\\
-\code{QM STEP <dt>} / \code{QM RUN <t> [STEPS <n>]} & Crank--Nicolson propagation\\
-\code{QM NORM ENERGY POSITION MOMENTUM} & observables\\
+\code{QM STEP <dt>} / \code{QM RUN <t> [STEPS <n>]} & propagate with the current \code{QM METHOD}\\
+\code{QM NORM} / \code{QM ENERGY} / \code{QM POSITION} / \code{QM MOMENTUM} & observables\\
 \code{QM PROB <a> <b>} & probability of being found in $[a,b]$\\
 \code{QM DENSITY} & $|\psi|^2$ as a list\\
 \code{QM DRIVE <shape> <modulation>} & time-dependent $V(x,t) \mathrel{+}= f(t)g(x)$\\
@@ -1740,10 +1742,32 @@ up command by command.
 \end{tabular}
 \end{center}
 
-Four things are worth knowing before you start, because each will
+Five things are worth knowing before you start, because each will
 otherwise cost you an afternoon.
 
-\textbf{The walls are infinite and they reflect.} \code{QM GRID} pins
+\textbf{\code{QM METHOD} changes the boundary condition, not just the
+algorithm.} \code{CAYLEY} is Crank--Nicolson on the Dirichlet grid: the
+walls reflect. \code{NASH} is the Bessel-stencil split-operator scheme
+ported from the original C++, and it is \textbf{periodic} --- a packet
+leaving the right edge re-enters at the left. The grid points and the
+potential samples are identical either way, so switching moves nothing;
+only the two ends change meaning. The status line always states which
+is in force.
+
+Because bound states are computed with Dirichlet walls, \code{QM STATES}
+and \code{QM STATE} are \textbf{refused} while the method is
+\code{NASH} rather than quietly handing you eigenstates of a different
+problem. \code{QM ABSORB} and \code{QM DRIVE} are likewise refused
+under \code{NASH}: the propagator takes a real, static potential, and an
+absorber is a complex one. Each refusal names the way out.
+
+\code{NASH} alone is first order in $dt$ --- that is what the original
+does, so it is the default. \code{NASH STRANG} is second order for
+essentially the same cost, and is the better choice unless you are
+reproducing SolveIt output.
+
+\textbf{The walls are infinite and they reflect} --- under
+\code{CAYLEY}, which is the default. \code{QM GRID} pins
 $\psi$ to zero just outside the domain, which is exactly right for bound
 states and a trap for scattering: a packet that reaches a wall bounces
 back and corrupts your transmission number. \code{QM PACKET} and

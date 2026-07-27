@@ -27,6 +27,8 @@
 //! re-issue `QM POTENTIAL v` — which is stated in the status output
 //! rather than left to be discovered.
 
+pub use quantum::nash::Splitting;
+use quantum::nash::{NashPropagator, PeriodicGrid};
 use quantum::qm1d::{DrivenPropagator, Grid, Hamiltonian, Propagator, Wavefunction};
 
 use crate::vm::{SimState, Value};
@@ -72,12 +74,62 @@ pub enum QmCmd {
     Absorb,
     /// Remove them.
     AbsorbOff,
+    /// Choose the propagator. See [`EvolveMethod`].
+    Method(EvolveMethod),
     /// Forget the whole quantum problem.
     Reset,
     /// Propagate while capturing |psi|^2, and write a self-contained
     /// HTML animation to the given path. Pops the frame count, then the
     /// total time.
     Animate(String),
+}
+
+/// Every `QM` subcommand word the parser accepts.
+///
+/// This list is not documentation — it is the input to
+/// `every_qm_subcommand_is_documented_in_lockstep`, which checks each
+/// word against the parser, `HELP_TEXT`, the EBNF comment and both
+/// grammar documents. The project rule is that a command is not "added"
+/// until all five agree, and until Stage 2A that rule was enforced by
+/// discipline for the `QM` family, which is to say not enforced.
+pub const QM_SUBCOMMANDS: &[&str] = &[
+    "status", "grid", "potential", "mass", "hbar", "method", "states", "state", "packet",
+    "step", "run", "norm", "energy", "position", "momentum", "prob", "density", "drive",
+    "absorb", "animate", "reset",
+];
+
+/// Which propagator `QM RUN` and `QM STEP` use.
+///
+/// This is **not** only a choice of algorithm: it changes the boundary
+/// condition. Crank–Nicolson runs on the Dirichlet grid, whose walls
+/// reflect. The Nash propagator is periodic — the two ends are
+/// identified — because that is what the original C++ index wrap means
+/// and there is no honest way to pretend otherwise.
+///
+/// The `n` interior points of the Dirichlet grid are exactly `n`
+/// periodic points at the same spacing `h`, so switching methods
+/// re-uses the potential samples verbatim and moves no grid point. Only
+/// the interpretation of the two ends changes.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum EvolveMethod {
+    /// Crank–Nicolson on the Dirichlet grid. The default.
+    Cayley,
+    /// The Bessel-stencil split-operator scheme, periodic.
+    Nash(Splitting),
+}
+
+impl std::fmt::Display for EvolveMethod {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Cayley => write!(f, "cayley (Crank-Nicolson, Dirichlet walls)"),
+            Self::Nash(Splitting::Lie) => {
+                write!(f, "nash (Bessel stencil, periodic, Lie - as the original C++)")
+            }
+            Self::Nash(Splitting::Strang) => {
+                write!(f, "nash strang (Bessel stencil, periodic, 2nd order)")
+            }
+        }
+    }
 }
 
 /// How a potential is specified.
@@ -120,6 +172,8 @@ pub struct QmState {
     /// Cached bound states, so `QM STATE n` after `QM STATES k` does not
     /// pay for a second diagonalisation.
     pub states: Option<(Vec<f64>, Vec<Vec<f64>>)>,
+    /// Which propagator to use, and therefore which boundary condition.
+    pub method: EvolveMethod,
 }
 
 impl Default for QmState {
@@ -135,6 +189,7 @@ impl Default for QmState {
             psi: None,
             time: 0.0,
             states: None,
+            method: EvolveMethod::Cayley,
         }
     }
 }
@@ -154,6 +209,52 @@ impl QmState {
         match self.absorber {
             Some((w, st, p)) => ham.with_absorber(w, st, p),
             None => Ok(ham),
+        }
+    }
+
+    /// The Nash propagator for this session, on the periodic reading of
+    /// the same grid.
+    ///
+    /// The Dirichlet grid's `n` interior points span `[x_min + h,
+    /// x_max - h]` at spacing `h`; a periodic grid over
+    /// `[x_min + h, x_max]` with `n` points has the same spacing and the
+    /// same points, so nothing is re-sampled and the potential carries
+    /// over unchanged.
+    fn nash(&self, dt: f64, splitting: Splitting) -> Result<NashPropagator, String> {
+        let grid = self
+            .grid
+            .clone()
+            .ok_or("QM: no grid — use `QM GRID <x_min> <x_max> <n>` first")?;
+        let v = self
+            .potential
+            .clone()
+            .ok_or("QM: no potential — use `QM POTENTIAL <function>` (or `QM POTENTIAL zero`)")?;
+        // Both of these are Crank-Nicolson features and neither has a
+        // meaning for this propagator yet. Refusing beats quietly
+        // ignoring them, which would produce a plausible wrong picture.
+        if self.absorber.is_some() {
+            return Err("QM: NASH has no absorbing edges — the propagator takes a real \
+                        potential, and an absorber is a complex one. Use `QM ABSORB OFF`, \
+                        or `QM METHOD CAYLEY`."
+                .to_string());
+        }
+        if self.drive.is_some() {
+            return Err("QM: NASH has no drive — its potential phase is built once, so a \
+                        time-dependent V(x,t) is not expressible. Use `QM DRIVE OFF`, or \
+                        `QM METHOD CAYLEY`."
+                .to_string());
+        }
+        let h = grid.h();
+        let pg = PeriodicGrid::new(grid.x(0), grid.x(0) + grid.n as f64 * h, grid.n)?;
+        Ok(NashPropagator::new(pg, &v, self.hbar, self.mass, dt, None)?
+            .with_splitting(splitting))
+    }
+
+    /// The splitting in force, if the method is Nash.
+    fn nash_splitting(&self) -> Option<Splitting> {
+        match self.method {
+            EvolveMethod::Nash(s) => Some(s),
+            EvolveMethod::Cayley => None,
         }
     }
 
@@ -214,11 +315,21 @@ pub fn exec_qm(
                 None => s.push_str("  potential (unset — QM POTENTIAL <function>)\n"),
             }
             s.push_str(&format!("  mass      {}\n  hbar      {}\n", q.mass, q.hbar));
-            match q.absorber {
-                Some((w, st, p)) => s.push_str(&format!(
-                    "  absorber  width {w}, strength {st}, power {p} (norm decays by design)\n"
+            s.push_str(&format!("  method    {}\n", q.method));
+            // The boundary is a property of the METHOD, so saying "the
+            // walls reflect" under NASH would be a plain falsehood.
+            match (q.method, q.absorber) {
+                (EvolveMethod::Nash(_), _) => s.push_str(
+                    "  boundary  PERIODIC — the two ends are identified; a packet leaving \
+                     one re-enters at the other\n",
+                ),
+                (EvolveMethod::Cayley, Some((w, st, p))) => s.push_str(&format!(
+                    "  boundary  Dirichlet, absorber width {w}, strength {st}, power {p} \
+                     (norm decays by design)\n"
                 )),
-                None => s.push_str("  absorber  off — the walls REFLECT\n"),
+                (EvolveMethod::Cayley, None) => {
+                    s.push_str("  boundary  Dirichlet — the walls REFLECT (absorber off)\n");
+                }
             }
             match &q.psi {
                 Some(w) => s.push_str(&format!(
@@ -354,6 +465,19 @@ pub fn exec_qm(
         }
 
         QmCmd::States => {
+            // Bound states come from the DIRICHLET Hamiltonian, whose
+            // walls pin psi to zero. Under NASH the domain is periodic
+            // and those are simply different eigenproblems — a periodic
+            // box has Bloch states, not box states. Loading one into a
+            // periodic run would be a silent boundary-condition mix, so
+            // it is refused. `quantum::qm1d` has no periodic
+            // eigensolver; that is a stated gap, not an oversight.
+            if state.qm.nash_splitting().is_some() {
+                return Err("QM: bound states are computed with Dirichlet walls, and the \
+                            NASH method is periodic — the two are different eigenproblems. \
+                            Use `QM METHOD CAYLEY` for bound states."
+                    .to_string());
+            }
             let k = pop_count(stack, "the state count")?;
             if k == 0 {
                 return Err("QM STATES: ask for at least one state".to_string());
@@ -369,6 +493,19 @@ pub fn exec_qm(
         }
 
         QmCmd::LoadState => {
+            // Bound states come from the DIRICHLET Hamiltonian, whose
+            // walls pin psi to zero. Under NASH the domain is periodic
+            // and those are simply different eigenproblems — a periodic
+            // box has Bloch states, not box states. Loading one into a
+            // periodic run would be a silent boundary-condition mix, so
+            // it is refused. `quantum::qm1d` has no periodic
+            // eigensolver; that is a stated gap, not an oversight.
+            if state.qm.nash_splitting().is_some() {
+                return Err("QM: bound states are computed with Dirichlet walls, and the \
+                            NASH method is periodic — the two are different eigenproblems. \
+                            Use `QM METHOD CAYLEY` for bound states."
+                    .to_string());
+            }
             let n = pop_count(stack, "the state index")?;
             let ham = state.qm.hamiltonian()?;
             // reuse the cached diagonalisation when it is deep enough
@@ -425,6 +562,19 @@ pub fn exec_qm(
             };
             if !dt.is_finite() || dt == 0.0 {
                 return Err(format!("QM: the time step must be finite and non-zero, got {dt}"));
+            }
+            if let Some(sp) = state.qm.nash_splitting() {
+                let prop = state.qm.nash(dt, sp)?;
+                let mut w = state.qm.wavefunction()?.clone();
+                let n0 = w.norm();
+                prop.run(&mut w.psi, steps)?;
+                let n1 = w.norm();
+                state.qm.psi = Some(w);
+                state.qm.time += dt * steps as f64;
+                return Ok(format!(
+                    "t = {:.6}, {steps} step(s) of dt = {dt:.6e} by {}; norm {n0:.12} -> {n1:.12}",
+                    state.qm.time, state.qm.method
+                ));
             }
             let ham = state.qm.hamiltonian()?;
             let mut w = state.qm.wavefunction()?.clone();
@@ -500,10 +650,27 @@ pub fn exec_qm(
             let hbar = state.qm.hbar;
             Ok(format!("{:.15}", state.qm.wavefunction()?.momentum(hbar)))
         }
-        QmCmd::Energy => {
-            let ham = state.qm.hamiltonian()?;
-            Ok(format!("{:.15}", state.qm.wavefunction()?.energy(&ham)))
+        QmCmd::Method(m) => {
+            state.qm.method = *m;
+            // Bound states are Dirichlet and the cache would outlive the
+            // boundary condition that produced it.
+            state.qm.invalidate();
+            Ok(format!("method {m}"))
         }
+
+        QmCmd::Energy => match state.qm.nash_splitting() {
+            // The Dirichlet Hamiltonian drops the two wrap terms, which
+            // are exactly the ones that matter when the run is periodic.
+            Some(sp) => {
+                let psi = state.qm.wavefunction()?.psi.clone();
+                let e = state.qm.nash(state.qm.hbar.abs().max(1e-300), sp)?.energy(&psi)?;
+                Ok(format!("{e:.15}"))
+            }
+            None => {
+                let ham = state.qm.hamiltonian()?;
+                Ok(format!("{:.15}", state.qm.wavefunction()?.energy(&ham)))
+            }
+        },
         QmCmd::Prob => {
             let b = pop_num(stack)?;
             let a = pop_num(stack)?;
@@ -892,7 +1059,106 @@ draw(); requestAnimationFrame(loop);
 
 #[cfg(test)]
 mod tests {
+    use super::{EvolveMethod, QmCmd, Splitting, QM_SUBCOMMANDS};
     use crate::vm::{execute_line, SimState};
+
+    /// The parser must own every word in [`QM_SUBCOMMANDS`].
+    ///
+    /// Most of them need arguments, so parsing `qm <word>` alone usually
+    /// fails — but it must not fail with *unknown subcommand*. That
+    /// distinction is what makes the list authoritative rather than
+    /// decorative: add a word here that the parser does not handle and
+    /// this fails.
+    #[test]
+    fn the_parser_owns_every_listed_subcommand() {
+        for w in QM_SUBCOMMANDS {
+            let err = match crate::parser::compile_line(&format!("qm {w}")) {
+                Ok(_) => continue,
+                Err(e) => e,
+            };
+            assert!(
+                !err.contains("unknown subcommand"),
+                "`qm {w}` is listed but the parser does not know it: {err}"
+            );
+        }
+        // ...and the check can fail, which is the point.
+        let err = crate::parser::compile_line("qm wibble").unwrap_err();
+        assert!(err.contains("unknown subcommand"), "got: {err}");
+    }
+
+    /// The five-way lockstep, mechanically.
+    ///
+    /// A `QM` subcommand is not added until it is parseable, in
+    /// `HELP_TEXT`, in the parser's EBNF comment, and in **both** grammar
+    /// documents. Forget one and the build fails here rather than in a
+    /// reader's hands.
+    #[test]
+    fn every_qm_subcommand_is_documented_in_lockstep() {
+        // `\_` in LaTeX, `\` nowhere else; case differs between the
+        // parser (lowercase) and the documents (upper).
+        let prep = |s: &str| s.replace('\\', "").to_ascii_uppercase();
+        let help = prep(crate::vm::HELP_TEXT);
+        // Only the `qmcmd` production, not the whole file: qm2cmd and
+        // qm3cmd quote the same words, so searching the file would pass
+        // on a word this family never declared.
+        let all = prep(include_str!("parser.rs"));
+        let from = all.find("QMCMD").expect("parser.rs must declare the qmcmd production");
+        let to = all[from..].find("QM2CMD").map_or(all.len(), |k| from + k);
+        let ebnf = all[from..to].to_string();
+        let md = prep(include_str!("../../grammar.md"));
+        let tex = prep(include_str!("../../grammar.tex"));
+
+        let mut missing = Vec::new();
+        for w in QM_SUBCOMMANDS {
+            let up = w.to_ascii_uppercase();
+            // Each document spells it its own way: the EBNF quotes the
+            // bare word, everything else writes `QM <WORD>`. Quoting in
+            // the EBNF needle is what keeps "STATE" from matching
+            // inside "STATES".
+            let needle = format!("QM {up}");
+            let ebnf_needle = format!("\"{up}\"");
+            for (what, hay) in [
+                ("HELP_TEXT", &help),
+                ("parser.rs EBNF", &ebnf),
+                ("grammar.md", &md),
+                ("grammar.tex", &tex),
+            ] {
+                // `QM STATUS` is spelled as bare `QM` in the documents,
+                // and the EBNF writes the optional form `[ "STATUS" ]`.
+                if *w == "status" && what != "parser.rs EBNF" {
+                    continue;
+                }
+                let want = if what == "parser.rs EBNF" { &ebnf_needle } else { &needle };
+                if !hay.contains(want.as_str()) {
+                    missing.push(format!("{want} is missing from {what}"));
+                }
+            }
+        }
+        assert!(missing.is_empty(), "QM grammar lockstep is broken:\n  {}", missing.join("\n  "));
+    }
+
+    /// The two methods, and the boundary condition each implies.
+    #[test]
+    fn qm_method_parses_every_form() {
+        for (src, want) in [
+            ("qm method cayley", EvolveMethod::Cayley),
+            ("qm method nash", EvolveMethod::Nash(Splitting::Lie)),
+            ("qm method nash lie", EvolveMethod::Nash(Splitting::Lie)),
+            ("qm method nash strang", EvolveMethod::Nash(Splitting::Strang)),
+            ("QM METHOD NASH STRANG", EvolveMethod::Nash(Splitting::Strang)),
+        ] {
+            let prog = crate::parser::compile_line(src)
+                .unwrap_or_else(|e| panic!("`{src}` did not parse: {e}"));
+            let got = prog.iter().find_map(|i| match i {
+                crate::vm::Instr::Qm(QmCmd::Method(m)) => Some(*m),
+                _ => None,
+            });
+            assert_eq!(got, Some(want), "`{src}`");
+        }
+        assert!(crate::parser::compile_line("qm method fourier").is_err());
+        assert!(crate::parser::compile_line("qm method").is_err());
+    }
+
 
     fn run(lines: &[&str]) -> (SimState, Vec<String>) {
         let mut st = SimState::default();
@@ -902,6 +1168,144 @@ mod tests {
             out.push(v.to_string());
         }
         (st, out)
+    }
+
+    /// The Nash method, end to end through the language, judged by
+    /// something the language can check: a free packet's energy is a
+    /// constant of the motion, and the norm is conserved.
+    #[test]
+    fn nash_propagates_through_the_language() {
+        for method in ["qm method nash", "qm method nash strang"] {
+            let (_, out) = run(&[
+                "qm grid -8 8 200",
+                "qm potential zero",
+                "qm packet -2 0.7 4",
+                method,
+                "qm energy",
+                "qm run 1 steps 200",
+                "qm energy",
+                "qm norm",
+            ]);
+            let e0: f64 = out[4].parse().unwrap();
+            let e1: f64 = out[6].parse().unwrap();
+            let n: f64 = out[7].parse().unwrap();
+            // A free particle's energy is conserved exactly by this
+            // scheme: with V constant the two factors commute, so there
+            // is no splitting error to leak into it.
+            assert!((e1 - e0).abs() < 1e-9, "{method}: energy {e0} -> {e1}");
+            assert!((n - 1.0).abs() < 1e-9, "{method}: norm {n}");
+            assert!(e0 > 7.0 && e0 < 9.0, "{method}: E = {e0} is not a k0 = 4 packet");
+        }
+    }
+
+    /// The boundary condition, demonstrated rather than asserted.
+    ///
+    /// The same packet, the same grid, the same time — launched at the
+    /// right-hand edge. Under `NASH` it **wraps** and arrives at the far
+    /// left; under `CAYLEY` it **reflects** and stays. If the two
+    /// methods ever quietly shared a boundary condition, this is the
+    /// test that would notice.
+    #[test]
+    fn nash_wraps_where_cayley_reflects() {
+        let script = |method: &str| {
+            let mut lines = vec!["qm grid 0 20 400", "qm potential zero", "qm packet 17 0.8 6"];
+            if !method.is_empty() {
+                lines.push(method);
+            }
+            lines.push("qm run 0.85 steps 400");
+            lines.push("qm prob 0 5");
+            lines.push("qm prob 15 20");
+            let (_, out) = run(&lines);
+            let n = out.len();
+            let left: f64 = out[n - 2].parse().unwrap();
+            let right: f64 = out[n - 1].parse().unwrap();
+            (left, right)
+        };
+
+        let (left, right) = script("qm method nash strang");
+        assert!(left > 0.9, "NASH: only {left} of the packet came round the seam");
+        assert!(right < 0.1, "NASH: {right} stayed at the right edge");
+
+        let (left, right) = script("");
+        assert!(left < 0.01, "CAYLEY: {left} leaked through a reflecting wall");
+        assert!(right > 0.9, "CAYLEY: only {right} bounced back");
+    }
+
+    /// The combinations that have no meaning are refused, with the way
+    /// out named in the message.
+    ///
+    /// Each of these could have been implemented as a silent no-op, and
+    /// each would then have produced a plausible, wrong picture — a
+    /// packet that never absorbs, a drive that never drives, bound
+    /// states from the wrong boundary condition.
+    #[test]
+    fn nash_refuses_what_it_cannot_do() {
+        let base = ["qm grid -8 8 100", "qm potential zero", "qm packet -2 0.7 4"];
+        let cases: [(&[&str], &str); 3] = [
+            (&["qm method nash", "qm states 3"], "Dirichlet"),
+            (&["qm absorb 2 0.5", "qm method nash", "qm run 1 steps 10"], "absorbing"),
+            (
+                &[
+                    "def g(x) { x }",
+                    "def f(t) { t }",
+                    "qm drive g f",
+                    "qm method nash",
+                    "qm run 1 steps 10",
+                ],
+                "drive",
+            ),
+        ];
+        for (extra, needle) in cases {
+            let mut st = SimState::default();
+            let mut refused: Option<String> = None;
+            for l in base.iter().chain(extra.iter()) {
+                if let Err(e) = execute_line(l, &mut st) {
+                    refused = Some(e);
+                    break;
+                }
+            }
+            // The whole point is that it REFUSES. Without this the test
+            // passes when nothing goes wrong, which is the failure mode
+            // it exists to catch.
+            let e = refused
+                .unwrap_or_else(|| panic!("`{needle}` case was accepted; it must be refused"));
+            assert!(e.contains(needle), "expected a message mentioning `{needle}`, got: {e}");
+            assert!(
+                e.contains("CAYLEY") || e.contains("cayley"),
+                "the refusal must name the way out: {e}"
+            );
+        }
+    }
+
+    /// Switching to NASH does not move a single grid point.
+    ///
+    /// The Dirichlet grid's `n` interior points are `n` periodic points
+    /// at the same spacing, which is why the potential samples carry
+    /// over untouched. If that ever stopped being true the potential
+    /// would be silently misaligned, so it is checked rather than
+    /// assumed.
+    #[test]
+    fn switching_method_moves_no_grid_point() {
+        let (st, _) = run(&["qm grid -3.5 2.25 64", "qm potential zero"]);
+        let g = st.qm.grid.clone().unwrap();
+        let p = st.qm.nash(1e-3, Splitting::Lie).unwrap();
+        let pg = p.grid();
+        assert_eq!(pg.n, g.n);
+        assert!((pg.h() - g.h()).abs() < 1e-15, "spacing changed");
+        for i in 0..g.n {
+            assert!((pg.x(i) - g.x(i)).abs() < 1e-12, "point {i} moved");
+        }
+    }
+
+    /// The status line must state the boundary condition in force, and
+    /// it must CHANGE with the method — saying "the walls REFLECT"
+    /// during a periodic run would be a plain falsehood.
+    #[test]
+    fn the_status_line_reports_the_boundary() {
+        let (_, out) = run(&["qm grid -8 8 64", "qm potential zero", "qm", "qm method nash", "qm"]);
+        assert!(out[2].contains("REFLECT"), "cayley status: {}", out[2]);
+        assert!(out[4].contains("PERIODIC"), "nash status: {}", out[4]);
+        assert!(!out[4].contains("REFLECT"), "nash must not claim reflection: {}", out[4]);
     }
 
     /// The harmonic oscillator, entirely through the language: define a

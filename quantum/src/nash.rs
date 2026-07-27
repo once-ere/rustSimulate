@@ -257,6 +257,9 @@ pub struct NashPropagator {
     phase: Vec<C>,
     /// The same factor at half a step, for [`Splitting::Strang`].
     half_phase: Vec<C>,
+    /// The physical potential, kept so observables can be formed with
+    /// the **periodic** Hamiltonian rather than a Dirichlet one.
+    v: Vec<f64>,
     splitting: Splitting,
     truncation: f64,
 }
@@ -341,6 +344,7 @@ impl NashPropagator {
             coeff,
             phase,
             half_phase,
+            v: v.to_vec(),
             splitting: Splitting::Lie,
             truncation,
         })
@@ -494,6 +498,37 @@ impl NashPropagator {
             }
         }
         Ok(())
+    }
+
+    /// `<psi|H|psi> / <psi|psi>` with the **periodic** Hamiltonian.
+    ///
+    /// This exists because the obvious alternative is wrong: forming the
+    /// energy with a Dirichlet Hamiltonian on the same samples drops the
+    /// two wrap terms, and those are exactly the terms that matter when
+    /// a packet is near the seam — which is the only situation in which
+    /// a periodic run differs from a Dirichlet one at all.
+    ///
+    /// # Errors
+    /// A length mismatch with the grid, or an identically zero `psi`.
+    pub fn energy(&self, psi: &[C]) -> Result<f64, String> {
+        self.check(psi)?;
+        let n = psi.len();
+        let h = self.grid.h();
+        let kappa = self.hbar * self.hbar / (2.0 * self.mass * h * h);
+        let mut num = 0.0;
+        let mut den = 0.0;
+        for j in 0..n {
+            let lap = psi[j] * 2.0 - psi[(j + n - 1) % n] - psi[(j + 1) % n];
+            let hpsi = lap * kappa + psi[j] * self.v[j];
+            // <psi|H|psi> is real because H is Hermitian; take the real
+            // part rather than asserting it.
+            num += (psi[j].conj() * hpsi).re;
+            den += psi[j].norm_sqr();
+        }
+        if den == 0.0 {
+            return Err("NashPropagator::energy: psi is identically zero".to_string());
+        }
+        Ok(num / den)
     }
 
     fn check(&self, psi: &[C]) -> Result<(), String> {
@@ -660,6 +695,37 @@ mod tests {
             );
         }
         assert!(errs[3] < 1e-3, "and the finest step should be accurate: {:.2e}", errs[3]);
+    }
+
+    /// The periodic energy, against a closed form.
+    ///
+    /// A plane wave is an exact eigenvector of the periodic Hamiltonian
+    /// at constant potential, with eigenvalue `2 kappa (1 - cos k h) + V`
+    /// — the lattice dispersion again. Nothing is fitted.
+    #[test]
+    fn the_energy_is_the_lattice_dispersion_on_a_plane_wave() {
+        let grid = PeriodicGrid::new(0.0, 1.0, 64).unwrap();
+        for &v0 in &[0.0_f64, 2.5, -1.25] {
+            let v = vec![v0; grid.n];
+            let p = NashPropagator::new(grid.clone(), &v, 1.0, 1.0, 1e-3, None).unwrap();
+            let h = grid.h();
+            let kappa = 1.0 / (2.0 * h * h);
+            for m in [0_i32, 1, 5, 17, 32] {
+                let k = 2.0 * std::f64::consts::PI * f64::from(m);
+                let psi: Vec<C> =
+                    (0..grid.n).map(|i| C::from_polar(1.0, k * grid.x(i))).collect();
+                let want = 2.0 * kappa * (1.0 - (k * h).cos()) + v0;
+                let got = p.energy(&psi).unwrap();
+                assert!(
+                    (got - want).abs() <= 1e-9 * want.abs().max(1.0),
+                    "m = {m}, V = {v0}: {got} vs {want}"
+                );
+            }
+        }
+        let grid = PeriodicGrid::new(0.0, 1.0, 8).unwrap();
+        let p = NashPropagator::new(grid, &[0.0; 8], 1.0, 1.0, 1e-3, None).unwrap();
+        assert!(p.energy(&[C::ZERO; 8]).is_err());
+        assert!(p.energy(&[C::ONE; 3]).is_err());
     }
 
     /// Strang is **second** order: halving `dt` quarters the error.
