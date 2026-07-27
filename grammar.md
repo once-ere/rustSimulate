@@ -864,12 +864,21 @@ drops from `I` is not of relative size `exp(-2 Re z)` but
 `exp(pi |Im nu| - 2 Re z)`: **complex order makes it bigger**, by a
 factor this crate had no reason to carry until now.
 
-**Still missing: the Airy-type expansion of DLMF 10.20 at complex
-order.** The obstacle is concrete rather than theoretical — it needs
-`Ai` at a *complex* argument, and this crate has only the real-argument
-Airy functions from the vendored Cephes. So the turning point
-`|z| ~ |nu|` at complex order is reached by the ascending series or not
-at all, and the error says which.
+**The turning point is covered too.** Olver's Airy-type expansion (DLMF
+10.20) now runs at complex order, using the complex Airy functions of
+`airy_z`. It needed no new mathematics: near `x = 1` every ingredient —
+`zeta`, the prefactor, and the coefficients `A_k`, `B_k` — is already a
+Taylor series in `w = 1 - x`, generated at 70 digits, and a Taylor
+series does not care whether its variable is real. What did *not*
+continue to complex `x` are the closed forms outside that
+neighbourhood, where 10.20 is the wrong tool anyway.
+
+**What is left is the Debye region at complex order**: `|z|` a few times
+`|nu|`, where the `1/z` expansion is refused because `|4 nu^2|` is not
+small compared with `|z|`, the ascending series has cancelled, and
+`x = z/nu` is too far from 1 for the turning-point expansion. DLMF 10.19
+covers it for real order. The routines report that gap rather than
+guessing in it.
 
 #### Airy functions, complex argument
 

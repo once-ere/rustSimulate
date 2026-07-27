@@ -142,6 +142,7 @@ record is separate and detailed:
 | `gamma_complex` | native | `ln Γ` by the Stirling asymptotic series with **argument shifting** — `Γ(z+1) = zΓ(z)` repeatedly until `Re z ≥ 14`, then `(z−½)ln z − z + ½ln2π + Σ B₂ₙ/(2n(2n−1)z^{2n−1})`; reflection `Γ(z)Γ(1−z) = π/sin πz` for the left half plane. **Lanczos was rejected on licensing grounds**: its coefficients are a table, and the circulating tables are most often reproduced from *Numerical Recipes*. Stirling needs only the Bernoulli numbers, which a test re-derives from `Σ C(m+1,j)B_j = 0` | DLMF 5.5.1, 5.5.3, 5.11.1, 5.11.3 |
 | `bessel_cnu` | native | The same ascending series as `bessel_complex`, with `1/Γ(ν+k+1)` advanced by its own recurrence so the complex gamma is evaluated once; `Y` and `K` by the reflections, which are **better** conditioned off the real axis since `\|sin νπ\|` grows like `e^{π\|Im ν\|}`. A real order (within 1e-13) is handed to the real-order routines, which handle negative whole orders the recurrence cannot restart from | DLMF 10.2.2, 10.2.3, 10.25.2, 10.27.4 |
 | `bessel_cnu_large` | native | The `1/z` asymptotics of DLMF 10.17.5/6 and 10.40.1/2 at **complex order** — the order enters only as `μ = 4ν²`, polynomially, so they extend unchanged — plus the DLMF 10.41 uniform expansions in the sector `\|arg ν\| < π/2` (10.41.5). Two validity facts the truncation estimate cannot see are checked separately: `\|4ν²\| ≤ 2\|z\|`, and the `exp(π\|Im ν\| − 2Re z)` size of the term 10.40.1 drops | DLMF 10.17.5, 10.17.6, 10.40.1, 10.40.2, 10.41.3–10.41.5 |
+| `airy_uniform` (complex order) | native | DLMF 10.20 at complex order, restricted to `\|1 − z/ν\| ≤ 0.25`. Needed no new mathematics: near the turning point `ζ`, the prefactor and `A_k`, `B_k` all come from the generated `w = 1 − x` Taylor series, which are complex-safe by construction. The closed forms outside that neighbourhood do **not** continue naively — `ζ`'s two branch formulas meet at `x = 1` and the principal ⅔ power does not carry across — but 10.20 is the wrong tool there anyway | DLMF 10.20.4, 10.20.5 |
 | `airy_uniform` | native | Olver's uniform Airy-type expansion, DLMF 10.20.4/10.20.5, valid **through** the turning point `z = ν`. `ζ(x)` from 10.20.2/3; `A_k`, `B_k` from 10.20.10/11 built on the same Debye polynomials, with `λ_j`, `μ_j` from 10.20.12/13. Their closed forms cancel catastrophically as `ζ → 0` (each term is `O(w^{−3(2k+1)/2})` where the sum is `O(1)`), so near the turning point they come from Taylor series in `w = 1−x` **generated at 70 decimal digits** and verified in-crate against the closed forms. `A₁(0) = −1/225` and `ζ'(1) = −2^{1/3}` are known independently and both come out right | DLMF 10.20.2–10.20.5, 10.20.10–10.20.13 |
 | `debye` | native | The Debye polynomials `U_k(p)` by the exact recurrence `U_{k+1} = ½p²(1−p²)U_k' + ⅛∫₀^p(1−5t²)U_k` (DLMF 10.41.9), carried out on coefficient vectors rather than transcribed; then the uniform large-order expansions `I_ν`, `K_ν` (10.41.3/4) and the Debye `J_ν`, `Y_ν` for `z < ν` (10.19.3/4). Optimal truncation supplies the error estimate, so these compete with the `1/z` routes on measured terms | DLMF 10.19.3, 10.19.4, 10.41.3, 10.41.4, 10.41.9, 10.41.10 |
 | `bessel_scaled` | native | The asymptotic expansions `e^{-iz}H1 ~ sqrt(2/πz)e^{-i(νπ/2+π/4)}S(i)`, `e^zK ~ sqrt(π/2z)S(1)`, `e^{-z}I ~ S(-1)/sqrt(2πz)` with `a_k = a_{k-1}(4ν²-(2k-1)²)/8k`; `J` and `Y` from the Hankel pair without forming the envelope; optimal truncation supplying its own error estimate, which then **selects between the asymptotic and the ascending series by comparing estimates**; upward order recurrence for `K`, `Y`, `H1`, `H2`; the I–K Wronskian with a continued-fraction ratio anchoring `I` at large order | DLMF 10.6.1, 10.17.5, 10.17.6, 10.28.2, 10.29.1, 10.34.1, 10.27.6, 10.40.1, 10.40.2 |
@@ -273,12 +274,10 @@ Unit tests prove the pieces; three examples prove they do the job:
   hard limits rather than performance advice. Where the order happens
   to be whole, the integer-order Miller routines reach much further
   along the real axis.
-- **DLMF 10.20 at complex order.** Complex Airy now exists
-  (`airy_complex`), so the ingredient is no longer missing — what
-  remains is extending the `ζ(x)` map of 10.20.2/3 to complex `x`,
-  where the two branch formulas meet and the principal power does not
-  continue correctly across `x = 1`. The `w = 1 − x` series already
-  handles a complex `w`; the closed forms outside it do not yet.
+- **The Debye region at complex order** — `|z|` a few times `|ν|`,
+  between where the `1/z` expansion is valid and where the
+  turning-point one applies. DLMF 10.19 covers it for real order;
+  extending it is what remains of chapter 10.
 - **A wider number type.** For `z` well below `ν`, `J` is below the
   smallest double and `Y` above the largest. The expansions determine
   those values; `f64` cannot carry them, and the routines say so and

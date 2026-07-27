@@ -361,6 +361,97 @@ pub fn jy_airy(nu: f64, z: f64) -> (Option<Uniform>, Option<Uniform>) {
     )
 }
 
+// ---------------------------------------------------------------------
+// Complex order
+// ---------------------------------------------------------------------
+
+/// Horner in a **complex** `w`.
+fn horner_c(c: &[f64], w: C) -> C {
+    let mut v = C::ZERO;
+    for &a in c.iter().rev() {
+        v = v * w + C::real(a);
+    }
+    v
+}
+
+/// `J_nu(z)` and `Y_nu(z)` by DLMF 10.20 at **complex order**, near the
+/// turning point.
+///
+/// # Why this is restricted to the turning point, and why that is not a
+/// compromise
+///
+/// The closed forms for `zeta` and for `A_k`, `B_k` do not continue
+/// naively to complex `x`: `zeta`'s two branch formulas meet at `x = 1`
+/// and the principal `2/3` power does not carry across, which is what
+/// Stage 21 recorded as outstanding. But **every ingredient this
+/// expansion needs near the turning point is already a Taylor series in
+/// `w = 1 - x`**, generated at 70 digits and validated against the
+/// closed forms — and a Taylor series does not care whether its
+/// variable is real. So `|w| <= 0.25` needs no new mathematics at all.
+///
+/// Outside that neighbourhood 10.20 is not the right tool anyway. The
+/// Debye and `1/z` expansions of [`crate::bessel_cnu_large`] already
+/// cover complex order there, and they are what the selector uses. The
+/// gap this closes is exactly the one they leave: `|z|` comparable to
+/// `|nu|`, both complex.
+///
+/// Returns `None` outside the neighbourhood, or where the value leaves
+/// `f64`.
+pub fn jy_airy_c(nu: C, z: C) -> Option<(Uniform, Uniform)> {
+    if !nu.is_finite() || !z.is_finite() || nu.abs() == 0.0 {
+        return None;
+    }
+    let x = z * nu.inv();
+    let w = C::ONE - x;
+    if w.abs() > W_SERIES {
+        return None;
+    }
+    // zeta = w * (zeta/w), and the ratio 4 zeta/(1 - x^2) in the form
+    // that does not divide two vanishing quantities: 4(zeta/w)/(2 - w).
+    let g = horner_c(&ZETA_OVER_W, w);
+    let zeta = g * w;
+    let ratio = g * 4.0 * (C::real(2.0) - w).inv();
+    let pref = ratio.powf(0.25);
+    let t = nu.powc(C::real(2.0 / 3.0)) * zeta;
+    let a = crate::airy_complex::airy_c(t).ok()?;
+
+    let a1 = horner_c(&A1_W, w);
+    let a2 = horner_c(&A2_W, w);
+    let b0 = horner_c(&B0_W, w);
+    let b1 = horner_c(&B1_W, w);
+    let b2 = horner_c(&B2_W, w);
+    let n2 = nu * nu;
+    let n4 = n2 * n2;
+    let sa = C::ONE + a1 * n2.inv() + a2 * n4.inv();
+    let sb = b0 + b1 * n2.inv() + b2 * n4.inv();
+    let c1 = pref * nu.powc(C::real(1.0 / 3.0)).inv();
+    let c2 = pref * nu.powc(C::real(5.0 / 3.0)).inv();
+
+    let j = c1 * a.ai * sa + c2 * a.aip * sb;
+    let y = (c1 * a.bi * sa + c2 * a.bip * sb) * -1.0;
+
+    // Optimal truncation, as in the real-order routine: the size of the
+    // last term kept, relative to the result — plus whatever the Airy
+    // evaluation itself reports, since that is now a computed quantity
+    // rather than a table lookup.
+    let last = |v: C, f1: C, f2: C| {
+        let m = (c1 * f1 * a2 * n4.inv()).abs() + (c2 * f2 * b2 * n4.inv()).abs();
+        if v.abs() == 0.0 || !v.is_finite() {
+            f64::INFINITY
+        } else {
+            (m / v.abs()).max(a.err)
+        }
+    };
+    let (ej, ey) = (last(j, a.ai, a.aip), last(y, a.bi, a.bip));
+    if !j.is_finite() || !y.is_finite() || !ej.is_finite() || !ey.is_finite() {
+        return None;
+    }
+    Some((
+        Uniform { value: j, err: ej },
+        Uniform { value: y, err: ey },
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -535,8 +626,84 @@ mod tests {
         }
     }
 
+    /// At a real order and argument the complex route must reproduce
+    /// the real one. They share the generated series but not the
+    /// arithmetic — complex `powc` and complex Airy against `powf` and
+    /// Cephes — so agreement is a real check on both.
+    #[test]
+    fn the_complex_route_reproduces_the_real_one() {
+        for &(nu, frac) in &[
+            (40.0_f64, 0.85_f64),
+            (40.0, 1.0),
+            (100.0, 0.98),
+            (200.0, 1.0),
+            (400.0, 1.05),
+            (1000.0, 1.15),
+        ] {
+            let z = nu * frac;
+            let (Some(rj), Some(ry)) = jy_airy(nu, z) else {
+                panic!("real route missing at nu={nu}, x={frac}")
+            };
+            let Some((cj, cy)) = jy_airy_c(C::real(nu), C::real(z)) else {
+                panic!("complex route missing at nu={nu}, x={frac}")
+            };
+            assert!(
+                (cj.value.re - rj.value.re).abs() <= 1e-12 * rj.value.re.abs(),
+                "J at nu={nu}, x={frac}"
+            );
+            assert!(
+                (cy.value.re - ry.value.re).abs() <= 1e-12 * ry.value.re.abs(),
+                "Y at nu={nu}, x={frac}"
+            );
+            assert!(cj.value.im.abs() <= 1e-12 * rj.value.re.abs(), "should be real");
+        }
+    }
+
+    /// Complex order at the turning point, by the J-Y Wronskian — whose
+    /// right-hand side involves neither the order nor any Bessel
+    /// function, and which is the only instrument available here since
+    /// no reference implementation covers it.
+    ///
+    /// This is the region Stage 18 recorded as unreachable and Stage 21
+    /// supplied the missing ingredient for.
+    #[test]
+    fn complex_order_at_the_turning_point_satisfies_the_wronskian() {
+        let mut checked = 0;
+        for &(a, b) in &[
+            (40.0_f64, 5.0_f64),
+            (100.0, 10.0),
+            (100.0, -20.0),
+            (200.0, 40.0),
+            (400.0, 80.0),
+        ] {
+            for &frac in &[0.85_f64, 0.95, 1.0, 1.05, 1.15] {
+                let nu = C::new(a, b);
+                let z = nu * frac;
+                let (Some((j0, y0)), Some((j1, y1))) =
+                    (jy_airy_c(nu, z), jy_airy_c(nu + C::ONE, z))
+                else {
+                    continue;
+                };
+                let w = j1.value * y0.value - j0.value * y1.value;
+                let want = z.inv() * (2.0 / std::f64::consts::PI);
+                let scale = (j1.value * y0.value).abs() + (j0.value * y1.value).abs();
+                let e = (w - want).abs() / scale;
+                checked += 1;
+                assert!(
+                    e <= (3.0 * j0.err).max(1e-10),
+                    "nu={nu:?}, x={frac}: residual {e:.2e}, estimate {:.1e}",
+                    j0.err
+                );
+            }
+        }
+        assert!(checked >= 20, "only {checked} points were reached");
+    }
+
     #[test]
     fn airy_uniform_edge_cases() {
+        // The complex route is a turning-point tool and says so.
+        assert!(jy_airy_c(C::real(100.0), C::real(10.0)).is_none(), "far from x = 1");
+        assert!(jy_airy_c(C::ZERO, C::ONE).is_none(), "nu = 0");
         assert!(jy_airy(0.0, 1.0).0.is_none(), "nu = 0");
         assert!(jy_airy(10.0, 0.0).0.is_none(), "z = 0");
         assert!(jy_airy(10.0, -1.0).0.is_none(), "negative z");
