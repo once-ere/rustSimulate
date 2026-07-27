@@ -161,7 +161,7 @@ record is separate and detailed:
 
 ## 4. Test results, and what they actually establish
 
-**556 passed workspace-wide; zero failures; zero build warnings;
+**557 passed workspace-wide; zero failures; zero build warnings;
 `cargo clippy --workspace --all-targets` reports zero errors and zero
 warnings.**
 
@@ -218,8 +218,29 @@ recorded here because it shaped the suite:
   integer-order `bessel_j_array` is checked against the vendored Cephes
   `jv` — two entirely unrelated algorithms — and against the native
   spherical Bessel via the half-integer identity.
-- **Mutation testing.** `orthopoly` and `quadrature` were mutation-tested
-  to confirm the suites are non-vacuous.
+- **Mutation testing.** `scripts/mutation_probe.sh` breaks the program
+  deliberately, in the places where this project's real defects have
+  historically lived — branch choices, guard thresholds, safety factors,
+  sampling offsets — and requires the suite to catch each one. A passing
+  suite is evidence only if a broken program would fail it.
+
+  First full run: **10 of 14 caught**. The four survivors, worked
+  through rather than filed:
+
+  | mutation | verdict |
+  |---|---|
+  | `zeta-anchor` (1.5 → 1.0 in the Stage 2D branch anchor) | **equivalent mutant.** Inside the guarded sector `\|arg(z/ν)\| ≤ 0.8` both coefficients unwrap to the same branch, so no input distinguishes them. It only bites where the route already refuses. |
+  | `asym-floor` (5e-14 → 1e-300) | a floor that raises an estimate; no test pins a case where the *unfloored* value would win selection. Real gap, narrow. |
+  | `cap-cells` (200 → 8) | the absorber's resolution; `the_result_is_converged_in_the_cell_count` asserts the 1/n² law with its own local geometry rather than the shipped constant. |
+  | `zeno-count` (64 → 1) | escalating after one impact still lets the settling-ball test pass, because that test checks termination and rest, not how many elastic bounces survived first. |
+
+  Investigating `zeta-anchor` produced the more useful finding: the
+  Stage 2D verification compared the closed form with the series **in
+  their overlap**, which is where the answer was already known.
+  `the_branch_anchor_is_constrained_away_from_the_turning_point` now
+  exercises the extended route far from the turning point against the
+  `1/z` Hankel pair — the test that stage should have had, whether or
+  not it moves this particular mutant.
 
 ### When the instrument is the thing that is wrong
 

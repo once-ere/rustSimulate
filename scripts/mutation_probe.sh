@@ -18,9 +18,18 @@
 # to catch each one.
 #
 # A mutation that SURVIVES is the output. It names a line whose value the
-# tests do not constrain, which is either a genuine gap or a constant
-# nothing depends on. Both are worth knowing; neither is visible from a
-# green run.
+# tests do not constrain, and there are three reasons that happens:
+#
+#   1. a missing test           — a real gap, fix it
+#   2. an EQUIVALENT mutant     — the change cannot alter behaviour
+#                                 inside the domain the code serves
+#   3. a constant that turns out not to matter
+#
+# Only (1) is a defect, and telling them apart is the analysis this
+# script exists to prompt. Survivors from the first full run are worked
+# through in SPECIAL_FUNCTIONS_PROVENANCE.md; `zeta-anchor` is a
+# textbook (2), and finding out WHY was worth more than the green tick
+# would have been.
 #
 #   ./scripts/mutation_probe.sh            # every mutation
 #   ./scripts/mutation_probe.sh debye      # only those whose id matches
