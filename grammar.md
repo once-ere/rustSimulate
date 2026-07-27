@@ -366,7 +366,16 @@ fixed by giving the function a second route:
   direction there, because `Y_n(iy)` is mostly `I_n(y)` and `I` is the
   recessive solution of that recurrence;
 * `bessel_y_z` along the real axis and `bessel_k_z` everywhere use
-  their own `1/z` expansions, single series with nothing to cancel.
+  their own `1/z` expansions, single series with nothing to cancel;
+* `bessel_j_z` and `bessel_y_z` in the wedge either side of the
+  **negative real axis** continue the Hankel expansions from the
+  positive one (DLMF 10.11.3, 10.11.4). Those expansions have sectors
+  ending at `arg z = pi`, so the cut is the one direction neither
+  reaches directly — and `w = -z` puts it back where both are at their
+  best. `bessel_k_z` needed only its sector widening: DLMF 10.40.2 is
+  valid to `|arg z| < 3pi/2`, so the whole principal sheet was always
+  interior to it and the margin being kept there was copied from the
+  Hankel ones for no reason.
 
 The routes are chosen by comparing error estimates, so nothing changes
 in what you write. What changed is the answers:
@@ -380,6 +389,26 @@ in what you write. What changed is the answers:
 Measured across `|z|` from 5 to 40 and `arg z` over the upper half
 plane, the J-Y Wronskian residual is now **1e-10 or better and mostly
 below 1e-15**.
+
+**On the cut itself that Wronskian is the wrong instrument.** There it
+is dominated by the exponentially *recessive* Hankel member, so it
+measures the Stokes phenomenon rather than the answer — which cost some
+confusion to work out. The right test is the pair of exact continuation
+identities
+
+```
+J_n(x e^{i pi}) = (-1)^n J_n(x)
+Y_n(x e^{i pi}) = (-1)^n [Y_n(x) + 2i J_n(x)]
+```
+
+which relate a point on the cut to one on the positive real axis, where
+everything is at its best. Against those, `bessel_j_z` is **exact** and
+`bessel_y_z` is 1e-14 out to `|z| = 300`; the wedge either side is
+1e-12 or better, where before it reached 1.0 at `|z| = 60`.
+
+The branch jump is still exactly `4i(-1)^n J_n`, and a test says so.
+Widening the coverage across a cut is only correct if the cut stays
+where it was.
 
 Two of those defects were found by accident and one by a test written
 for something else, and in each case the elementary Wronskian settled

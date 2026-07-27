@@ -448,7 +448,15 @@ fixed by giving the function a second route:
   recurrence;
 \item \code{bessel\_y\_z} along the real axis and \code{bessel\_k\_z}
   everywhere use their own $1/z$ expansions, single series with nothing
-  to cancel.
+  to cancel;
+\item \code{bessel\_j\_z} and \code{bessel\_y\_z} in the wedge either
+  side of the \textbf{negative real axis} continue the Hankel expansions
+  from the positive one (DLMF 10.11.3, 10.11.4). Those expansions have
+  sectors ending at $\arg z = \pi$, so the cut is the one direction
+  neither reaches directly, and $w = -z$ puts it back where both are at
+  their best. \code{bessel\_k\_z} needed only its sector widening: DLMF
+  10.40.2 is valid to $|\arg z| < 3\pi/2$, so the whole principal sheet
+  was always interior to it.
 \end{itemize}
 The routes are chosen by comparing error estimates, so nothing changes
 in what you write. What changed is the answers:
@@ -465,7 +473,23 @@ in what you write. What changed is the answers:
 
 Measured across $|z|$ from 5 to 40 and $\arg z$ over the upper half
 plane, the $J$--$Y$ Wronskian residual is now \textbf{$10^{-10}$ or
-better and mostly below $10^{-15}$}. The $J$ and $I$ rows of the table
+better and mostly below $10^{-15}$}.
+
+\textbf{On the cut itself that Wronskian is the wrong instrument.} It is
+dominated there by the exponentially \emph{recessive} Hankel member, so
+it measures the Stokes phenomenon rather than the answer. The right test
+is the pair of exact continuation identities
+\[
+  J_n(xe^{i\pi}) = (-1)^n J_n(x), \qquad
+  Y_n(xe^{i\pi}) = (-1)^n\big[Y_n(x) + 2iJ_n(x)\big],
+\]
+which relate a point on the cut to one on the positive real axis, where
+everything is at its best. Against those, \code{bessel\_j\_z} is
+\textbf{exact} and \code{bessel\_y\_z} is $10^{-14}$ out to $|z| = 300$;
+the wedge either side is $10^{-12}$ or better, where before it reached
+$1.0$ at $|z| = 60$. The branch jump is still exactly $4i(-1)^nJ_n$, and
+a test says so --- widening coverage across a cut is only correct if the
+cut stays where it was. The $J$ and $I$ rows of the table
 agree digit for digit because they are the same measurement ---
 $I_n(z)$ \emph{is} $J_n(iz)$.
 

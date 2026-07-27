@@ -156,6 +156,58 @@ fn hankel_pair(nu: C, z: C) -> Option<(C, C, f64)> {
     (h1.is_finite() && h2.is_finite()).then_some((h1, h2, e1.max(e2)))
 }
 
+/// The Hankel pair near `arg z = ±pi`, by continuing from the positive
+/// real axis (DLMF 10.11.3, 10.11.4 with `m = ±1`).
+///
+/// The `1/z` expansions of DLMF 10.17.5 and 10.17.6 hold on
+/// `-pi < arg z < 2pi` and `-2pi < arg z < pi`, so the negative real
+/// axis is interior to one and on the boundary of the other, and
+/// [`hankel_pair`] keeps a `pi/3` margin from it. Everything in that
+/// wedge then fell back to the ascending series and its `exp(|z|)`
+/// loss — measured, a J-Y Wronskian residual of 1.0 at `|z| = 60`.
+///
+/// The remedy is not a new expansion but a change of variable. With
+/// `w = -z`, so that `arg w` is near zero where both expansions are at
+/// their best:
+///
+/// ```text
+///   arg z ~ +pi:  H1(z) = -e^(-i nu pi) H2(w)
+///                 H2(z) =  e^(i nu pi) H1(w) + 2 cos(nu pi) H2(w)
+///   arg z ~ -pi:  H1(z) =  2 cos(nu pi) H1(w) + e^(-i nu pi) H2(w)
+///                 H2(z) = -e^(i nu pi) H1(w)
+/// ```
+///
+/// The two cases are different because `z` is on **different sides of
+/// the cut**, and that is the point rather than an inconvenience: `Y`
+/// and the Hankel functions really are discontinuous there, and the
+/// side is chosen by the sign of `Im z` — including its signed zero,
+/// which is the convention the rest of this crate already follows.
+///
+/// On the negative real axis `|H1(w)| = |H2(w)|`, so neither
+/// combination cancels; the estimate carries through unchanged.
+fn hankel_pair_continued(nu: C, z: C) -> Option<(C, C, f64)> {
+    let a = z.arg();
+    // Only inside the wedge `hankel_pair` refuses.
+    if a.abs() <= std::f64::consts::PI - std::f64::consts::FRAC_PI_3 {
+        return None;
+    }
+    let w = z * -1.0;
+    let (h1w, h2w, e) = hankel_pair(nu, w)?;
+    let epi = (C::I * nu * std::f64::consts::PI).exp();
+    let two_cos = (nu * std::f64::consts::PI).cos() * 2.0;
+    let (h1, h2) = if a >= 0.0 {
+        (h2w * epi.inv() * -1.0, h1w * epi + h2w * two_cos)
+    } else {
+        (h1w * two_cos + h2w * epi.inv(), h1w * epi * -1.0)
+    };
+    (h1.is_finite() && h2.is_finite()).then_some((h1, h2, e))
+}
+
+/// The Hankel pair by whichever route reaches this `z`.
+fn hankel_pair_any(nu: C, z: C) -> Option<(C, C, f64)> {
+    hankel_pair(nu, z).or_else(|| hankel_pair_continued(nu, z))
+}
+
 /// How much forming `J` or `Y` from the Hankel pair costs, measured
 /// from the values rather than modelled — the sum of the ingredient
 /// magnitudes over the magnitude of the result.
@@ -169,23 +221,26 @@ fn cancellation(a: C, b: C, result: C) -> f64 {
 
 /// `J_nu(z)` by the large-argument route.
 pub fn j_asym(nu: C, z: C) -> Cand {
-    let (h1, h2, e) = hankel_pair(nu, z)?;
+    let (h1, h2, e) = hankel_pair_any(nu, z)?;
     let v = (h1 + h2) * 0.5;
     ok(v, e.max(FLOOR) * cancellation(h1, h2, v))
 }
 
 /// `Y_nu(z)` by the large-argument route.
 pub fn y_asym(nu: C, z: C) -> Cand {
-    let (h1, h2, e) = hankel_pair(nu, z)?;
+    let (h1, h2, e) = hankel_pair_any(nu, z)?;
     let v = (h1 - h2) / (C::I * 2.0);
     ok(v, e.max(FLOOR) * cancellation(h1, h2, v))
 }
 
 /// `K_nu(z)` from DLMF 10.40.2 — one term, no cancellation.
 pub fn k_asym(nu: C, z: C) -> Cand {
-    if !order_is_small_enough(nu, z)
-        || z.arg().abs() >= std::f64::consts::PI - std::f64::consts::FRAC_PI_4
-    {
+    // DLMF 10.40.2 holds for `|arg z| < 3 pi/2`, so the whole principal
+    // sheet is interior to it — unlike the Hankel expansions, whose
+    // sectors end at `pi`. The pi/4 margin kept here originally was
+    // copied from those and was simply too strict: it cut `K` off from
+    // the negative real axis for no reason the mathematics gives.
+    if !order_is_small_enough(nu, z) {
         return None;
     }
     let (s, e) = asym_sum_c(nu, z, C::ONE);
@@ -396,11 +451,42 @@ mod tests {
         }
     }
 
+    /// The continuation is exact algebra, so where **both** routes
+    /// apply they must agree to the last bit. That is the sharpest test
+    /// of DLMF 10.11.3/4 as transcribed here: a sign error in either
+    /// formula shows up immediately, and no reference is involved.
+    #[test]
+    fn the_continuation_agrees_with_the_direct_route_where_both_apply() {
+        for &(a, b) in &[(1.3_f64, 0.0_f64), (2.0, 0.0), (0.5, 1.0), (1.7, -2.0)] {
+            for &r in &[15.0_f64, 40.0, 120.0] {
+                for &arg in &[1.6_f64, 1.9, 2.05, -1.6, -1.9, -2.05] {
+                    let (nu, z) = (C::new(a, b), C::from_polar(r, arg));
+                    let (Some((d1, d2, _)), Some((c1, c2, _))) =
+                        (hankel_pair(nu, z), hankel_pair_continued(nu, z))
+                    else {
+                        continue;
+                    };
+                    // The recessive member of the pair is only
+                    // determined to `eps` times the dominant one — the
+                    // Stokes phenomenon — so agreement is asserted
+                    // relative to the LARGER of the two.
+                    let scale = d1.abs().max(d2.abs());
+                    assert!(
+                        (c1 - d1).abs() <= 1e-12 * scale && (c2 - d2).abs() <= 1e-12 * scale,
+                        "nu={nu:?} z={z:?}: direct ({d1:?}, {d2:?}) vs continued ({c1:?}, {c2:?})"
+                    );
+                }
+            }
+        }
+    }
+
     #[test]
     fn large_order_edge_cases() {
         let nu = C::new(1.0, 1.0);
-        // The negative real axis is outside both Hankel sectors.
-        assert!(j_asym(nu, C::real(-50.0)).is_none(), "arg z = pi");
+        // The negative real axis is outside both Hankel sectors — and
+        // since Stage 20 it is reached anyway, by continuing from the
+        // positive one. This assertion used to say `is_none()`.
+        assert!(j_asym(nu, C::real(-50.0)).is_some(), "arg z = pi is now covered");
         // I's expansion is only used near the real axis.
         assert!(i_asym(nu, C::new(1.0, 50.0)).is_none(), "near the imaginary axis");
         assert!(i_asym(nu, C::real(-10.0)).is_none(), "Re z < 0");

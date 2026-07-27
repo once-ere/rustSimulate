@@ -57,11 +57,29 @@
 //!   replaces the upward recurrence in `n` — the direction that
 //!   destroys `Y` there, since its content is mostly the recessive `I`;
 //! * `Y` along the real axis, and `K` everywhere, by their own `1/z`
-//!   expansions, which are single series with nothing to cancel.
+//!   expansions, which are single series with nothing to cancel;
+//! * `J` and `Y` in the wedge either side of the **negative real
+//!   axis**, by continuing the Hankel expansions from the positive one
+//!   (DLMF 10.11.3, 10.11.4). The two `1/z` Hankel expansions have
+//!   sectors that end at `arg z = pi`, so the cut is the one direction
+//!   neither reaches directly; `w = -z` puts it back where both are at
+//!   their best, and the continuation is exact algebra.
 //!
 //! Measured after that, the J-Y Wronskian residual over `|z|` from 5 to
 //! 40 and `arg z` across the upper half plane is **1e-10 or better and
-//! mostly below 1e-15**, against 1e-1 before. `Y_0(40)` was wrong in its
+//! mostly below 1e-15**, against 1e-1 before.
+//!
+//! Near the cut that Wronskian is the wrong instrument — it is
+//! dominated there by the exponentially **recessive** Hankel member and
+//! so measures the Stokes phenomenon rather than the answer. The right
+//! test is the exact continuation identities,
+//! `J_n(x e^{i pi}) = (-1)^n J_n(x)` and
+//! `Y_n(x e^{i pi}) = (-1)^n [Y_n(x) + 2i J_n(x)]`, which relate a
+//! point on the cut to one on the positive real axis. Against those,
+//! `J` is exact and `Y` is 1e-14 out to `|z| = 300`; the wedge either
+//! side is 1e-12 or better. The branch jump is still exactly
+//! `4i(-1)^n J_n`, and a test says so — widening the coverage across a
+//! cut is only correct if the cut stays where it was. `Y_0(40)` was wrong in its
 //! first digit and is now exact to 1e-15; `K_0(20)` was out by `8e8`
 //! and is now exact to 2e-16.
 //!
@@ -209,6 +227,9 @@ pub fn bessel_j_array_c(n_max: usize, z: C) -> Result<Vec<C>, String> {
 /// ```
 pub fn bessel_j_c(n: i32, z: C) -> Result<C, String> {
     if let Some(v) = j_via_i(n, z) {
+        return Ok(v);
+    }
+    if let Some(v) = j_via_asym(n, z) {
         return Ok(v);
     }
     if n < 0 {
@@ -386,6 +407,28 @@ pub fn bessel_y_c(n: i32, z: C) -> Result<C, String> {
         return Ok(v);
     }
     Ok(bessel_y_array_c(n as usize, z)?[n as usize])
+}
+
+/// `J_n(z)` by the `1/z` Hankel expansion, where Miller's normalisation
+/// has cancelled.
+///
+/// Miller loses `exp(|Im z|)`. Near the imaginary axis [`j_via_i`]
+/// rotates that away, but in the wedge either side of the **negative
+/// real axis** — where `|Im z|` is large and yet not larger than
+/// `|Re z|` — neither applies, and the expansion is what is left.
+/// Since Stage 20 it reaches that wedge, by continuing from the
+/// positive real axis.
+fn j_via_asym(n: i32, z: C) -> Option<C> {
+    if !z.is_finite() || z.abs() == 0.0 {
+        return None;
+    }
+    let (v, e) = crate::bessel_cnu_large::j_asym(C::real(n as f64), z)?;
+    if !v.is_finite() {
+        return None;
+    }
+    let loss = z.im.abs();
+    let miller_err = if loss > 700.0 { f64::INFINITY } else { 1e-16 * loss.exp() };
+    (e < miller_err).then_some(v)
 }
 
 /// `Y_n(z)` by the `1/z` Hankel expansion, where the ascending series
@@ -1684,6 +1727,92 @@ mod tests {
         // ... and the grid must actually be reaching something hard, or
         // the bound above is decoration.
         assert!(worst > 1e-15, "worst was {worst:.1e}");
+    }
+
+    /// The negative real axis, tested by the **exact** continuation
+    /// identities rather than by a Wronskian.
+    ///
+    /// ```text
+    ///   J_n(x e^{i pi}) = (-1)^n J_n(x)
+    ///   Y_n(x e^{i pi}) = (-1)^n [Y_n(x) + 2i J_n(x)]
+    /// ```
+    ///
+    /// These follow from DLMF 10.11.3/4 and relate a point on the cut to
+    /// one on the positive real axis, where every route here is at its
+    /// best. That makes them a far better test than the J-Y Wronskian,
+    /// which near the cut is dominated by the exponentially **recessive**
+    /// Hankel member and so measures the Stokes phenomenon rather than
+    /// the answer — a distinction that cost some confusion to find.
+    #[test]
+    fn the_negative_real_axis_satisfies_the_continuation_identities() {
+        for &x in &[10.0_f64, 20.0, 40.0, 60.0, 100.0, 300.0] {
+            for &n in &[0_i32, 2, 5] {
+                let sign = if n % 2 == 0 { 1.0 } else { -1.0 };
+                let (jp, yp) = (
+                    bessel_j_c(n, C::real(x)).unwrap(),
+                    bessel_y_c(n, C::real(x)).unwrap(),
+                );
+                // `-x` with a POSITIVE zero imaginary part is the upper
+                // side of the cut, which is the side `arg = +pi` names.
+                let zn = C::new(-x, 0.0);
+                let jg = bessel_j_c(n, zn).unwrap();
+                let yg = bessel_y_c(n, zn).unwrap();
+                let jw = jp * sign;
+                let yw = (yp + C::I * jp * 2.0) * sign;
+                assert!(
+                    (jg - jw).abs() <= 1e-13 * jw.abs(),
+                    "J_{n}(-{x}): {jg:?} vs {jw:?}"
+                );
+                assert!(
+                    (yg - yw).abs() <= 1e-13 * yw.abs(),
+                    "Y_{n}(-{x}): {yg:?} vs {yw:?}"
+                );
+            }
+        }
+    }
+
+    /// The wedge either side of the cut, where neither the rotation of
+    /// [`j_via_i`] nor the direct expansion applies and only the
+    /// continuation does. Same identities, applied at `arg z` rather
+    /// than at `pi`.
+    #[test]
+    fn the_wedge_beside_the_cut_is_covered() {
+        for &r in &[15.0_f64, 40.0, 100.0, 300.0] {
+            for &a in &[2.2_f64, 2.4, 2.6, 2.8, -2.4, -2.8] {
+                let z = C::from_polar(r, a);
+                let w = C::from_polar(r, a - a.signum() * std::f64::consts::PI);
+                let n = 2;
+                let (jw, yw) = (bessel_j_c(n, w).unwrap(), bessel_y_c(n, w).unwrap());
+                let s = C::I * a.signum() * 2.0;
+                let jg = bessel_j_c(n, z).unwrap();
+                let yg = bessel_y_c(n, z).unwrap();
+                // 1e-11: worst measured in the wedge is 1.6e-12, at
+                // r = 15 where the expansion is only just converged.
+                assert!((jg - jw).abs() <= 1e-11 * jw.abs(), "J at r={r}, arg={a}");
+                let want = yw + jw * s;
+                assert!((yg - want).abs() <= 1e-11 * want.abs(), "Y at r={r}, arg={a}");
+            }
+        }
+    }
+
+    /// The branch jump must still be exactly `4i(-1)^n J_n`. Widening
+    /// the coverage across the cut is only correct if the cut itself is
+    /// still where it was.
+    #[test]
+    fn the_branch_jump_is_unchanged() {
+        for &x in &[5.0_f64, 20.0, 50.0, 200.0] {
+            for &n in &[0_i32, 3] {
+                let up = bessel_y_c(n, C::new(-x, 0.0)).unwrap();
+                let lo = bessel_y_c(n, C::new(-x, -0.0)).unwrap();
+                let sign = if n % 2 == 0 { 1.0 } else { -1.0 };
+                let want = C::I * bessel_j_c(n, C::real(x)).unwrap() * 4.0 * sign;
+                assert!(
+                    (up - lo - want).abs() <= 1e-12 * want.abs(),
+                    "jump at n={n}, x={x}: {:?} vs {want:?}",
+                    up - lo
+                );
+            }
+        }
     }
 
     /// The three routes must each be the one chosen where it belongs,
