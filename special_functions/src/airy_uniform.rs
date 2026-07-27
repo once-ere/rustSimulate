@@ -689,8 +689,10 @@ mod tests {
                 let scale = (j1.value * y0.value).abs() + (j0.value * y1.value).abs();
                 let e = (w - want).abs() / scale;
                 checked += 1;
+                let floor = crate::bessel_cnu_large::hankel_ratio(nu, z)
+                    .map_or(0.0, |r| 1.0 / r);
                 assert!(
-                    e <= (3.0 * j0.err).max(1e-10),
+                    e <= (3.0 * j0.err).max(1e-10).max(10.0 * floor),
                     "nu={nu:?}, x={frac}: residual {e:.2e}, estimate {:.1e}",
                     j0.err
                 );

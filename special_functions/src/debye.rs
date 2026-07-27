@@ -303,22 +303,119 @@ pub fn jy_debye_c(nu: C, z: C) -> (Option<Uniform>, Option<Uniform>) {
     if !nu.is_finite() || !z.is_finite() || nu.abs() == 0.0 || z.abs() == 0.0 {
         return (None, None);
     }
-    // A LARGE-ORDER expansion, so a small order is out of range even
-    // when its terms happen to look small. At `nu = 1.3, |z| = 18` the
-    // ratio `q = 1/sqrt(1-x^2)` is 0.07, the terms shrink nicely, and
-    // the truncation estimate comes out below 1e-14 — while the answer
-    // is 1.7e-10 off, because what the estimate cannot see is the
-    // expansion's own `1/nu` character. The 1/z route is far better
-    // there, and without this guard the selector preferred this one.
-    // 8, not 3. At `nu = 3` the expansion still passed its own
-    // estimate and still lost the J-Y Wronskian by a factor of 1 at
-    // `|z| = 22` — a `1/nu` series needs `nu` genuinely large, and the
-    // band this exists to cover starts at `nu ~ 20` anyway.
-    if nu.abs() < 8.0 {
+    // **Measured validity.** This routine reports a truncation
+    // estimate, and Stage 24 asked, over ~90 000 values judged against
+    // references that share no code with it — the ascending series
+    // below `|z| = 26`, the `1/z` Hankel pair above it — where that
+    // estimate is actually a *bound*. There are two such places, and
+    // they are much smaller than what was being offered:
+    //
+    // ```text
+    //   |z| >= 8|nu| and |arg(z/nu)| <= 1.2   worst act/est   4.2
+    //   |z| >= 2|nu| and |arg(z/nu)| <= 0.1   worst            1.0
+    //   |z| <   |nu| and |arg(z/nu)| <= 0.1   worst            4.9
+    // ```
+    //
+    // The near-real clause is judged against Cephes `jv`/`yv` rather
+    // than against another expansion, over `nu` from 1.3 to 100 and
+    // `z/nu` from 1.1 to 8. It is the wider sector that costs `|z|`:
+    // off the real axis the same accuracy needs eight times the
+    // argument, not two.
+    //
+    // The band `1 < |z/nu| < 2` near the real axis is **not** covered
+    // by this routine at large order — at `nu = 100, z = 140` the
+    // estimate is optimistic by 8.1e10. Below `nu ~ 8` it is fine
+    // there, and above it the turning-point expansion of DLMF 10.20
+    // reaches `|1 - z/nu| <= 0.25`; between those lies a genuine gap,
+    // recorded rather than papered over.
+    //
+    // Both sector limits are measured, not inherited. Past 1.2 the
+    // oscillatory case degrades fast — 2.1e4 by `|arg| = 1.8`, and
+    // 5.0e12 past 2.0, where at `|nu| = 3.7`, `arg(z/nu) = 2.2` it
+    // claimed 3.1e-13 on a value wrong by 1.5. That is the same Stokes
+    // structure [`crate::bessel_cnu_large::hankel_pair`] keeps a `pi/3`
+    // margin from, seen in a different expansion.
+    //
+    // Outside them the estimate is optimistic — at `|nu| = 13.8` and
+    // `z/nu = 1.02 e^(1.4i)` it claimed **1.3e-11** on a value wrong by
+    // **3.5e3**, a factor of 2.7e14. Optimal truncation reports the
+    // first omitted term; it cannot see that an expansion has a
+    // *sector*, and this one does.
+    //
+    // What this replaces is the guard `|nu| >= 8` — an ORDER guard, and
+    // the wrong variable. The failure does not improve with order: at
+    // `|nu| >= 25` near the turning point it is still 1.2e14. It does
+    // improve with `|z|/|nu|`, which the old guard ignored entirely.
+    // So small orders are now *allowed* wherever the argument is large
+    // enough, which is what narrows the sliver Stage 23 left open, and
+    // large orders near the turning point are now refused, which is
+    // what stops the lying.
+    //
+    // The band `0.25 < |1 - z/nu|` up to `|z| = 8|nu|` is left to
+    // [`crate::airy_uniform::jy_airy_c`] where it reaches, and is
+    // otherwise **not covered** — refused rather than guessed at.
+    let x = z * nu.inv();
+    let ratio = x.abs();
+    let sector = x.arg().abs();
+    let usable = (ratio >= 8.0 && sector <= 1.2)
+        || (ratio >= 2.0 && sector <= 0.1)
+        || (ratio < 1.0 && sector <= 0.1);
+    if !usable {
         return (None, None);
     }
-    let x = z * nu.inv();
-    let t = (C::ONE - x * x).powf(0.5);
+    // **Which square root.** `(1 - x^2)^(1/2)` on the principal branch
+    // has its cut where `1 - x^2` is a negative real, i.e. where `x^2`
+    // is real and `>= 1` — which is exactly the oscillatory region this
+    // expansion exists to cover. Crossing that cut negates `t`, and
+    // negating `t` **exchanges the two solutions**: `exp(nu(t - alpha))`
+    // and `exp(-nu(t - alpha))` swap, so `H1` is returned as `H2`, and
+    // `J` and `Y` are then built from the wrong pair.
+    //
+    // For a real order and a real argument `x` is real, `1 - x^2` is a
+    // negative real with a `+0` imaginary part, `arg` is `+pi`, and the
+    // principal root lands on the side that happens to be right. That
+    // is why this survived two stages: every check that could have seen
+    // it was run where `x` is exactly real. Measured off it, at
+    // `nu = 5 + 2i`, `z = 60 + 30i`, the returned `H1` is the true `H2`
+    // — wrong by `|H2/H1| = 2e23`. It fires at a **real** order too, as
+    // soon as `z` is complex: `nu = 20`, `z = 300 + 40i`.
+    //
+    // Moving the cut is not enough. `i (x^2 - 1)^(1/2)` puts it on the
+    // ray where `x` is purely imaginary instead of along the real axis,
+    // which is a large improvement and still wrong near that ray —
+    // measured, `arg(z/nu) = 1.2` still swapped, at every order up to
+    // 12. There is no principal branch that is right everywhere,
+    // because the correct `t` is defined by continuation and not by a
+    // formula.
+    //
+    // So the branch is **chosen against the answer's own leading
+    // exponent** rather than assumed. As `|x|` grows, `t -> i x` and
+    // `alpha -> i pi/2`, so
+    //
+    // ```text
+    //     nu (t - alpha)  ->  i (z - nu pi/2)
+    // ```
+    //
+    // which is the exponent of `H1` in DLMF 10.17.5 (the remaining
+    // `-i pi/4` is carried by the prefactor). The two candidate roots
+    // give exponents on opposite sides of that target and the choice is
+    // decisive, since they differ by `2|z - nu pi/2|`. Below `|x| = 1`
+    // the principal root is the correct one and its cut lies outside
+    // the disc, so that regime is left exactly as it was.
+    let x2 = x * x;
+    let t_principal = (C::ONE - x2).powf(0.5);
+    let t = if x.abs() > 1.0 {
+        let target = C::I * (z - nu * std::f64::consts::FRAC_PI_2);
+        let exponent = |t: C| (t - ((C::ONE + t) * x.inv()).ln()) * nu;
+        let flipped = t_principal * -1.0;
+        if (exponent(t_principal) - target).abs() <= (exponent(flipped) - target).abs() {
+            t_principal
+        } else {
+            flipped
+        }
+    } else {
+        t_principal
+    };
     if t.abs() == 0.0 || !t.is_finite() {
         return (None, None);
     }
@@ -326,7 +423,29 @@ pub fn jy_debye_c(nu: C, z: C) -> (Option<Uniform>, Option<Uniform>) {
     let q = t.inv();
     let (sp, ep) = u_series(nu, q, 1.0);
     let (sm, em) = u_series(nu, q, -1.0);
-    let pref = ((nu * t) * (2.0 * std::f64::consts::PI)).powf(-0.5);
+    // **The prefactor has a branch too, and it is a separate one.**
+    // `(2 pi nu t)^(-1/2)` on the principal branch flips sign when
+    // `arg(nu t)` passes `+-pi`. Since `t -> i x`, `nu t -> i z`, so the
+    // crossing is at `arg z = pi/2` — and there both `H1` and `H2` come
+    // back negated. Every *bilinear* check is blind to that: the
+    // Wronskian is a product of two of them, so the two sign errors
+    // cancel and it passes. Measured against the `1/z` route instead,
+    // the relative error is exactly 2.0, which is the signature.
+    //
+    // `arg` must therefore be **unwrapped** rather than taken
+    // principal. `nu t = (i z) r` with `r = t/(i x) = (1 - 1/x^2)^(1/2)`,
+    // which stays near 1 and never approaches the negative reals for
+    // `|x| > 1`, so `arg r` is safe to take principal. The continuous
+    // representative is then `arg z + pi/2 + arg r`, which is allowed to
+    // leave `(-pi, pi]` — that is the whole point.
+    let pref = if x.abs() > 1.0 {
+        let r = (nu * t) * (C::I * z).inv();
+        let theta = z.arg() + std::f64::consts::FRAC_PI_2 + r.arg();
+        let modulus = (2.0 * std::f64::consts::PI * (nu * t).abs()).powf(-0.5);
+        C::from_polar(modulus, -0.5 * theta)
+    } else {
+        ((nu * t) * (2.0 * std::f64::consts::PI)).powf(-0.5)
+    };
     let e = (t - alpha) * nu;
     // The exponential's own rounding: `exp(e)` is known only to
     // `|e| * eps` relative, because `e` is. The same term the complex
@@ -670,17 +789,109 @@ mod tests {
         assert!((got.re - wy).abs() <= 1e-12 * wy.abs(), "chosen: {} vs {wy}", got.re);
     }
 
-    /// A `1/nu` expansion needs `nu` genuinely large, and its terms
-    /// looking small is not the same thing. At `nu = 3, |z| = 22` it
-    /// passed its own estimate and still lost the J-Y Wronskian by a
-    /// factor of 1, which is why the order is guarded rather than left
-    /// to the estimate.
+    /// **The three branch defects Stage 24 found, one test each.**
+    ///
+    /// All three returned a *plausible* value with a *small* estimate,
+    /// and all three were invisible to every check that existed,
+    /// because those checks were run where `z/nu` is exactly real —
+    /// the one line in the plane on which none of the three fires.
+    ///
+    /// The reference is the `1/z` Hankel pair, which shares no code
+    /// with this module.
     #[test]
-    fn a_small_order_is_refused_outright() {
-        assert!(jy_debye_c(C::real(1.3), C::real(18.0)).0.is_none());
-        assert!(jy_debye_c(C::real(3.0), C::real(22.0)).0.is_none());
+    fn the_branch_choices_are_right_off_the_real_axis() {
+        let cases = [
+            // (nu, z, what went wrong before)
+            //
+            // 1. `t = (1 - x^2)^(1/2)` on the principal branch, whose
+            //    cut IS the oscillatory region. `Im(x^2) > 0` here, the
+            //    root flipped, and H1 came back as H2 - wrong by 2e23.
+            (C::new(5.0, 2.0), C::new(200.0, 80.0)),
+            // 2. The same defect at a **real** order, which is why this
+            //    was not merely a complex-order bug: `x = z/nu` is
+            //    complex as soon as `z` is, and that is all it takes.
+            (C::real(20.0), C::new(300.0, 40.0)),
+            // 3. The prefactor `(2 pi nu t)^(-1/2)`, a *separate* branch,
+            //    crossed once `arg z > pi/2`. Both H1 and H2 came back
+            //    negated, so every bilinear check - the Wronskian
+            //    included - passed while the values were sign-wrong.
+            (C::from_polar(6.7, 0.8), C::from_polar(120.0, 1.9)),
+        ];
+        for (nu, z) in cases {
+            let (Some(j), Some(y)) = jy_debye_c(nu, z) else {
+                panic!("nu={nu:?} z={z:?} should be inside the measured region")
+            };
+            let (h1, h2, e) = crate::bessel_cnu_large::hankel_pair_any(nu, z)
+                .expect("the 1/z route must reach these reference points");
+            assert!(e < 1e-13, "reference itself is weak at nu={nu:?}: {e:.1e}");
+            let (wj, wy) = ((h1 + h2) * 0.5, (h1 - h2) * C::new(0.0, -0.5));
+            let rj = (j.value - wj).abs() / wj.abs();
+            let ry = (y.value - wy).abs() / wy.abs();
+            assert!(rj < 1e-11, "J at nu={nu:?} z={z:?}: {rj:.1e}");
+            assert!(ry < 1e-11, "Y at nu={nu:?} z={z:?}: {ry:.1e}");
+        }
+    }
+
+    /// The instrument that hid them.
+    ///
+    /// A swapped or negated Hankel pair is a *basis* change, and the
+    /// Wronskian is bilinear, so it is blind to a shared sign. And at
+    /// complex order the J-Y Wronskian scaled by its largest term
+    /// reports `|H1/H2|` whatever the values are. This pins both facts
+    /// so that neither can quietly become the measurement again.
+    #[test]
+    fn the_wronskian_is_blind_to_a_shared_sign_and_to_a_dominant_hankel() {
+        let (nu, z) = (C::new(5.0, 2.0), C::new(200.0, 80.0));
+        let (h1, h2, _) = crate::bessel_cnu_large::hankel_pair_any(nu, z).unwrap();
+        let (h1b, h2b, _) = crate::bessel_cnu_large::hankel_pair_any(nu + C::ONE, z).unwrap();
+        let want = z.inv() * C::new(0.0, -4.0 / std::f64::consts::PI);
+
+        let good = h1b * h2 - h1 * h2b;
+        let negated = (h1b * -1.0) * (h2 * -1.0) - (h1 * -1.0) * (h2b * -1.0);
+        assert!((good - want).abs() / want.abs() < 1e-12, "the identity holds");
+        assert!(
+            (negated - good).abs() == 0.0,
+            "and negating BOTH members changes it not at all - which is why a \
+             sign defect survived every Wronskian check in the crate"
+        );
+
+        // The J-Y instrument's resolution here is |H1/H2| = 4e-24: it
+        // cannot report an error smaller OR larger than that.
+        let ratio = crate::bessel_cnu_large::hankel_ratio(nu, z).unwrap();
+        assert!(ratio > 1e20, "one Hankel dominates by {ratio:.1e}");
+    }
+
+    /// The guard is on the **region**, not on the order.
+    ///
+    /// This test used to assert that `nu = 1.3` was refused outright,
+    /// on a Stage 23 measurement that the expansion was 1.7e-10 wrong
+    /// there while claiming better. That measurement was real, but its
+    /// cause was not the order: it was the branch defects fixed in
+    /// Stage 24. With those repaired, `nu = 1.3, z = 18` is accurate to
+    /// **5.6e-13** against Cephes while claiming 2.4e-10 — conservative,
+    /// not optimistic — so refusing it was throwing away a good value.
+    ///
+    /// What must still be refused is the region the estimate cannot
+    /// speak for: too close to the turning point, or too far off the
+    /// real axis for the argument on offer.
+    #[test]
+    fn the_guard_is_on_the_region_not_the_order() {
+        // Small order, argument well clear: allowed, and right.
+        let (Some(j), Some(y)) = jy_debye_c(C::real(1.3), C::real(18.0)) else {
+            panic!("nu = 1.3 at z = 18 is inside the measured region")
+        };
+        let (wj, wy) = (spec_math::cephes64::jv(1.3, 18.0), spec_math::cephes64::yv(1.3, 18.0));
+        let (rj, ry) = ((j.value.re - wj).abs() / wj.abs(), (y.value.re - wy).abs() / wy.abs());
+        assert!(rj < 1e-11 && ry < 1e-11, "nu = 1.3: {rj:.1e}, {ry:.1e}");
+        assert!(rj <= j.err && ry <= y.err, "and the estimate must bound them");
+
+        // Off the real axis with only |z| = 3.7|nu|: refused, because
+        // the wider sector needs 8|nu| and this is not that.
         assert!(jy_debye_c(C::new(5.0, 2.0), C::real(20.0)).0.is_none());
-        assert!(jy_debye_c(C::real(8.0), C::real(24.0)).0.is_some(), "nu = 8 is in range");
+        // Same order, same sector, argument eight times over: allowed.
+        assert!(jy_debye_c(C::new(5.0, 2.0), C::real(60.0)).0.is_some());
+        // Near the turning point at large order: refused.
+        assert!(jy_debye_c(C::real(100.0), C::real(140.0)).0.is_none());
     }
 
     #[test]

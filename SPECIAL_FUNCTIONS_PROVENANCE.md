@@ -221,6 +221,59 @@ recorded here because it shaped the suite:
 - **Mutation testing.** `orthopoly` and `quadrature` were mutation-tested
   to confirm the suites are non-vacuous.
 
+### When the instrument is the thing that is wrong
+
+Stage 24 is recorded separately because what it found was not a wrong
+value but a **wrong measurement**, and the wrong measurement had been
+certifying four other stages.
+
+The J–Y Wronskian `J_{ν+1}Y_ν − J_νY_{ν+1} = 2/(πz)` had been the
+crate's sharpest check: it holds at every order, its right-hand side is
+elementary, and no consistently-wrong pair can satisfy it. From Stage 13
+onward the residual was divided by the largest product formed, "so the
+metric's own cancellation is divided out".
+
+That scaling is valid on the real axis and **vacuous off it**. `J` and
+`Y` are both `(H1 ± H2)/2`, so wherever one Hankel function dominates —
+any complex order off the real axis, or any order with appreciable
+`|Im z|` — they are *the same function* to within `|H1/H2|`. The
+Wronskian's true size is `|H1 H2|` while each product forming it is
+`|H2|²`, so the scaled residual is `|H1/H2|` and nothing else. Measured
+at `ν = 5 + 2i, z = 200 + 80i`: `|H1| = 2.2e-35`, `|H2| = 1.3e32`, and
+the scaled residual came out **8.2e-24** — reported as a triumph, and
+in fact just the ratio. Removing the scaling does not help; it would
+then demand an accuracy of `|H1/H2|` relative, which no correct
+implementation can deliver. **The J–Y Wronskian cannot resolve below
+`|H1/H2|`, under any scaling.** The four sweeps that used it are now
+floored at that resolution, and `hankel_ratio` exists to compute it.
+
+Three consequences followed immediately, all in `debye::jy_debye_c`:
+
+1. **`t = (1 − x²)^{1/2}` on the principal branch**, whose cut is
+   `x²` real ≥ 1 — *precisely the oscillatory region the expansion
+   exists to cover*. Crossing it negates `t`, which exchanges the two
+   solutions, so `H1` was returned as `H2`. At `ν = 5 + 2i, z = 60 + 30i`
+   the answer was wrong by `|H2/H1| = 2e23`.
+2. **The same defect at real order.** `x = z/ν` is complex as soon as
+   `z` is, so `ν = 20, z = 300 + 40i` fired it too. This was shipping.
+3. **The prefactor `(2πνt)^{-1/2}`, a separate branch**, crossed once
+   `arg z > π/2`, negating *both* members. Every bilinear check —
+   the Wronskian included — is blind to a shared sign, so this one
+   survived by construction.
+
+Moving the cut is not sufficient (`i(x²−1)^{1/2}` merely relocates it to
+the imaginary-`x` ray, and measurement showed `arg(z/ν) = 1.2` still
+swapping). The branch is now **chosen against the answer's own leading
+exponent**, `ν(t − α) → i(z − νπ/2)` from DLMF 10.17.5, and the
+prefactor's argument is **unwrapped** rather than taken principal.
+Reverting either fix fails
+`debye::tests::the_branch_choices_are_right_off_the_real_axis`.
+
+The general lesson, and the reason this section exists: *an identity
+that is bilinear in the quantities under test cannot see a shared sign,
+and an identity scaled by its own largest term cannot see below the
+ratio of the terms.* Both are cheap to check and neither had been.
+
 ### Observed accuracy, and where the worst error lives
 
 | module | observed | note |
@@ -275,9 +328,15 @@ Unit tests prove the pieces; three examples prove they do the job:
   hard limits rather than performance advice. Where the order happens
   to be whole, the integer-order Miller routines reach much further
   along the real axis.
-- **A sliver at `4 ≲ |ν| ≲ 8` with `|z|` a few times larger**, where
-  the `1/z` route is refused for `|4ν²|` and the Debye one for being a
-  `1/ν` series at too small an order. Both refusals are deliberate.
+- **The band `1 < |z/ν| < 8` away from the real axis, and
+  `1 < |z/ν| < 2` at order past about 8.** This replaces the earlier
+  entry "a sliver at `4 ≲ |ν| ≲ 8`", which Stage 24 closed — that
+  sliver was an artefact of guarding the Debye route by *order* when
+  its accuracy is governed by `|z|/|ν|` and `arg(z/ν)`. Restating the
+  guard in the measured variables took the sliver from 94% to 97%
+  served. The band named here is what the same measurement exposed as
+  genuinely uncovered: before Stage 24 those points were accepted with
+  error estimates up to **1e14 times too small**.
 - **A ridge near `z/ν ≈ 1.3`**, where `Y` reaches about 1e-7 at
   moderate order — just outside the turning-point expansion's
   validated neighbourhood (`|1 − x| ≤ 0.25`) and just inside where the

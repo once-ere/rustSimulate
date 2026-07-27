@@ -204,8 +204,25 @@ fn hankel_pair_continued(nu: C, z: C) -> Option<(C, C, f64)> {
 }
 
 /// The Hankel pair by whichever route reaches this `z`.
-fn hankel_pair_any(nu: C, z: C) -> Option<(C, C, f64)> {
+pub(crate) fn hankel_pair_any(nu: C, z: C) -> Option<(C, C, f64)> {
     hankel_pair(nu, z).or_else(|| hankel_pair_continued(nu, z))
+}
+
+/// `|H1_nu(z) / H2_nu(z)|`, the factor by which the J-Y Wronskian
+/// degenerates as a measuring instrument.
+///
+/// `J` and `Y` are both `(H1 +- H2)/2`, so when one Hankel function
+/// dominates the other they are **the same function to within
+/// `|H1/H2|`**. Their Wronskian is of size `|H1 H2|` while each product
+/// forming it is of size `|H2|^2`, so a residual scaled by the largest
+/// term measures `|H1/H2|` and nothing about the values. Tests use this
+/// to know when that instrument has nothing left to say.
+#[cfg(test)]
+pub(crate) fn hankel_ratio(nu: C, z: C) -> Option<f64> {
+    let (h1, h2, _) = hankel_pair_any(nu, z)?;
+    let (a, b) = (h1.abs(), h2.abs());
+    let r = (a / b).max(b / a);
+    r.is_finite().then_some(r)
 }
 
 /// How much forming `J` or `Y` from the Hankel pair costs, measured
@@ -391,8 +408,11 @@ mod tests {
                     if !scale.is_finite() || scale == 0.0 {
                         continue;
                     }
+                    // Floored at |H1/H2|: past that the J-Y Wronskian
+                    // is measuring the Hankel ratio, not these values.
+                    let floor = hankel_ratio(nu, z).map_or(0.0, |r| 1.0 / r);
                     assert!(
-                        (w - want).abs() / scale < 1e-11,
+                        (w - want).abs() / scale < (1e-11f64).max(10.0 * floor),
                         "nu={nu:?} z={z:?}: residual {:.2e}",
                         (w - want).abs() / scale
                     );

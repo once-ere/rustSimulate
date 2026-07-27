@@ -64,11 +64,26 @@
 //! below it — at complex order, so the band that had no method at all
 //! now has one.
 //!
-//! What remains is a sliver: `|nu|` small but not tiny (roughly 4 to 8)
-//! with `|z|` a few times larger, where the `1/z` expansion is refused
-//! for `|4 nu^2|` and the Debye one is refused for being a `1/nu`
-//! series at an order too small to trust. Both refusals are deliberate
-//! and both are measured; the routines report the gap.
+//! That sliver — `4 <~ |nu| <~ 8` with `|z|` a few times larger — was
+//! **closed in Stage 24, but not by adding a method**. Measurement
+//! found that the Debye route was refusing it for the wrong reason: it
+//! carried an *order* guard, `|nu| >= 8`, while the thing that actually
+//! governs its accuracy is `|z|/|nu|` together with `arg(z/nu)`. With
+//! the guard restated in those variables, small orders are admitted
+//! wherever the argument is large enough, and the sliver goes from
+//! 94% served to **97%**.
+//!
+//! The same measurement found three **branch defects** in that route
+//! which had been returning confident, plausible, wrong values — see
+//! [`crate::debye::jy_debye_c`]. They fired only where `z/nu` is off
+//! the real axis, including at *real* order with complex argument, so
+//! every check in the crate had missed them.
+//!
+//! What is uncovered now is a different and larger-order region: the
+//! band `1 < |z/nu| < 8` off the real axis, and `1 < |z/nu| < 2` at
+//! orders past about 8. Before Stage 24 those points were *accepted*,
+//! with estimates up to 1e14 times too small. Refusing them is the
+//! improvement, even though it shows up as coverage lost.
 
 use crate::bessel_complex::{bessel_i_nu, bessel_j_nu, bessel_k_nu, bessel_y_nu};
 use crate::complex::Complex64 as C;
@@ -132,11 +147,15 @@ fn accept(c: Cand, what: &str, nu: C, z: C) -> Result<C, String> {
         Some((v, e)) if e <= TOL => Ok(v),
         Some((_, e)) => Err(format!(
             "{what}: no method is accurate at nu = {nu:?}, z = {z:?} — the best \
-             available estimates {e:.1e}. The ascending series has cancelled away \
-             its digits at this |z|, and the 1/z expansions need |4 nu^2| small \
-             compared with |z|. The remedy for |z| comparable to |nu| is the \
-             uniform Airy-type expansion of DLMF 10.20, which needs Ai at COMPLEX \
-             argument; complex Airy is not implemented."
+             available estimates {e:.1e}. Four methods were offered and none \
+             could speak for this point: the ascending series has cancelled away \
+             its digits at this |z|; the 1/z expansions need |4 nu^2| small \
+             compared with |z|; the Airy-type expansion of DLMF 10.20 reaches \
+             only |1 - z/nu| <= 0.25 around the turning point; and the Debye \
+             expansion is trusted only for |z| >= 2|nu| near the real axis, or \
+             |z| >= 8|nu| within |arg(z/nu)| <= 1.2. What is left uncovered is \
+             mainly the band 1 < |z/nu| < 8 off the real axis, and 1 < |z/nu| < 2 \
+             at large order — measured gaps, not oversights."
         )),
         None => Err(format!(
             "{what}: no method produced a finite value at nu = {nu:?}, z = {z:?}. \
@@ -544,8 +563,16 @@ mod tests {
     /// The loss law the module documents:
     /// `1e-16 exp(|z| - |Im z| + Im nu * arg z)`. Complex order is free
     /// on the positive real axis and costs `Im nu * arg z` elsewhere.
-    /// Measured against the J-Y Wronskian, scaled by its own largest
-    /// term so the metric's cancellation is divided out.
+    /// **On the instrument.** This used to divide the J-Y Wronskian
+    /// residual by its own largest term, "so the metric's cancellation
+    /// is divided out". Stage 24 measured what that actually leaves: at
+    /// `nu = 5 + 2i, z = 200 + 80i` the two Hankel functions differ in
+    /// size by 1e67, `J` and `Y` are then the same function to within
+    /// 4e-24, and the scaled residual came out **8.2e-24** — not
+    /// accuracy, just `|H1/H2|`. The unscaled form is no better: it
+    /// would demand an accuracy of `|H1/H2|` relative, which no correct
+    /// implementation can deliver. The J-Y Wronskian simply **cannot
+    /// resolve below `|H1/H2|`**, so the tolerance is floored there.
     #[test]
     fn the_complex_order_loss_law_holds() {
         for &b in &[0.5_f64, 2.0, 5.0] {
@@ -564,8 +591,11 @@ mod tests {
                     let w = j1 * y0 - j0 * y1;
                     let want = z.inv() * (2.0 / std::f64::consts::PI);
                     let scale = (j1 * y0).abs() + (j0 * y1).abs();
+                    // The floor the instrument cannot see past.
+                    let floor = crate::bessel_cnu_large::hankel_ratio(nu, z)
+                        .map_or(0.0, |r| 1.0 / r);
                     assert!(
-                        (w - want).abs() / scale <= bound,
+                        (w - want).abs() / scale <= bound.max(10.0 * floor),
                         "nu={nu:?} z={z:?}: residual {:.2e} exceeds {bound:.1e}",
                         (w - want).abs() / scale
                     );
@@ -613,6 +643,7 @@ mod tests {
     fn the_chosen_values_satisfy_the_wronskian_across_the_plane() {
         let mut judged = 0;
         let mut refused = 0;
+        let mut blind = 0;
         let mut worst = 0.0_f64;
         for &(a, b) in &[
             (1.3_f64, 0.0_f64),
@@ -648,6 +679,16 @@ mod tests {
                     }
                     judged += 1;
                     let e = (w - want).abs() / scale;
+                    // The J-Y Wronskian cannot resolve below |H1/H2|;
+                    // see `the_complex_order_loss_law_holds`. Where the
+                    // two Hankel functions are far apart this metric
+                    // reports their ratio, not an error.
+                    let floor = crate::bessel_cnu_large::hankel_ratio(nu, z)
+                        .map_or(0.0, |r| 1.0 / r);
+                    if floor > TOL {
+                        blind += 1;
+                        continue;
+                    }
                     worst = worst.max(e);
                     assert!(
                         e <= TOL,
@@ -657,7 +698,11 @@ mod tests {
                 }
             }
         }
-        assert!(judged > 800, "only {judged} points were judged");
+        assert!(
+            judged - blind > 500,
+            "only {} points were judged ({blind} blind to |H1/H2|)",
+            judged - blind
+        );
         assert!(refused > 0, "the refusal path should be exercised too");
         assert!(worst > 1e-12, "worst was {worst:.1e} — is the grid reaching anything hard?");
     }
