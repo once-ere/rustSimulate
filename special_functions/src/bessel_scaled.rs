@@ -53,16 +53,25 @@
 //! from the unscaled routines, where `bessel_y_c(0, 40)` used to return
 //! a confident first digit that was wrong.
 //!
-//! # Where the asymptotic does not reach
+//! # Where the asymptotic does not reach, and what covers it
 //!
 //! The expansion is in `1/z` at fixed order, so it needs `|z|` large
 //! compared with `nu^2`, not merely large. At `nu = 10` it wants
-//! `|z| >~ 100`. The transition region — `|z|` and `nu` both large and
-//! comparable — is exactly where the **uniform** (Airy-type) expansions
-//! of DLMF 10.20 are needed, and those are **not** implemented. The
-//! error estimate detects the gap rather than papering over it: ask for
-//! something in it and you get an error naming the two methods that
-//! failed and why.
+//! `|z| >~ 100`. Large order is therefore a different problem, and it
+//! is answered by a different expansion — in `1/nu` — which lives in
+//! [`crate::debye`] and is offered here as a further candidate. The two
+//! together cover the real axis at every order tried up to 1000.
+//!
+//! What is left is not a method gap but a **representation** one: for
+//! `z` well below `nu`, `J` is smaller than the smallest `f64` and `Y`
+//! larger than the largest. Those points return an error saying so, and
+//! quoting the logarithm, which is a different statement from "nothing
+//! was accurate enough" and the more useful one.
+//!
+//! The uniform **Airy-type** expansion of DLMF 10.20, which is uniform
+//! *through* the turning point `z ~ nu`, is not implemented — measured,
+//! there is nothing there for it to fix. See the note in
+//! [`crate::debye`] and `examples/large_order_accuracy.rs`.
 
 use crate::bessel_complex::{
     bessel_i_c, bessel_i_nu, bessel_j_c, bessel_j_nu, bessel_k_nu, bessel_y_nu,
@@ -166,6 +175,25 @@ fn check(nu: f64, z: C, what: &str) -> Result<(), String> {
 /// It names both estimates, because "I cannot do this" is only useful
 /// if it says how badly and which way out is missing.
 fn no_method(what: &str, nu: f64, z: C, asym_err: f64, series_err: f64) -> String {
+    // Two failures that look the same from outside are worth telling
+    // apart: no method reached the point, versus the value is perfectly
+    // well determined and simply outside f64. At nu = 400.5, x = 40 the
+    // true J is about e^-1013 and Y about e^+1010.
+    if z.im == 0.0 && z.re > 0.0 {
+        if let Some((lj, ly)) = crate::debye::jy_log_magnitude(nu.abs(), z.re) {
+            let l = if what.contains("_j_") { lj } else { ly };
+            if !(-745.0..=709.0).contains(&l) && (what.contains("_j_") || what.contains("_y_")) {
+                return format!(
+                    "{what}: the value at nu = {nu}, z = {:?} is outside f64 range — \
+                     its natural logarithm is about {l:.0}, against a representable \
+                     range of about -745 to 709. This is not a failure of method: \
+                     the large-order expansion determines it, but no scaling this \
+                     crate offers can carry it as an f64.",
+                    z.re
+                );
+            }
+        }
+    }
     format!(
         "{what}: neither method is accurate at nu = {nu}, z = {z:?}. \
          The ascending series would have a relative error of about \
@@ -222,6 +250,13 @@ fn candidate(v: Result<C, String>, loss: f64) -> Candidate {
         Ok(x) if x.is_finite() => Some((x, series_error(loss))),
         _ => None,
     }
+}
+
+/// Reject an exact zero. `I` and `K` have no zeros, so a returned zero
+/// is underflow wearing an answer's clothes — and it arrives with a
+/// small claimed error, which is worse than arriving with none.
+fn nonzero(c: Candidate) -> Candidate {
+    c.filter(|(v, _)| v.abs() > 0.0)
 }
 
 /// The better of two candidates, or whichever one exists.
@@ -589,7 +624,8 @@ pub fn bessel_k_scaled_nu(nu: f64, z: C) -> Result<C, String> {
     check(nu, z, "bessel_k_scaled")?;
     // K_{-nu} = K_nu, so only the magnitude of the order matters.
     let (c, asym_err) = k_scaled_candidate(nu.abs(), z);
-    accept(c, "bessel_k_scaled", nu, z, asym_err)
+    let u = ik_uniform_candidates(nu.abs(), z).1;
+    accept(nonzero(better(c, u)), "bessel_k_scaled", nu, z, asym_err)
 }
 
 /// `exp(-|Re z|) I_nu(z)`.
@@ -622,16 +658,16 @@ pub fn bessel_i_scaled_nu(nu: f64, z: C) -> Result<C, String> {
     // `I_nu(z) = e^(-i nu pi/2) J_nu(iz)` (DLMF 10.27.6) — and `iz` is
     // then near the REAL axis, which is exactly where `J` is at its
     // best. The scalings line up: `|Im(iz)| = |Re z|`.
-    if z.re < z.im.abs() {
+    let via_j = if z.re < z.im.abs() {
         let (c, _) = j_scaled_candidate(nu, C::I * z);
-        if let Some((v, e)) = c {
+        nonzero(c.and_then(|(v, e)| {
             let ph = (C::I * (-std::f64::consts::FRAC_PI_2 * nu)).exp();
             let w = v * ph;
-            if w.is_finite() && e <= SERIES_TOL {
-                return Ok(w);
-            }
-        }
-    }
+            w.is_finite().then_some((w, e))
+        }))
+    } else {
+        None
+    };
     let mut asym_err = f64::INFINITY;
     let mut a: Candidate = None;
     if z.re > 0.0 && z.re >= z.im.abs() {
@@ -654,7 +690,14 @@ pub fn bessel_i_scaled_nu(nu: f64, z: C) -> Result<C, String> {
         w.is_finite().then_some((w, e))
     });
     let w = i_from_wronskian(nu.abs(), z);
-    accept(better(better(a, s), w), "bessel_i_scaled", nu, z, asym_err)
+    let u = ik_uniform_candidates(nu.abs(), z).0;
+    accept(
+        nonzero(better(better(better(better(a, s), w), u), via_j)),
+        "bessel_i_scaled",
+        nu,
+        z,
+        asym_err,
+    )
 }
 
 // ---------------------------------------------------------------------
@@ -694,6 +737,16 @@ fn scaled_pair(nu: f64, z: C) -> Option<(C, C, f64)> {
 /// `1e-32`, so building `J` from the pair would be worthless. Without
 /// this factor the routine would return that value with a confident
 /// `1e-5` error estimate attached.
+/// The measured cancellation, floored at machine epsilon.
+///
+/// The floor is not cosmetic. At `nu = 1/2` the asymptotic terminates
+/// exactly and the truncation estimate is 0, so multiplying it by any
+/// cancellation factor left 0 — and a `J` built from two Hankel values
+/// that cancel by `1e14` was returned with a claimed error of zero. At
+/// `nu = 400.5, z = 240` that value was wrong by a factor of `5e89`.
+/// An exact expansion is still only evaluated to `f64` precision.
+const EVAL_FLOOR: f64 = 1e-16;
+
 fn cancellation(h1: C, h2: C, result: C) -> f64 {
     let top = h1.abs() + h2.abs();
     let bottom = result.abs();
@@ -718,6 +771,54 @@ pub fn bessel_j_scaled_nu(nu: f64, z: C) -> Result<C, String> {
     accept(c, "bessel_j_scaled", nu, z, asym_err)
 }
 
+/// The large-order routes from [`crate::debye`], as candidates.
+///
+/// These are expansions in `1/nu` rather than `1/z`, so they cover
+/// exactly what the rest of this module cannot: `z` below `nu`, where
+/// `J` is exponentially small and every method here built it as the
+/// difference of two exponentially large numbers.
+///
+/// On the real axis the `exp(-|Im z|)` scaling is 1, so the Debye values
+/// need no adjustment; off it they do not apply and return `None`.
+/// Safety factor on the large-order truncation estimates.
+///
+/// Optimal truncation gives the size of the first omitted term, which
+/// is an estimate and not a bound — and measured, it runs optimistic.
+/// At `nu = 10, x = 5` the DLMF 10.41 expansion for `K` claimed better
+/// than the 1/z route and delivered 3.6e-10 against that route's
+/// 1.4e-16, so it was winning comparisons it should have lost. Ten is
+/// enough to order them correctly without discarding the regions where
+/// these are the only methods there are.
+const LARGE_ORDER_SAFETY: f64 = 10.0;
+
+fn jy_debye_candidates(nu: f64, z: C) -> (Candidate, Candidate) {
+    if z.im != 0.0 || z.re <= 0.0 || nu <= 0.0 {
+        return (None, None);
+    }
+    let (j, y) = crate::debye::jy_debye(nu, z.re);
+    let e = |u: crate::debye::Uniform| {
+        (u.value, (u.err * LARGE_ORDER_SAFETY).max(EVAL_FLOOR))
+    };
+    (j.map(e), y.map(e))
+}
+
+/// The DLMF 10.41 uniform expansions for `I` and `K`, as candidates in
+/// this module's scalings.
+fn ik_uniform_candidates(nu: f64, z: C) -> (Candidate, Candidate) {
+    if nu <= 0.0 || z.re <= 0.0 || z.arg().abs() >= std::f64::consts::FRAC_PI_2 {
+        return (None, None);
+    }
+    let (i, k) = crate::debye::ik_uniform(nu, z);
+    // An exact zero here is underflow, not an answer: I and K have no
+    // zeros. Returning it with a small claimed error is the same lie
+    // these routines exist to stop telling.
+    let e = |u: crate::debye::Uniform| {
+        (u.value.abs() > 0.0)
+            .then(|| (u.value, (u.err * LARGE_ORDER_SAFETY).max(EVAL_FLOOR)))
+    };
+    (i.and_then(e), k.and_then(e))
+}
+
 /// The body of [`bessel_j_scaled_nu`], returning the candidate and the
 /// asymptotic estimate so that `I` can build on it and inherit an
 /// honest error rather than a nominal one.
@@ -725,7 +826,7 @@ fn j_scaled_candidate(nu: f64, z: C) -> (Candidate, f64) {
     let (a, asym_err) = match scaled_pair(nu, z) {
         Some((h1, h2, e)) => {
             let v = (h1 + h2) * 0.5;
-            let e = e * cancellation(h1, h2, v);
+            let e = e.max(EVAL_FLOOR) * cancellation(h1, h2, v);
             (v.is_finite().then_some((v, e)), e)
         }
         None => (None, f64::INFINITY),
@@ -734,7 +835,8 @@ fn j_scaled_candidate(nu: f64, z: C) -> (Candidate, f64) {
         let w = v * (-z.im.abs()).exp();
         w.is_finite().then_some((w, e))
     });
-    (better(a, s), asym_err)
+    let d = jy_debye_candidates(nu, z).0;
+    (better(better(a, s), d), asym_err)
 }
 
 /// `exp(-|Im z|) Y_nu(z)`.
@@ -763,7 +865,7 @@ pub fn bessel_y_scaled_nu(nu: f64, z: C) -> Result<C, String> {
     let (a, asym_err) = match scaled_pair(nu, z) {
         Some((h1, h2, e)) => {
             let v = (h1 - h2) / (C::I * 2.0);
-            let e = e * cancellation(h1, h2, v);
+            let e = e.max(EVAL_FLOOR) * cancellation(h1, h2, v);
             (v.is_finite().then_some((v, e)), e)
         }
         None => (None, f64::INFINITY),
@@ -772,7 +874,8 @@ pub fn bessel_y_scaled_nu(nu: f64, z: C) -> Result<C, String> {
         let w = v * (-z.im.abs()).exp();
         w.is_finite().then_some((w, e))
     });
-    accept(better(a, s), "bessel_y_scaled", nu, z, asym_err)
+    let d = jy_debye_candidates(nu, z).1;
+    accept(better(better(a, s), d), "bessel_y_scaled", nu, z, asym_err)
 }
 
 #[cfg(test)]
@@ -1112,14 +1215,62 @@ mod tests {
         assert_eq!(s, C::ONE, "and its sum is 1");
     }
 
-    /// The refusal must be reachable, and its message must name both
-    /// failures. `I` near the imaginary axis at very large order is the
-    /// corner that survives every route here.
+    /// The refusal must be reachable, and it must distinguish the two
+    /// reasons. Since the large-order expansions were added, most points
+    /// that used to fail now succeed, and the ones that remain fail
+    /// because the ANSWER is outside f64 — a different statement, and
+    /// the more useful one.
     #[test]
-    fn an_unreachable_point_is_reported_not_guessed() {
-        let e = bessel_j_scaled_nu(400.5, C::real(25.0)).unwrap_err();
+    fn refusals_say_which_kind_of_failure_it_is() {
+        // J_400.5(40) is about e^-805: determined, but not representable.
+        let e = bessel_j_scaled_nu(400.5, C::real(40.0)).unwrap_err();
+        assert!(e.contains("outside f64 range"), "wrong diagnosis: {e}");
+        assert!(e.contains("-805"), "should quote the logarithm: {e}");
+        // Y_400.5(40) is about e^+798, the mirror.
+        let e = bessel_y_scaled_nu(400.5, C::real(40.0)).unwrap_err();
+        assert!(e.contains("outside f64 range"), "wrong diagnosis: {e}");
+        // And the genuine no-method message still exists, for I near the
+        // imaginary axis at an order no expansion here reaches.
+        let e = bessel_i_scaled_nu(4000.0, C::new(1e-6, 300.0)).unwrap_err();
         assert!(e.contains("neither method"), "unhelpful message: {e}");
         assert!(e.contains("10.20"), "should name the missing method: {e}");
+    }
+
+    /// The large-order routes must actually be reached and used. These
+    /// are the exact points at which the previous stage returned wrong
+    /// numbers: `J` below `nu`, built as the difference of two much
+    /// larger Hankel values.
+    #[test]
+    fn the_large_order_route_fixes_the_recessive_j_region() {
+        for &(nu, x, want_rel) in &[
+            (100.5_f64, 60.3_f64, 1e-12_f64),
+            (200.5, 120.3, 1e-12),
+            (400.5, 240.3, 1e-8),
+            (1000.5, 600.3, 1e-8),
+        ] {
+            let got = bessel_j_scaled_nu(nu, C::real(x)).unwrap().re;
+            let want = spec_math::cephes64::jv(nu, x);
+            assert!(
+                (got - want).abs() <= want_rel * want.abs(),
+                "J_{nu}({x}): {got} vs {want}"
+            );
+        }
+        // The floor on the truncation estimate is what makes this work:
+        // at nu = 1/2 the 1/z expansion terminates exactly, so its
+        // estimate was 0, and multiplying 0 by a cancellation factor of
+        // 1e14 still gave 0. The Hankel route then won every comparison
+        // it entered. Removing the floor must break this test, so it is
+        // exercised directly rather than asserted about.
+        // `scaled_pair`, not `hankel_pair_best`: the latter returns the
+        // pair before the exponentials are folded in, and on the real
+        // axis those carry the phases that make the sum cancel. Using
+        // the wrong one here showed no cancellation at all.
+        let (h1, h2, e) = scaled_pair(400.5, C::real(240.3)).expect("pair should exist");
+        let v = (h1 + h2) * 0.5;
+        assert!(
+            e.max(EVAL_FLOOR) * cancellation(h1, h2, v) > SERIES_TOL,
+            "the Hankel route at nu = 400.5, z = 240.3 must be rejected"
+        );
     }
 
     #[test]

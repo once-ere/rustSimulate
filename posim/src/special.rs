@@ -858,7 +858,15 @@ mod tests {
 
         // Singular and unreachable points report errors.
         assert!(!call_err("bessel_k_scaled", &[n(0.0), z(0.0, 0.0)]).is_empty());
+        // Since the large-order expansions arrived, this point no
+        // longer fails for want of a method — the expansion determines
+        // it, and it is the f64 that cannot carry it. The message says
+        // which, and quotes the logarithm.
         let e = call_err("bessel_j_scaled", &[n(400.5), n(25.0)]);
+        assert!(e.contains("outside f64 range"), "unhelpful message: {e}");
+        assert!(e.contains("-992"), "should quote the logarithm: {e}");
+        // The genuine no-method refusal is still reachable.
+        let e = call_err("bessel_i_scaled", &[n(4000.0), z(1e-6, 300.0)]);
         assert!(e.contains("neither method"), "unhelpful message: {e}");
     }
 

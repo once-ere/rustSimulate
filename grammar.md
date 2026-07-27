@@ -657,12 +657,40 @@ with order, so upward recurrence in `nu` is stable, and the expansion is
 used at a base order below 1 and stepped up. `Out[7]` is order 40, where
 the vendored Cephes `kn` overflows outright.
 
+**Large order is a separate expansion.** A series in `1/z` at fixed
+order cannot reach `z` below `nu`, where `J` is exponentially small and
+was being built as the difference of two exponentially large Hankel
+values — at `nu = 400.5, z = 240` that gave an answer wrong by a factor
+of `5e89`. The remedy is a series in `1/nu`: the **Debye polynomials**
+and the uniform expansions of DLMF 10.19 and 10.41,
+
+```
+U_0(p) = 1
+U_{k+1}(p) = (1/2) p^2 (1 - p^2) U_k'(p) + (1/8) integral_0^p (1-5t^2) U_k(t) dt
+```
+
+which produce the small number directly. These are chosen automatically
+by comparing error estimates, so nothing in the language changes; what
+changes is that the answers are now right. Measured against Cephes over
+orders 10 to 1000 and `z/nu` from 0.1 to 2, every value is within 1e-9
+and most within 1e-14 — and at `nu = 400.5` it is **Cephes** that is
+looser, by 1.4e-9, which the elementary J-Y Wronskian adjudicates.
+
 **When no method reaches a point, these return an error** naming both
-estimates and what is missing. That is the substantive difference from
-the plain forms, which returned a confident wrong first digit. The gap
-is the region where `|z|` and `nu` are large and comparable, which needs
-the uniform Airy-type expansions of DLMF 10.20 — **not implemented**.
-Complex *order* is also still absent.
+estimates. Since the large-order expansions arrived, most such points
+instead fail for a different and better-stated reason: *the value is
+outside `f64`*. For `z` well below `nu`, `J` is smaller than the
+smallest double and `Y` larger than the largest, and the error says so
+and quotes the logarithm.
+
+The uniform **Airy-type** expansion of DLMF 10.20 — uniform *through*
+the turning point `z ~ nu` — is **not** implemented, and the reason is
+measured rather than assumed: across `z/nu` from 0.95 to 1.1 the
+existing routes already give 1e-14, so there is nothing there to fix.
+Truncated at its first two coefficients Olver's expansion carries a
+relative error of `O(nu^-2)` — about `6e-6` at `nu = 400` — so adding it
+would widen coverage while lowering the floor. Complex *order* is also
+still absent.
 
 Measured, not asserted:
 

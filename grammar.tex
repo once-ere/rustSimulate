@@ -749,12 +749,41 @@ the expansion is used at a base order below 1 and stepped up.
 \code{Out[7]} is order 40, where the vendored Cephes \code{kn} overflows
 outright.
 
-\textbf{When no method reaches a point these return an error}, naming
-both estimates and what is missing. That is the substantive difference
-from the plain forms, which returned a confident wrong first digit. The
-gap is the region where $|z|$ and $\nu$ are large and comparable, which
-needs the uniform Airy-type expansions of DLMF 10.20 --- \textbf{not
-implemented}. Complex \emph{order} is also still absent.
+\textbf{Large order is a separate expansion.} A series in $1/z$ at fixed
+order cannot reach $z$ below $\nu$, where $J$ is exponentially small and
+was being built as the difference of two exponentially large Hankel
+values --- at $\nu = 400.5$, $z = 240$ that gave an answer wrong by a
+factor of $5\times10^{89}$. The remedy is a series in $1/\nu$: the
+\textbf{Debye polynomials} and the uniform expansions of DLMF 10.19 and
+10.41,
+\[
+  U_0(p) = 1,\qquad
+  U_{k+1}(p) = \tfrac12 p^2(1-p^2)U_k'(p)
+             + \tfrac18\int_0^p (1-5t^2)U_k(t)\,dt,
+\]
+which produce the small number directly. They are chosen automatically
+by comparing error estimates, so nothing in the language changes; what
+changes is that the answers are now right. Measured against Cephes over
+orders 10 to 1000 and $z/\nu$ from 0.1 to 2, every value is within
+$10^{-9}$ and most within $10^{-14}$ --- and at $\nu = 400.5$ it is
+\emph{Cephes} that is looser, by $1.4\times10^{-9}$, which the
+elementary $J$--$Y$ Wronskian adjudicates.
+
+\textbf{When no method reaches a point these return an error} naming
+both estimates. Since the large-order expansions arrived, most such
+points instead fail for a different and better-stated reason: \emph{the
+value is outside} \code{f64}. For $z$ well below $\nu$, $J$ is smaller
+than the smallest double and $Y$ larger than the largest, and the error
+says so and quotes the logarithm.
+
+The uniform \textbf{Airy-type} expansion of DLMF 10.20 --- uniform
+\emph{through} the turning point $z \sim \nu$ --- is \textbf{not}
+implemented, and the reason is measured rather than assumed: across
+$z/\nu$ from 0.95 to 1.1 the existing routes already give $10^{-14}$, so
+there is nothing there to fix. Truncated at its first two coefficients
+Olver's expansion carries a relative error of $O(\nu^{-2})$ --- about
+$6\times10^{-6}$ at $\nu = 400$ --- so adding it would widen coverage
+while lowering the floor. Complex \emph{order} is also still absent.
 
 Measured, not asserted:
 \begin{lstlisting}
