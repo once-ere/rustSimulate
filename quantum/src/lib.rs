@@ -47,8 +47,10 @@
 #![allow(non_camel_case_types)]
 #![allow(non_upper_case_globals)]
 
+pub mod absorber;
 pub mod isosurface;
 pub mod nash;
 pub mod qm1d;
 pub mod qm2d;
 pub mod qm3d;
+pub mod transfer;

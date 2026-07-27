@@ -35,6 +35,17 @@ dependencies.**
   form on plane waves, and against diagonalisation. See
   `CLEANROOM_PROVENANCE.md` §8.
 
+- **`quantum::transfer`** — fixed-energy scattering by transfer matrix:
+  `T(E)`, `R(E)`, flux balance, and a measured conditioning number. It
+  is *exact* when the potential is piecewise constant on the cells and
+  second order otherwise. This is what resolves resonances narrower than
+  a wavepacket's momentum spread; see `TUNNELING_RESULTS.md` §5.
+- **`quantum::absorber`** — the absorbing boundary, designed rather than
+  tuned. The CAP's reflection and leakage are computed exactly from the
+  same transfer matrix, so `choose_strength` optimises over a *band* of
+  wavenumbers instead of one packet's nominal `k`. Reachable from the
+  language as `QM TRANSMISSION` and `QM SCAN`.
+
 ## 2. Pros
 
 **The dependency posture is genuinely unusual and valuable.** Nothing

@@ -453,6 +453,11 @@ one-dimensional quantum mechanics (see grammar.md):
   QM STEP <dt> | QM RUN <t> [STEPS <n>]
                             propagate with the current QM METHOD; both
                             methods are unitary at any step size
+  QM TRANSMISSION <e>       T(E) and R(E) by transfer matrix — exact at
+                            one energy, no packet, no time stepping
+  QM SCAN <e1> <e2> <n>     scan T(E) and report the resonances; pushes
+                            the transmission list. Resolves peaks that
+                            are narrower than any affordable wavepacket
   QM NORM | QM ENERGY | QM POSITION | QM MOMENTUM
   QM PROB <a> <b>           probability in [a, b]
   QM DRIVE <shape> <modulation>

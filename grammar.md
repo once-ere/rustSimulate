@@ -1607,6 +1607,8 @@ command.
 | `QM STATE <n>` | load bound state `n` as psi |
 | `QM PACKET <x0> <sigma> <k0>` | a normalised Gaussian wavepacket |
 | `QM STEP <dt>` / `QM RUN <t> [STEPS <n>]` | propagate with the current `QM METHOD` |
+| `QM TRANSMISSION <e>` | `T(E)` and `R(E)` at one energy, by transfer matrix |
+| `QM SCAN <e1> <e2> <n>` | scan `T(E)`, report resonances, push the list |
 | `QM NORM`, `QM ENERGY`, `QM POSITION`, `QM MOMENTUM` | observables |
 | `QM PROB <a> <b>` | probability of being found in `[a, b]` |
 | `QM DENSITY` | `\|psi\|²` as a list |

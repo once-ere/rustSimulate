@@ -89,6 +89,8 @@
 //!           | "STATES" expr | "STATE" expr
 //!           | "PACKET" expr expr expr
 //!           | "STEP" expr | "RUN" expr [ "STEPS" expr ]
+//!           | "TRANSMISSION" expr
+//!           | "SCAN" expr expr expr
 //!           | "NORM" | "ENERGY" | "POSITION" | "MOMENTUM"
 //!           | "PROB" expr expr
 //!           | "DRIVE" ( "OFF" | IDENT [ "," ] IDENT )
@@ -107,6 +109,11 @@
 //!    is not decoration: `QM POTENTIAL WELL 5 -2 2` parses `-2` as
 //!    SUBTRACTION, yielding two arguments where three were wanted.
 //!    `5, -2, 2` is unambiguous.
+//!
+//!    QM TRANSMISSION and QM SCAN are time-INDEPENDENT: they solve the
+//!    fixed-energy scattering problem by transfer matrix rather than
+//!    propagating anything, which is the only way to resolve a
+//!    resonance narrower than a wavepacket's own momentum spread.
 //!
 //!    QM METHOD selects the propagator, and with it the BOUNDARY
 //!    CONDITION: CAYLEY is Crank-Nicolson with Dirichlet walls that
@@ -1144,6 +1151,14 @@ impl Parser {
                     prog.push(Instr::Push(Value::Num(120.0)));
                 }
                 QmCmd::Animate(path)
+            }
+            "transmission" => {
+                args(self, 1, &mut prog)?;
+                QmCmd::Transmission
+            }
+            "scan" => {
+                args(self, 3, &mut prog)?;
+                QmCmd::Scan
             }
             "method" => {
                 use crate::qm::{EvolveMethod, Splitting};

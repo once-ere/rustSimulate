@@ -255,6 +255,41 @@ implemented.
 I am recording the negative result rather than tuning parameters until a
 peak appeared.
 
+### Resolved — the transfer matrix, added later
+
+The diagnosis was right and the remedy was the one named: a direct
+`T(E)`. `quantum::transfer` solves the time-*independent* problem at one
+energy, so the packet — and its momentum spread — leaves the question
+entirely. The same double barrier, through the language:
+
+```text
+In[1]:= def dbl(x) { 3 * ((abs(x) > 1.5) * (abs(x) < 2)) }
+In[2]:= qm grid -12 12 4800
+In[3]:= qm potential dbl
+In[4]:= qm scan 0.05 2.9 1200
+Out[4]= 1200 energies in [0.05, 2.9] (0 refused), T from 2.082e-4 to 1.000e0
+  2 resonance(s), strongest first:
+    E = 1.288407006   T = 0.999989181
+    E = 0.316221852   T = 0.998978977
+In[5]:= qm transmission 0.5
+Out[5]= E = 0.5: T = 0.031944823, R = 0.968055177, T + R = 1.000000000000
+```
+
+**Two resonances, both at essentially unit transmission**, standing
+three to four orders of magnitude above the off-resonance background —
+`T = 0.032` at `E = 0.5`, between the peaks. The wavepacket scan in the
+table above ran across exactly this structure and reported a monotone
+rise, because each packet averaged the whole of it.
+
+The scan is not a refinement of the packet method; it answers a
+different question. A packet tells you what a *state* does. `T(E)` tells
+you what the *barrier* does. For resonances, only the second one is
+finite work.
+
+Flux balance, `T + R = 1` to twelve figures, is the check that comes
+free with the method and holds at every energy where the potential is
+real.
+
 ---
 
 ## 6. State

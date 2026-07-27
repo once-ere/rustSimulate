@@ -28,6 +28,8 @@
 //! rather than left to be discovered.
 
 pub use quantum::nash::Splitting;
+use quantum::transfer::{scan as tm_scan, scatter as tm_scatter, EnergyRange};
+use special_functions::complex::Complex64 as Cx;
 use quantum::nash::{NashPropagator, PeriodicGrid};
 use quantum::qm1d::{DrivenPropagator, Grid, Hamiltonian, Propagator, Wavefunction};
 
@@ -76,6 +78,11 @@ pub enum QmCmd {
     AbsorbOff,
     /// Choose the propagator. See [`EvolveMethod`].
     Method(EvolveMethod),
+    /// Pops the energy: `T(E)` and `R(E)` by transfer matrix.
+    Transmission,
+    /// Pops the point count, then the high and low energies: scan
+    /// `T(E)` and report the resonances.
+    Scan,
     /// Forget the whole quantum problem.
     Reset,
     /// Propagate while capturing |psi|^2, and write a self-contained
@@ -95,7 +102,7 @@ pub enum QmCmd {
 pub const QM_SUBCOMMANDS: &[&str] = &[
     "status", "grid", "potential", "mass", "hbar", "method", "states", "state", "packet",
     "step", "run", "norm", "energy", "position", "momentum", "prob", "density", "drive",
-    "absorb", "animate", "reset",
+    "absorb", "animate", "reset", "transmission", "scan",
 ];
 
 /// Which propagator `QM RUN` and `QM STEP` use.
@@ -256,6 +263,32 @@ impl QmState {
             EvolveMethod::Nash(s) => Some(s),
             EvolveMethod::Cayley => None,
         }
+    }
+
+    /// The potential as transfer-matrix **cells**.
+    ///
+    /// The grid samples `V` at `n` interior points spaced `h` apart, so
+    /// reading those as the midpoints of `n` cells of width `h` spans
+    /// `[x(0) - h/2, x(n-1) + h/2]` exactly. That is the natural
+    /// reading and it is second-order accurate, which is what
+    /// [`quantum::transfer`] wants.
+    fn cells(&self) -> Result<(Vec<Cx>, f64, f64), String> {
+        let grid = self
+            .grid
+            .clone()
+            .ok_or("QM: no grid — use `QM GRID <x_min> <x_max> <n>` first")?;
+        let v = self
+            .potential
+            .clone()
+            .ok_or("QM: no potential — use `QM POTENTIAL <function>` (or `QM POTENTIAL zero`)")?;
+        if self.absorber.is_some() {
+            return Err("QM: a transfer matrix needs a real potential at the boundary, and \
+                        an absorber is complex there — the incident flux would be \
+                        undefined. Use `QM ABSORB OFF`."
+                .to_string());
+        }
+        let h = grid.h();
+        Ok((v.into_iter().map(Cx::real).collect(), grid.x(0) - 0.5 * h, grid.x(grid.n - 1) + 0.5 * h))
     }
 
     fn wavefunction(&self) -> Result<&Wavefunction, String> {
@@ -656,6 +689,60 @@ pub fn exec_qm(
             // boundary condition that produced it.
             state.qm.invalidate();
             Ok(format!("method {m}"))
+        }
+
+        QmCmd::Transmission => {
+            let e = pop_num(stack)?;
+            let (v, x0, x1) = state.qm.cells()?;
+            let s = tm_scatter(&v, x0, x1, e, state.qm.mass, state.qm.hbar)?;
+            stack.push(Value::Num(s.transmission));
+            Ok(format!(
+                "E = {e}: T = {:.12}, R = {:.12}, T + R = {:.12}",
+                s.transmission,
+                s.reflection,
+                s.transmission + s.reflection
+            ))
+        }
+
+        QmCmd::Scan => {
+            let points = pop_count(stack, "the point count")?;
+            let e_hi = pop_num(stack)?;
+            let e_lo = pop_num(stack)?;
+            let (v, x0, x1) = state.qm.cells()?;
+            let range = EnergyRange { lo: e_lo, hi: e_hi, points };
+            let curve = tm_scan(&v, x0, x1, range, state.qm.mass, state.qm.hbar)?;
+            if curve.is_empty() {
+                return Err(format!(
+                    "QM SCAN: no energy in [{e_lo}, {e_hi}] could be solved — all of them \
+                     are at or below the potential at the left edge"
+                ));
+            }
+            // Interior maxima are the resonances, which are the reason
+            // this command exists: a wavepacket averages them away.
+            let mut peaks: Vec<(f64, f64)> = Vec::new();
+            for w in curve.windows(3) {
+                if w[1].transmission > w[0].transmission && w[1].transmission > w[2].transmission {
+                    peaks.push((w[1].energy, w[1].transmission));
+                }
+            }
+            peaks.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+            let hi = curve.iter().map(|s| s.transmission).fold(0.0, f64::max);
+            let lo = curve.iter().map(|s| s.transmission).fold(f64::INFINITY, f64::min);
+            let mut out = format!(
+                "{} energies in [{e_lo}, {e_hi}] ({} refused), T from {lo:.3e} to {hi:.3e}",
+                curve.len(),
+                points - curve.len()
+            );
+            if peaks.is_empty() {
+                out.push_str("\n  no interior maxima — T is monotone over this range");
+            } else {
+                out.push_str(&format!("\n  {} resonance(s), strongest first:", peaks.len()));
+                for (e, t) in peaks.iter().take(8) {
+                    out.push_str(&format!("\n    E = {e:.9}   T = {t:.9}"));
+                }
+            }
+            stack.push(Value::List(curve.iter().map(|s| Value::Num(s.transmission)).collect()));
+            Ok(out)
         }
 
         QmCmd::Energy => match state.qm.nash_splitting() {
@@ -1168,6 +1255,60 @@ mod tests {
             out.push(v.to_string());
         }
         (st, out)
+    }
+
+    /// **The result `TUNNELING_RESULTS.md` §5 recorded as unreachable.**
+    ///
+    /// That section swept a double barrier with wavepackets, found a
+    /// monotone rise with no peak, tried a four-times narrower packet
+    /// in `k`, still found none, and recorded the negative result
+    /// rather than tuning until something appeared. The diagnosis was
+    /// that the resonances are narrower than any affordable packet's
+    /// momentum spread.
+    ///
+    /// At fixed energy they are simply there, and this asserts it
+    /// through the language: two peaks at essentially unit
+    /// transmission, standing three to four orders of magnitude above
+    /// the background between them.
+    #[test]
+    fn qm_scan_finds_the_resonances_wavepackets_could_not() {
+        let (st, out) = run(&[
+            "def dbl(x) { 3 * ((abs(x) > 1.5) * (abs(x) < 2)) }",
+            "qm grid -12 12 4800",
+            "qm potential dbl",
+            "qm scan 0.05 2.9 1200",
+            "qm transmission 0.5",
+        ]);
+        let report = &out[3];
+        assert!(report.contains("resonance"), "no resonances reported:\n{report}");
+        // Two quasi-bound states in this well, both at ~unit T.
+        assert!(report.contains("E = 0.31"), "missing the lower resonance:\n{report}");
+        assert!(report.contains("E = 1.28"), "missing the upper resonance:\n{report}");
+        assert!(report.contains("T = 0.99"), "a resonance should reach ~1:\n{report}");
+
+        // Off resonance the same barrier is nearly opaque — the
+        // contrast is the whole point.
+        let off = &out[4];
+        assert!(off.contains("T = 0.03"), "off-resonance transmission:\n{off}");
+        assert!(off.contains("T + R = 1.000000000000"), "flux must balance:\n{off}");
+
+        // SCAN pushes the curve so it can be plotted or reduced; the
+        // `run` helper stringifies whatever the line returned.
+        let _ = &st;
+        assert!(report.starts_with("1200 energies"), "point count:\n{report}");
+    }
+
+    /// A transfer matrix needs a real potential where the wave comes
+    /// in, so an absorber is refused rather than silently ignored.
+    #[test]
+    fn the_transfer_matrix_refuses_an_absorbing_boundary() {
+        let mut st = SimState::default();
+        for l in ["qm grid -8 8 400", "qm potential zero", "qm absorb 2 0.5"] {
+            execute_line(l, &mut st).unwrap();
+        }
+        let e = execute_line("qm transmission 1.0", &mut st).unwrap_err();
+        assert!(e.contains("absorber") || e.contains("real potential"), "got: {e}");
+        assert!(e.contains("ABSORB OFF"), "the refusal must name the way out: {e}");
     }
 
     /// The Nash method, end to end through the language, judged by
