@@ -282,6 +282,7 @@ a confident, wrong number, and you would have no way to notice.
 | spherical Hankel | `sph_hankel_h1(n,x)`, `sph_hankel_h2(n,x)`, `sph_hankel_h1_prime(n,x)`, `sph_hankel_h2_prime(n,x)` |
 | scaled forms | `bessel_j_scaled(nu,z)`, `bessel_y_scaled(nu,z)`, `bessel_i_scaled(nu,z)`, `bessel_k_scaled(nu,z)`, `hankel_h1_scaled(nu,z)`, `hankel_h2_scaled(nu,z)` |
 | gamma, complex argument | `gamma_z(z)`, `ln_gamma_z(z)`, `rgamma_z(z)` |
+| Airy, complex argument | `airy_z(z)` → `[Ai, Ai', Bi, Bi']` |
 | quadrature | `gauss_legendre(n)` → `[nodes, weights]` |
 | eigenproblems | `eigenvalues(matrix)` → list, `jacobi_eigen(matrix)` → `[values, vectors]` |
 | angular momentum | `wigner_3j(j1,j2,j3,m1,m2,m3)`, `wigner_6j(j1,j2,j3,j4,j5,j6)`, `wigner_9j(a,b,c,d,e,f,g,h,i)`, `clebsch_gordan(j1,m1,j2,m2,j3,m3)` |
@@ -869,6 +870,61 @@ order.** The obstacle is concrete rather than theoretical — it needs
 Airy functions from the vendored Cephes. So the turning point
 `|z| ~ |nu|` at complex order is reached by the ascending series or not
 at all, and the error says which.
+
+#### Airy functions, complex argument
+
+`airy_z(z)` returns all four at once — `[Ai, Ai', Bi, Bi']` — because
+the routine computes them together and a caller who wants a Wronskian
+or a turning-point boundary condition wants all four.
+
+```
+In[1]:= airy_z(0)
+Out[1]= [0.3550280538878172 + 0i, -0.2588194037928068 + 0i, 0.6149266274460007 + 0i, 0.4482883573538264 + 0i]
+In[2]:= airy_z(2 - 3i)
+Out[2]= [0.008104457809530868 - 0.131178382604566i, 0.09665817903311252 + 0.23198718538548577i, -0.3963682550403918 + 0.5697309129559497i, 0.34945767192946653 + 1.105328588933856i]
+In[3]:= airy_z(-8)
+Out[3]= [-0.05270505035638864 + 0.0000000000000021649348980190553i, 0.9355609381983433 + 0.000000000000000638378239159465i, -0.3312515807511276 + 0i, -0.15945049781295806 + 0i]
+```
+
+`Out[1]` is the closed form at the origin: `Ai(0) = 3^{-2/3}/Gamma(2/3)`,
+`Ai'(0) = -3^{-1/3}/Gamma(1/3)`, and `Bi(0) = sqrt(3) Ai(0)` — the last
+of which you can read straight off the numbers. `Out[3]` is the
+oscillatory side, where the residual imaginary parts show the size of
+the rounding rather than a wrong branch.
+
+**Three regimes, one connection formula.** The ascending series (DLMF
+9.4) up to `|z| ~ 6`; the asymptotic expansions (DLMF 9.7.5, 9.7.6) in
+`zeta = (2/3)z^{3/2}` for `|arg z| <= 2pi/3`; and nearer the negative
+real axis the connection `Ai(z) + w Ai(wz) + w^2 Ai(w^2 z) = 0` with
+`w = exp(2 pi i/3)`, which rotates `arg z ~ pi` to `arg ~ ±pi/3` where
+the expansion is at its best. That is the same trick the Bessel
+functions use for their own cut, and it works for the same reason: on
+the negative real axis both rotated points have `|exp(-zeta)| = 1`, so
+nothing cancels.
+
+`Bi` needs no expansion of its own past the series — its asymptotic is
+only valid for `|arg z| < pi/3` anyway, and
+`Bi(z) = e^{i pi/6} Ai(z e^{2 pi i/3}) + e^{-i pi/6} Ai(z e^{-2 pi i/3})`
+gives it everywhere from an `Ai` that already works.
+
+**How it is checked.** The Wronskian `Ai Bi' - Ai' Bi = 1/pi` is exact,
+elementary, and free of both the argument and any transcendental
+function on the right. For a function with no complex reference
+implementation available that is as good a test as exists: across `|z|`
+from 0.1 to 200 and the full range of `arg z` the residual is **1e-11
+or better**, except in one band: between `|z| = 3` and `10` it is
+**1e-9**. That is the crossover, where the series has
+spent its digits on cancellation and the expansion is not yet
+converged, and `Ai` is exponentially recessive. The test states that
+band as a separate bound rather than loosening the whole thing to
+accommodate it. Also
+checked: the connection formula away from where it is used, conjugation
+symmetry, the defining equation `Ai'' = z Ai` by finite difference, and
+Cephes on the real axis.
+
+Past `|z| ~ 90` off the real axis the **dominant** solution leaves
+`f64` — it grows like `exp(2|z|^{3/2}/3)` — and `airy_z` says so rather
+than returning an infinity.
 
 **A wrinkle worth knowing about lists.** The bracket literal is
 overloaded: `[a,b,c]` is a *vector*, `[a,b,c,d]` is a *quaternion*, and

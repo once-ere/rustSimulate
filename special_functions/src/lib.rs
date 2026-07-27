@@ -51,6 +51,7 @@ pub mod debye;
 pub mod gamma_complex;
 pub mod bessel_cnu;
 pub mod bessel_cnu_large;
+pub mod airy_complex;
 pub mod airy_uniform;
 pub mod bessel_scaled;
 pub mod wigner;

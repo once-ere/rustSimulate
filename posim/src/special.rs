@@ -231,6 +231,7 @@ pub fn call(name: &str, args: &[Value]) -> Option<Result<Value, String>> {
         "bessel_j_z" | "bessel_i_z" | "bessel_y_z" | "bessel_k_z" => 2,
         "bessel_j_nu" | "bessel_i_nu" | "bessel_y_nu" | "bessel_k_nu" => 2,
         "gamma_z" | "ln_gamma_z" | "rgamma_z" => 1,
+        "airy_z" => 1,
         "hankel_h1_z" | "hankel_h2_z" | "hankel_h1_nu" | "hankel_h2_nu" => 2,
         "hankel_h1_prime_z" | "hankel_h2_prime_z" => 2,
         "hankel_h1_prime_nu" | "hankel_h2_prime_nu" => 2,
@@ -364,6 +365,20 @@ fn dispatch(name: &str, a: &[Value]) -> Result<Value, String> {
             as_cplx(name, 0, &a[0])?,
             as_cplx(name, 1, &a[1])?,
         )?)),
+
+        // ---- Airy at complex argument -----------------------------
+        // Returns all four at once — [Ai, Ai', Bi, Bi'] — because the
+        // routine computes them together and a caller who wants a
+        // Wronskian or a boundary condition wants all four.
+        "airy_z" => {
+            let v = sf::airy_complex::airy_c(as_cplx(name, 0, &a[0])?)?;
+            Ok(Value::List(vec![
+                Value::Complex(v.ai),
+                Value::Complex(v.aip),
+                Value::Complex(v.bi),
+                Value::Complex(v.bip),
+            ]))
+        }
 
         // ---- gamma at complex argument ----------------------------
         "gamma_z" => Ok(Value::Complex(sf::gamma_complex::gamma_c(as_cplx(
@@ -554,6 +569,7 @@ fn dispatch(name: &str, a: &[Value]) -> Result<Value, String> {
 /// Every name this module answers to. `vm.rs` folds this into the
 /// reserved-name list so a user function cannot shadow one.
 pub const SPECIAL_NAMES: &[&str] = &[
+    "airy_z",
     "assoc_legendre_p",
     "bessel_i_nu",
     "bessel_i_scaled",
@@ -950,6 +966,56 @@ mod tests {
 
         assert!(!call_err("bessel_y_nu", &[z(1.0, 1.0), z(0.0, 0.0)]).is_empty());
         assert!(!call_err("ln_gamma_z", &[n(0.0)]).is_empty(), "pole at 0");
+    }
+
+    /// `airy_z`, checked by the Wronskian `Ai Bi' - Ai' Bi = 1/pi`,
+    /// which is exact and elementary — and by the closed forms at the
+    /// origin.
+    #[test]
+    fn airy_at_complex_argument_is_reachable() {
+        use sf::complex::Complex64 as Cx;
+        let four = |v: Value| match v {
+            Value::List(l) if l.len() == 4 => {
+                let g = |x: &Value| match x {
+                    Value::Complex(c) => *c,
+                    Value::Num(r) => Cx::real(*r),
+                    other => panic!("expected complex, got {other:?}"),
+                };
+                [g(&l[0]), g(&l[1]), g(&l[2]), g(&l[3])]
+            }
+            other => panic!("expected four values, got {other:?}"),
+        };
+        for (re, im) in [(0.0, 0.0), (2.0, -3.0), (-8.0, 0.0), (-4.0, 5.0), (30.0, 0.0)] {
+            let v = four(call_ok("airy_z", &[Value::Complex(Cx::new(re, im))]));
+            let w = v[0] * v[3] - v[1] * v[2];
+            let want = Cx::real(1.0 / std::f64::consts::PI);
+            // Scaled by the largest term, as everywhere else in this
+            // crate: the Wronskian is a DIFFERENCE, so dividing by 1/pi
+            // alone measures its own cancellation as well as the
+            // routine's error. Unscaled, `z = -4 + 5i` reads 1.4e-7
+            // while the values there are good to 1e-11.
+            let scale = (v[0] * v[3]).abs() + (v[1] * v[2]).abs();
+            assert!(
+                (w - want).abs() / scale.max(want.abs()) <= 1e-9,
+                "Wronskian at {re}+{im}i: {w:?}"
+            );
+        }
+        // Ai(0) = 3^(-2/3)/Gamma(2/3), and Bi(0) = sqrt(3) Ai(0).
+        let v = four(call_ok("airy_z", &[n(0.0)]));
+        let g23 = get_re(call_ok("gamma_z", &[n(2.0 / 3.0)]));
+        assert!((v[0].re - 3.0_f64.powf(-2.0 / 3.0) / g23).abs() < 1e-13);
+        assert!((v[2].re - v[0].re * 3.0_f64.sqrt()).abs() < 1e-15);
+        // Past |z| ~ 90 off the real axis the dominant solution leaves
+        // f64, and that is reported rather than returned as infinity.
+        assert!(!call_err("airy_z", &[Value::Complex(Cx::new(-190.0, -60.0))]).is_empty());
+    }
+
+    fn get_re(v: Value) -> f64 {
+        match v {
+            Value::Complex(c) => c.re,
+            Value::Num(r) => r,
+            other => panic!("expected a number, got {other:?}"),
+        }
     }
 
     #[test]

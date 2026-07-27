@@ -350,6 +350,8 @@ scaled forms &
   \code{hankel\_h1\_scaled(nu,z)}, \code{hankel\_h2\_scaled(nu,z)}\\
 gamma, complex argument &
   \code{gamma\_z(z)}, \code{ln\_gamma\_z(z)}, \code{rgamma\_z(z)}\\
+Airy, complex argument &
+  \code{airy\_z(z)} $\to$ \code{[Ai, Ai', Bi, Bi']}\\
 quadrature & \code{gauss\_legendre(n)} $\to$ \code{[nodes, weights]}\\
 eigenproblems & \code{eigenvalues(matrix)} $\to$ list,
   \code{jacobi\_eigen(matrix)} $\to$ \code{[values, vectors]}\\
@@ -968,6 +970,61 @@ $\mathrm{Ai}$ at a \emph{complex} argument, and this crate has only the
 real-argument Airy functions from the vendored Cephes. So the turning
 point $|z|\sim|\nu|$ at complex order is reached by the ascending series
 or not at all, and the error says which.
+
+\subsubsection*{Airy functions, complex argument}
+
+\code{airy\_z(z)} returns all four at once --- \code{[Ai, Ai', Bi, Bi']}
+--- because the routine computes them together and a caller who wants a
+Wronskian or a turning-point boundary condition wants all four.
+
+\begin{lstlisting}
+In[1]:= airy_z(0)
+Out[1]= [0.3550280538878172 + 0i, -0.2588194037928068 + 0i,
+         0.6149266274460007 + 0i, 0.4482883573538264 + 0i]
+In[2]:= airy_z(2 - 3i)
+Out[2]= [0.008104457809530868 - 0.131178382604566i,
+         0.09665817903311252 + 0.23198718538548577i,
+         -0.3963682550403918 + 0.5697309129559497i,
+         0.34945767192946653 + 1.105328588933856i]
+\end{lstlisting}
+
+\code{Out[1]} is the closed form at the origin:
+$\mathrm{Ai}(0) = 3^{-2/3}/\Gamma(2/3)$,
+$\mathrm{Ai}'(0) = -3^{-1/3}/\Gamma(1/3)$ and
+$\mathrm{Bi}(0) = \sqrt3\,\mathrm{Ai}(0)$, the last of which you can read
+straight off the numbers.
+
+\textbf{Three regimes, one connection formula.} The ascending series
+(DLMF 9.4) up to $|z|\approx 6$; the asymptotic expansions (DLMF 9.7.5,
+9.7.6) in $\zeta = \tfrac23 z^{3/2}$ for $|\arg z| \le 2\pi/3$; and
+nearer the negative real axis the connection
+$\mathrm{Ai}(z) + \omega\mathrm{Ai}(\omega z)
+ + \omega^2\mathrm{Ai}(\omega^2 z) = 0$ with $\omega = e^{2\pi i/3}$,
+which rotates $\arg z \sim \pi$ to $\arg \sim \pm\pi/3$ where the
+expansion is at its best --- the same trick the Bessel functions use for
+their own cut, and it works for the same reason.
+
+$\mathrm{Bi}$ needs no expansion of its own past the series: its
+asymptotic is valid only for $|\arg z| < \pi/3$, and
+$\mathrm{Bi}(z) = e^{i\pi/6}\mathrm{Ai}(ze^{2\pi i/3})
+ + e^{-i\pi/6}\mathrm{Ai}(ze^{-2\pi i/3})$ gives it everywhere.
+
+\textbf{How it is checked.} The Wronskian
+$\mathrm{Ai}\,\mathrm{Bi}' - \mathrm{Ai}'\,\mathrm{Bi} = 1/\pi$ is
+exact, elementary, and free of both the argument and any transcendental
+function on the right. Across $|z|$ from 0.1 to 200 and the full range
+of $\arg z$ the residual is \textbf{$10^{-11}$ or better}, except in one
+band: between $|z| = 3$ and $10$ it is
+$10^{-9}$ --- the crossover, where $\mathrm{Ai}$ is exponentially
+recessive. The test states that band separately rather than loosening
+the whole bound to accommodate it. Also checked: the connection
+formula away from where it is used, conjugation symmetry, the defining
+equation $\mathrm{Ai}'' = z\,\mathrm{Ai}$ by finite difference, and
+Cephes on the real axis.
+
+Past $|z|\approx 90$ off the real axis the \emph{dominant} solution
+leaves \code{f64} --- it grows like $e^{2|z|^{3/2}/3}$ --- and
+\code{airy\_z} says so rather than returning an infinity.
 
 \textbf{A wrinkle worth knowing about lists.} The bracket literal is
 overloaded: \code{[a,b,c]} is a \emph{vector}, \code{[a,b,c,d]} is a

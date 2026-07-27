@@ -571,6 +571,9 @@ special functions (see grammar.md; orders must be WHOLE numbers):
   (the _nu forms take a COMPLEX order as well as a real one:
    bessel_j_nu(1 + 2i, 3) is J_(1+2i)(3). Complex order costs nothing
    on the positive real axis and ~exp(Im nu * arg z) off it)
+  Airy                      airy_z(z)  -> [Ai, Ai', Bi, Bi']
+                            (complex argument; Ai Bi' - Ai' Bi = 1/pi
+                            exactly, which is how it is verified)
   gamma                     gamma_z(z)      complex argument
                             ln_gamma_z(z)   defined past Gamma's overflow
                             rgamma_z(z)     1/Gamma, ZERO at the poles
