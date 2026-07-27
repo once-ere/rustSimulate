@@ -126,7 +126,9 @@
 //!           | "STATES" expr | "STATE" expr
 //!           | "STEP" expr | "RUN" expr [ "STEPS" expr ]
 //!           | "NORM" | "ENERGY" | "CENTROID" | "PROB" expr{6}
+//!           | "DRIVE" ( "OFF" | IDENT [ "," ] IDENT )
 //!           | "ABSORB" ( "OFF" | expr expr [ expr ] )
+//!           | "ANIMATE" STRING expr [ "FRAMES" expr ]
 //!           | "RESET" ;
 //!
 //! (* QM2 is a SEPARATE family rather than a mode on QM: a 2-D problem
@@ -745,11 +747,53 @@ impl Parser {
                     Qm3Cmd::Absorb
                 }
             }
+            "drive" => {
+                let off = matches!(
+                    self.peek(),
+                    Some(Token { kind: TokKind::Keyword(Keyword::Off), .. })
+                );
+                if off {
+                    self.pos += 1;
+                    Qm3Cmd::DriveOff
+                } else {
+                    let shape = self.expect_field()?;
+                    if let Some(Token { kind: TokKind::Comma, .. }) = self.peek() {
+                        self.pos += 1;
+                    }
+                    Qm3Cmd::Drive(shape, self.expect_field()?)
+                }
+            }
+            "animate" => {
+                let path = match self.next() {
+                    Some(Token { kind: TokKind::Str(p), .. }) => p,
+                    Some(t) => {
+                        return Err(format!(
+                            "parse error at column {}: QM3 ANIMATE needs a quoted file path, \
+                             found {}",
+                            t.col, t.kind
+                        ))
+                    }
+                    None => return Err("QM3 ANIMATE: expected a quoted file path".to_string()),
+                };
+                self.expr(&mut prog)?;
+                let has_frames = matches!(
+                    self.peek(),
+                    Some(Token { kind: TokKind::Ident(w), .. }) if w.eq_ignore_ascii_case("frames")
+                );
+                if has_frames {
+                    self.pos += 1;
+                    self.expr(&mut prog)?;
+                } else {
+                    prog.push(Instr::Push(Value::Num(60.0)));
+                }
+                Qm3Cmd::Animate(path)
+            }
             "reset" => Qm3Cmd::Reset,
             other => {
                 return Err(format!(
-                    "QM3: unknown subcommand `{other}` (grid, potential, packet, states, \
-                     state, step, run, norm, energy, centroid, prob, absorb, status, reset)"
+                    "QM3: unknown subcommand `{other}` (grid, potential, drive, packet, \
+                     states, state, step, run, norm, energy, centroid, prob, absorb, \
+                     animate, status, reset)"
                 ))
             }
         };

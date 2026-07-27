@@ -514,7 +514,15 @@ three-dimensional quantum mechanics (ADI; see grammar.md):
                             such limit
   QM3 NORM | ENERGY | CENTROID
   QM3 PROB <xa> <xb>, <ya> <yb>, <za> <zb>
+  QM3 DRIVE <shape> <modulation> | QM3 DRIVE OFF
+                            time-dependent V(x,y,z,t), as in 1-D and 2-D
   QM3 ABSORB <width> <strength> [<power>] | QM3 ABSORB OFF
+  QM3 ANIMATE \"<file>\" <t> [FRAMES <n>]
+                            three MARGINAL densities per frame:
+                            P(x,y), P(x,z), P(y,z). A volume cannot be
+                            drawn flat without an isosurface or a
+                            ray-caster; a marginal is a real observable
+                            and each integrates to the norm
   QM3 RESET
   QM RESET                  forget the quantum problem
                             NOTE: separate negative arguments with

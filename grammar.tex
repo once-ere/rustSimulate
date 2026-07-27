@@ -1280,7 +1280,9 @@ A third family, for the same reason \kw{qm2} is separate from \kw{qm}.
 \code{QM3 STEP <dt> | QM3 RUN <t> [STEPS <n>]} & ADI propagation\\
 \code{QM3 NORM | ENERGY | CENTROID} & observables\\
 \code{QM3 PROB <xa> <xb>, ..., <za> <zb>} & probability in a box\\
+\code{QM3 DRIVE <shape> <modulation> | OFF} & time-dependent $V(x,y,z,t)$\\
 \code{QM3 ABSORB <w> <s> [<p>] | OFF} & absorbing faces, all six sides\\
+\code{QM3 ANIMATE "<file>" <t> [FRAMES <n>]} & three marginal densities, animated\\
 \code{QM3 RESET} & forget the 3-D problem\\
 \end{tabular}
 \end{center}
@@ -1312,6 +1314,32 @@ costing $O(m^2 n)$ in time and $O(mn)$ in memory. The practical ceiling
 is about $\mathbf{40^3}$, and beyond it the command \textbf{refuses up
 front} rather than exhausting memory. Propagation on the same grid still
 works.
+
+\subsubsection*{Looking at a volume}
+
+A volume cannot be drawn on a flat canvas without an isosurface mesh or
+a ray-caster, either of which would mean shipping a WebGL pipeline
+inside a file that must work from \code{file://}. \code{QM3 ANIMATE}
+shows the three \textbf{marginal densities} instead:
+\[
+  P(x,y)=\!\int\!|\psi|^2 dz,\quad
+  P(x,z)=\!\int\!|\psi|^2 dy,\quad
+  P(y,z)=\!\int\!|\psi|^2 dx .
+\]
+Each is a genuine observable --- the probability of finding the particle
+at those two coordinates whatever the third --- not a rendering
+convention, and each integrates to the total norm, which the page prints
+under every panel.
+
+What they cannot show is correlation between axes: a state concentrated
+on a diagonal shell and one spread over a box can share all three
+marginals. That is a real limit of the representation, and the reason a
+true isosurface view is listed as unfinished rather than unnecessary.
+
+Verified in a browser on a driven $34^3$ run: all three marginals
+integrate to $1.000000$ in every sampled frame, the $P(x,y)$ peak travels
+along $x$ while its $y$ coordinate does not move, and $P(y,z)$ does not
+move at all --- exactly right for a drive along $x$.
 
 \subsubsection*{The 3-D oscillator}
 

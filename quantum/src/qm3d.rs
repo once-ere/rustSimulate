@@ -604,6 +604,52 @@ impl Wavefunction3 {
         self.psi.iter().map(|z| z.norm_sqr()).collect()
     }
 
+    /// A **marginal probability density**: the density integrated over
+    /// the axis named by `over`.
+    ///
+    /// These are the honest way to look at a volume. `P(x, y) =
+    /// integral |psi|^2 dz` is the probability of finding the particle
+    /// at `(x, y)` whatever its `z` — a real observable, not a rendering
+    /// convention — and each marginal integrates to the full norm,
+    /// which the tests check.
+    ///
+    /// Returned row-major over the two remaining axes, in their natural
+    /// order: `Axis::Z` gives `P(x, y)` indexed `iy * nx + ix`,
+    /// `Axis::Y` gives `P(x, z)` indexed `iz * nx + ix`, and `Axis::X`
+    /// gives `P(y, z)` indexed `iz * ny + iy`.
+    pub fn marginal(&self, over: Axis) -> Vec<f64> {
+        let g = &self.grid;
+        let (n1, n2) = match over {
+            Axis::Z => (g.nx, g.ny),
+            Axis::Y => (g.nx, g.nz),
+            Axis::X => (g.ny, g.nz),
+        };
+        // the element of the integrated axis
+        let dh = match over {
+            Axis::X => g.hx(),
+            Axis::Y => g.hy(),
+            Axis::Z => g.hz(),
+        };
+        let mut out = vec![0.0; n1 * n2];
+        for iz in 0..g.nz {
+            for iy in 0..g.ny {
+                for ix in 0..g.nx {
+                    let p = self.psi[g.idx(ix, iy, iz)].norm_sqr();
+                    let k = match over {
+                        Axis::Z => iy * n1 + ix,
+                        Axis::Y => iz * n1 + ix,
+                        Axis::X => iz * n1 + iy,
+                    };
+                    out[k] += p;
+                }
+            }
+        }
+        for v in out.iter_mut() {
+            *v *= dh;
+        }
+        out
+    }
+
     /// Probability within `frac` of the domain size of any face.
     pub fn edge_probability(&self, frac: f64) -> f64 {
         let g = &self.grid;
@@ -729,6 +775,99 @@ impl Propagator3 {
     pub fn run(&self, w: &mut Wavefunction3, steps: usize) -> Result<(), String> {
         for _ in 0..steps {
             self.step(w)?;
+        }
+        Ok(())
+    }
+}
+
+/// A 3-D propagator for `H(t) = H_0 + f(t) g(x, y, z)`, matching the
+/// 1-D and 2-D drives: a fixed spatial shape, a scalar modulation
+/// sampled at the step midpoint.
+pub struct DrivenPropagator3 {
+    ham: Hamiltonian3,
+    shape: Vec<f64>,
+    dt: f64,
+    time: f64,
+}
+
+impl DrivenPropagator3 {
+    /// # Errors
+    /// Shape length mismatch, non-finite shape, or a zero `dt`.
+    pub fn new(ham: Hamiltonian3, shape: Vec<f64>, dt: f64) -> Result<Self, String> {
+        if shape.len() != ham.grid.len() {
+            return Err(format!(
+                "DrivenPropagator3: the drive shape has {} values but the grid has {}",
+                shape.len(),
+                ham.grid.len()
+            ));
+        }
+        if shape.iter().any(|v| !v.is_finite()) {
+            return Err("DrivenPropagator3: the drive shape has a non-finite value".to_string());
+        }
+        if !dt.is_finite() || dt == 0.0 {
+            return Err(format!("DrivenPropagator3: dt must be finite and non-zero, got {dt}"));
+        }
+        Ok(Self { ham, shape, dt, time: 0.0 })
+    }
+
+    pub fn time(&self) -> f64 {
+        self.time
+    }
+    pub fn dt(&self) -> f64 {
+        self.dt
+    }
+
+    fn hamiltonian_at(&self, amp: f64) -> Result<Hamiltonian3, String> {
+        if !amp.is_finite() {
+            return Err(format!("DrivenPropagator3: the modulation returned {amp}"));
+        }
+        let v: Vec<f64> = self
+            .ham
+            .potential
+            .iter()
+            .zip(&self.shape)
+            .map(|(v0, g)| v0 + amp * g)
+            .collect();
+        let mut h = Hamiltonian3::new(
+            self.ham.grid.clone(),
+            v,
+            self.ham.mass,
+            self.ham.hbar,
+        )?;
+        h.absorber = self.ham.absorber.clone();
+        Ok(h)
+    }
+
+    /// One step, modulation taken at the midpoint.
+    ///
+    /// # Errors
+    /// Grid mismatch, non-finite modulation, or a solve failure.
+    pub fn step<F: Fn(f64) -> f64>(
+        &mut self,
+        w: &mut Wavefunction3,
+        modulation: F,
+    ) -> Result<(), String> {
+        if w.grid != self.ham.grid {
+            return Err("step: the wavefunction and propagator use different grids".to_string());
+        }
+        let amp = modulation(self.time + 0.5 * self.dt);
+        Propagator3::new(self.hamiltonian_at(amp)?, self.dt)?.step(w)?;
+        self.time += self.dt;
+        Ok(())
+    }
+
+    /// `steps` steps.
+    ///
+    /// # Errors
+    /// As [`DrivenPropagator3::step`].
+    pub fn run<F: Fn(f64) -> f64 + Copy>(
+        &mut self,
+        w: &mut Wavefunction3,
+        steps: usize,
+        modulation: F,
+    ) -> Result<(), String> {
+        for _ in 0..steps {
+            self.step(w, modulation)?;
         }
         Ok(())
     }
@@ -1053,6 +1192,147 @@ mod tests {
                 .unwrap();
         Propagator3::new(ham, 0.01).unwrap().run(&mut w, 10).unwrap();
         assert!((w.norm() - 1.0).abs() < 1e-10);
+    }
+
+    /// Every marginal must integrate to the full norm — that is what
+    /// makes it a probability density rather than a picture. Checked on
+    /// a NON-CUBIC grid, where a wrong axis or a wrong spacing factor
+    /// would show up.
+    #[test]
+    fn marginals_are_probability_densities() {
+        let g = Grid3::new(-5.0, 5.0, 17, -3.0, 3.0, 11, -4.0, 4.0, 13).unwrap();
+        let w = Wavefunction3::gaussian(
+            g.clone(),
+            (0.5, -0.3, 0.2),
+            (1.0, 0.8, 1.2),
+            (0.4, -0.2, 0.3),
+        )
+        .unwrap();
+        let total = w.norm();
+        assert!((total - 1.0).abs() < 1e-12);
+
+        for (over, (n1, n2), (d1, d2)) in [
+            (Axis::Z, (g.nx, g.ny), (g.hx(), g.hy())),
+            (Axis::Y, (g.nx, g.nz), (g.hx(), g.hz())),
+            (Axis::X, (g.ny, g.nz), (g.hy(), g.hz())),
+        ] {
+            let m = w.marginal(over);
+            assert_eq!(m.len(), n1 * n2, "{over:?} marginal has the wrong shape");
+            let sum: f64 = m.iter().sum::<f64>() * d1 * d2;
+            assert!(
+                (sum - total).abs() < 1e-12,
+                "{over:?} marginal integrates to {sum}, want {total}"
+            );
+            assert!(m.iter().all(|v| *v >= 0.0), "a density went negative");
+        }
+    }
+
+    /// The marginal must peak where the packet is, on the right axes.
+    /// An axis swap would put the peak in the wrong place, and on a
+    /// non-cubic grid it would also change the shape.
+    #[test]
+    fn marginals_peak_at_the_packet_centre() {
+        let g = Grid3::new(-6.0, 6.0, 25, -6.0, 6.0, 19, -6.0, 6.0, 15).unwrap();
+        let (x0, y0, z0) = (2.0_f64, -1.5_f64, 3.0_f64);
+        let w = Wavefunction3::gaussian(
+            g.clone(),
+            (x0, y0, z0),
+            (0.8, 0.8, 0.8),
+            (0.0, 0.0, 0.0),
+        )
+        .unwrap();
+
+        // P(x, y): peak at (x0, y0)
+        let m = w.marginal(Axis::Z);
+        let (mut best, mut at) = (f64::NEG_INFINITY, (0usize, 0usize));
+        for iy in 0..g.ny {
+            for ix in 0..g.nx {
+                let v = m[iy * g.nx + ix];
+                if v > best {
+                    best = v;
+                    at = (ix, iy);
+                }
+            }
+        }
+        assert!((g.x(at.0) - x0).abs() < g.hx(), "P(x,y) peaks at x = {}", g.x(at.0));
+        assert!((g.y(at.1) - y0).abs() < g.hy(), "P(x,y) peaks at y = {}", g.y(at.1));
+
+        // P(y, z): peak at (y0, z0)
+        let m = w.marginal(Axis::X);
+        let (mut best, mut at) = (f64::NEG_INFINITY, (0usize, 0usize));
+        for iz in 0..g.nz {
+            for iy in 0..g.ny {
+                let v = m[iz * g.ny + iy];
+                if v > best {
+                    best = v;
+                    at = (iy, iz);
+                }
+            }
+        }
+        assert!((g.y(at.0) - y0).abs() < g.hy(), "P(y,z) peaks at y = {}", g.y(at.0));
+        assert!((g.z(at.1) - z0).abs() < g.hz(), "P(y,z) peaks at z = {}", g.z(at.1));
+    }
+
+    /// The 3-D driven oscillator: Ehrenfest is exact per axis, so a
+    /// drive along x must move `<x>` on the classical trajectory and
+    /// leave `<y>` and `<z>` at zero. The last part is what would break
+    /// if the five ADI sweeps were composed wrongly.
+    #[test]
+    fn a_3d_drive_moves_only_the_driven_axis() {
+        // h = 0.303. The tolerance below is set by this: Ehrenfest is
+        // exact in the CONTINUUM, but the discrete Laplacian shifts the
+        // oscillator's effective frequency, and the resonance
+        // denominator (1 - w^2) is sensitive to that. At h = 0.519 the
+        // deviation was 0.064; at h = 0.303 it is about a third of that,
+        // consistent with second order. The 1-D test pins the same drive
+        // code quantitatively at h = 0.05, where agreement is 0.01.
+        let (a, n) = (5.0_f64, 32usize);
+        let g = cube(n, a);
+        let ham =
+            Hamiltonian3::from_fn(g.clone(), |x, y, z| 0.5 * (x * x + y * y + z * z), 1.0, 1.0)
+                .unwrap();
+        // ground state as a product of 1-D ground states
+        let g1 = qm1d::Grid::new(-a, a, n).unwrap();
+        let s1 = qm1d::Hamiltonian::from_fn(g1, |x| 0.5 * x * x, 1.0, 1.0)
+            .unwrap()
+            .bound_states(1)
+            .unwrap()
+            .1;
+        let mut psi = Vec::with_capacity(g.len());
+        for iz in 0..g.nz {
+            for iy in 0..g.ny {
+                for ix in 0..g.nx {
+                    psi.push(C::real(s1[0][ix] * s1[0][iy] * s1[0][iz]));
+                }
+            }
+        }
+        let mut w = Wavefunction3::new(g.clone(), psi).unwrap();
+        w.normalise().unwrap();
+
+        // g(x, y, z) = x
+        let mut shape = Vec::with_capacity(g.len());
+        for _iz in 0..g.nz {
+            for _iy in 0..g.ny {
+                for ix in 0..g.nx {
+                    shape.push(g.x(ix));
+                }
+            }
+        }
+        let (f0, om, dt, steps) = (0.3_f64, 0.7_f64, 0.01_f64, 500usize);
+        let mut prop = DrivenPropagator3::new(ham, shape, dt).unwrap();
+        prop.run(&mut w, steps, move |t| f0 * (om * t).cos()).unwrap();
+
+        let t = dt * steps as f64;
+        let exact = -f0 / (1.0 - om * om) * ((om * t).cos() - t.cos());
+        let (cx, cy, cz) = w.centroid();
+        assert!(
+            (cx - exact).abs() < 0.04,
+            "<x> = {cx}, classical {exact} (grid h = {})",
+            g.hx()
+        );
+        assert!(cy.abs() < 1e-9, "<y> = {cy}, must not move");
+        assert!(cz.abs() < 1e-9, "<z> = {cz}, must not move");
+        assert!((w.norm() - 1.0).abs() < 1e-10, "norm = {}", w.norm());
     }
 
     #[test]

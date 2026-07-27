@@ -22,7 +22,9 @@
 //! Asking for more is refused up front rather than left to exhaust
 //! memory.
 
-use quantum::qm3d::{BoundStates3, Grid3, Hamiltonian3, Propagator3, Wavefunction3};
+use quantum::qm3d::{
+    Axis, BoundStates3, DrivenPropagator3, Grid3, Hamiltonian3, Propagator3, Wavefunction3,
+};
 
 use crate::vm::{SimState, Value};
 
@@ -45,9 +47,15 @@ pub enum Qm3Cmd {
     Prob,
     States,
     LoadState,
+    /// `f(t) g(x, y, z)`: two DEF'd function names.
+    Drive(String, String),
+    DriveOff,
     Absorb,
     AbsorbOff,
     Reset,
+    /// Pops frames, then total time; writes an HTML page showing the
+    /// three marginal densities.
+    Animate(String),
 }
 
 /// The 3-D problem carried by a session.
@@ -61,6 +69,7 @@ pub struct Qm3State {
     pub psi: Option<Wavefunction3>,
     pub time: f64,
     pub absorber: Option<(f64, f64, f64)>,
+    pub drive: Option<(Vec<f64>, String, String)>,
     pub states: Option<BoundStates3>,
 }
 
@@ -273,7 +282,32 @@ pub fn exec_qm3(
             let ham = state.qm3.hamiltonian()?;
             let mut w = state.qm3.wavefunction()?.clone();
             let n0 = w.norm();
-            Propagator3::new(ham.clone(), dt)?.run(&mut w, steps)?;
+            match state.qm3.drive.clone() {
+                None => {
+                    Propagator3::new(ham.clone(), dt)?.run(&mut w, steps)?;
+                }
+                Some((shape, _, time_name)) => {
+                    let mut prop = DrivenPropagator3::new(ham.clone(), shape, dt)?;
+                    let t0 = state.qm3.time;
+                    for k in 0..steps {
+                        let mid = t0 + dt * (k as f64 + 0.5);
+                        let v = crate::vm::call_user_function_public(
+                            &time_name,
+                            vec![Value::Num(mid)],
+                            state,
+                        )?;
+                        let amp = match v {
+                            Value::Num(y) => y,
+                            other => {
+                                return Err(format!(
+                                    "QM3 RUN: `{time_name}(t)` must return a number, got {other}"
+                                ))
+                            }
+                        };
+                        prop.step(&mut w, |_| amp)?;
+                    }
+                }
+            }
             let n1 = w.norm();
             let drift = (n1 / n0 - 1.0).abs();
             let edge = w.edge_probability(0.05);
@@ -374,6 +408,55 @@ pub fn exec_qm3(
             Ok(format!("psi = 3-D bound state {n}, E = {e:.10}, t reset to 0"))
         }
 
+        Qm3Cmd::Drive(shape_name, time_name) => {
+            let grid = state.qm3.grid.clone().ok_or("QM3 DRIVE: set a grid first")?;
+            for nm in [shape_name, time_name] {
+                if !state.functions.contains_key(nm) {
+                    return Err(format!(
+                        "QM3 DRIVE: no function `{nm}` — the shape is \
+                         `DEF {nm}(x, y, z) {{ ... }}` and the modulation is `DEF f(t) {{ ... }}`"
+                    ));
+                }
+            }
+            let mut shape = Vec::with_capacity(grid.len());
+            for iz in 0..grid.nz {
+                for iy in 0..grid.ny {
+                    for ix in 0..grid.nx {
+                        let v = crate::vm::call_user_function_public(
+                            shape_name,
+                            vec![
+                                Value::Num(grid.x(ix)),
+                                Value::Num(grid.y(iy)),
+                                Value::Num(grid.z(iz)),
+                            ],
+                            state,
+                        )?;
+                        match v {
+                            Value::Num(y) => shape.push(y),
+                            other => {
+                                return Err(format!(
+                                    "QM3 DRIVE: `{shape_name}(x, y, z)` must return a number, \
+                                     got {other}"
+                                ))
+                            }
+                        }
+                    }
+                }
+            }
+            state.qm3.drive = Some((shape, shape_name.clone(), time_name.clone()));
+            state.qm3.states = None;
+            Ok(format!(
+                "drive V(x,y,z,t) += {time_name}(t) * {shape_name}(x,y,z). Energy is NO LONGER \
+                 conserved; propagation stays unitary. QM3 STATES uses the STATIC potential."
+            ))
+        }
+
+        Qm3Cmd::DriveOff => {
+            state.qm3.drive = None;
+            state.qm3.states = None;
+            Ok("drive removed".to_string())
+        }
+
         Qm3Cmd::Absorb => {
             let power = pop_num(stack)?;
             let strength = pop_num(stack)?;
@@ -395,11 +478,208 @@ pub fn exec_qm3(
             Ok("absorbing faces removed — all six faces reflect again".to_string())
         }
 
+        Qm3Cmd::Animate(path) => {
+            let frames = pop_count(stack, "the frame count")?;
+            let total = pop_num(stack)?;
+            if frames < 2 {
+                return Err("QM3 ANIMATE: ask for at least 2 frames".to_string());
+            }
+            if !total.is_finite() || total <= 0.0 {
+                return Err(format!("QM3 ANIMATE: total time must be positive, got {total}"));
+            }
+            let ham = state.qm3.hamiltonian()?;
+            let mut w = state.qm3.wavefunction()?.clone();
+            let g = ham.grid.clone();
+            let per_frame = 8usize;
+            let dt = total / (frames * per_frame) as f64;
+            let prop = Propagator3::new(ham.clone(), dt)?;
+
+            // Three MARGINALS per frame rather than the volume: a volume
+            // cannot be drawn on a 2-D canvas without an isosurface or
+            // ray-caster, and P(x,y) = integral |psi|^2 dz is a genuine
+            // observable rather than a rendering convention. Three of
+            // them determine a great deal about where the packet is.
+            let n0 = w.norm();
+            let mut worst = 0.0_f64;
+            let mut xy = Vec::with_capacity(frames);
+            let mut xz = Vec::with_capacity(frames);
+            let mut yz = Vec::with_capacity(frames);
+            let mut times = Vec::with_capacity(frames);
+            let enc = |v: &[f64]| {
+                v.iter().map(|x| format!("{x:.5e}")).collect::<Vec<_>>().join(",")
+            };
+            for f in 0..frames {
+                if f > 0 {
+                    prop.run(&mut w, per_frame)?;
+                }
+                worst = worst.max((w.norm() / n0 - 1.0).abs());
+                xy.push(format!("[{}]", enc(&w.marginal(Axis::Z))));
+                xz.push(format!("[{}]", enc(&w.marginal(Axis::Y))));
+                yz.push(format!("[{}]", enc(&w.marginal(Axis::X))));
+                times.push(format!("{:.4}", state.qm3.time + dt * (f * per_frame) as f64));
+            }
+            state.qm3.time += total;
+            state.qm3.psi = Some(w);
+
+            let label = state
+                .qm3
+                .potential_name
+                .clone()
+                .unwrap_or_else(|| "unnamed".to_string());
+            let html = render_html_3d(
+                &xy.join(",\n"),
+                &xz.join(",\n"),
+                &yz.join(",\n"),
+                &times.join(","),
+                &label,
+                (g.nx, g.ny, g.nz),
+                (g.x_min, g.x_max, g.y_min, g.y_max, g.z_min, g.z_max),
+            );
+            std::fs::write(path, &html)
+                .map_err(|e| format!("QM3 ANIMATE: cannot write `{path}`: {e}"))?;
+            Ok(format!(
+                "wrote {path} — {frames} frames over t = {total} (dt = {dt:.6}), three marginal \
+                 densities per frame, worst norm drift {worst:.3e}. Open it in a browser."
+            ))
+        }
+
         Qm3Cmd::Reset => {
             state.qm3 = Qm3State::fresh();
             Ok("3-D quantum state cleared".to_string())
         }
     }
+}
+
+/// The three-marginal animation page, self-contained.
+///
+/// A volume cannot be drawn on a 2-D canvas without an isosurface mesh
+/// or a ray-caster, both of which would mean shipping a WebGL pipeline
+/// inside a file that must work from `file://`. Three marginal
+/// densities are the honest alternative: each is a real observable, and
+/// together they locate the packet on every axis.
+#[allow(clippy::too_many_arguments)]
+fn render_html_3d(
+    xy: &str,
+    xz: &str,
+    yz: &str,
+    times: &str,
+    label: &str,
+    dims: (usize, usize, usize),
+    bounds: (f64, f64, f64, f64, f64, f64),
+) -> String {
+    let (nx, ny, nz) = dims;
+    let (x0, x1, y0, y1, z0, z1) = bounds;
+    format!(
+        r##"<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>posim — 3-D quantum, marginal densities</title>
+<style>
+ :root {{ color-scheme: light dark; }}
+ body {{ margin:0; font:14px/1.5 ui-sans-serif,system-ui,sans-serif;
+        background:#0e1116; color:#e6e6e6; }}
+ header {{ padding:14px 18px; border-bottom:1px solid #263042; }}
+ h1 {{ margin:0; font-size:16px; font-weight:600; }}
+ .sub {{ color:#8b98ad; font-size:12px; margin-top:3px; }}
+ #wrap {{ padding:14px 18px; }}
+ .panels {{ display:flex; gap:16px; flex-wrap:wrap; }}
+ .panel {{ flex:1 1 260px; min-width:220px; }}
+ .cap {{ font-size:12px; color:#9fb3d0; margin-bottom:5px;
+         font-variant-numeric:tabular-nums; }}
+ canvas {{ width:100%; height:auto; display:block; image-rendering:pixelated;
+           background:#11151c; border:1px solid #263042; border-radius:6px; }}
+ .row {{ display:flex; gap:12px; align-items:center; margin-top:14px; flex-wrap:wrap; }}
+ button {{ background:#1b2330; color:#e6e6e6; border:1px solid #33405a;
+           border-radius:5px; padding:6px 14px; cursor:pointer; font:inherit; }}
+ button:hover {{ background:#243149; }}
+ input[type=range] {{ flex:1; min-width:200px; }}
+ .stat {{ font-variant-numeric:tabular-nums; color:#9fb3d0; }}
+ .note {{ margin-top:10px; font-size:12px; color:#8b98ad; max-width:60em; }}
+</style></head><body>
+<header>
+  <h1>3-D quantum — marginal probability densities</h1>
+  <div class="sub">potential: <b>{label}</b> &middot; grid {nx}&times;{ny}&times;{nz}
+  &middot; ADI (Strang-split Cayley, exactly unitary) &middot; generated by posim</div>
+</header>
+<div id="wrap">
+  <div class="panels">
+    <div class="panel"><div class="cap" id="cxy"></div><canvas id="a" width="{nx}" height="{ny}"></canvas></div>
+    <div class="panel"><div class="cap" id="cxz"></div><canvas id="b" width="{nx}" height="{nz}"></canvas></div>
+    <div class="panel"><div class="cap" id="cyz"></div><canvas id="c" width="{ny}" height="{nz}"></canvas></div>
+  </div>
+  <div class="row">
+    <button id="play">Pause</button>
+    <button id="rew">Restart</button>
+    <input type="range" id="scrub" min="0" value="0">
+    <span class="stat" id="stat"></span>
+  </div>
+  <div class="note">
+    Each panel is a genuine observable, not a projection trick:
+    P(x,y) = &int;|&psi;|&sup2; dz is the probability of finding the particle at
+    (x,y) whatever its z. Each integrates to the total norm. Brightness is
+    scaled per panel per frame, so panels show <em>shape</em>, not relative
+    weight — the norms in the captions carry that.
+  </div>
+</div>
+<script>
+const XY=[
+{xy}
+], XZ=[
+{xz}
+], YZ=[
+{yz}
+], T=[{times}];
+const NX={nx}, NY={ny}, NZ={nz};
+const B={{x0:{x0}, x1:{x1}, y0:{y0}, y1:{y1}, z0:{z0}, z1:{z1}}};
+const panels = [
+  {{cv:'a', cap:'cxy', data:XY, w:NX, h:NY, name:'P(x, y)  = int |psi|^2 dz'}},
+  {{cv:'b', cap:'cxz', data:XZ, w:NX, h:NZ, name:'P(x, z)  = int |psi|^2 dy'}},
+  {{cv:'c', cap:'cyz', data:YZ, w:NY, h:NZ, name:'P(y, z)  = int |psi|^2 dx'}},
+];
+const dx=(B.x1-B.x0)/(NX+1), dy=(B.y1-B.y0)/(NY+1), dz=(B.z1-B.z0)/(NZ+1);
+const cells=[dx*dy, dx*dz, dy*dz];
+const scrub=document.getElementById('scrub'); scrub.max=T.length-1;
+let i=0, playing=true;
+
+function drawPanel(p, k) {{
+  const cv=document.getElementById(p.cv), g=cv.getContext('2d');
+  const f=p.data[i];
+  let m=0, tot=0;
+  for (const v of f) {{ if (v>m) m=v; tot+=v; }}
+  if (m<=0) m=1;
+  const img=g.createImageData(p.w, p.h);
+  for (let r=0;r<p.h;r++) for (let c=0;c<p.w;c++) {{
+    const src=r*p.w+c;
+    const dst=((p.h-1-r)*p.w+c)*4;      // flip so the second axis points up
+    const t=Math.sqrt(f[src]/m);        // sqrt makes the tails visible
+    img.data[dst  ]=Math.min(255, 40*t + 215*t*t*t);
+    img.data[dst+1]=Math.min(255, 90*t + 165*t*t*t);
+    img.data[dst+2]=Math.min(255, 200*t + 55*t*t*t);
+    img.data[dst+3]=255;
+  }}
+  g.putImageData(img,0,0);
+  document.getElementById(p.cap).textContent =
+    `${{p.name}}   norm ${{(tot*cells[k]).toFixed(6)}}`;
+}}
+function draw() {{
+  panels.forEach(drawPanel);
+  document.getElementById('stat').textContent =
+    `t = ${{(+T[i]).toFixed(2)}}   frame ${{i+1}}/${{T.length}}`;
+  scrub.value=i;
+}}
+let last=0;
+function loop(ts) {{
+  if (playing && ts-last>60) {{ i=(i+1)%T.length; last=ts; draw(); }}
+  requestAnimationFrame(loop);
+}}
+document.getElementById('play').onclick=e=>{{playing=!playing;e.target.textContent=playing?'Pause':'Play';}};
+document.getElementById('rew').onclick=()=>{{i=0;draw();}};
+scrub.oninput=e=>{{i=+e.target.value;playing=false;
+  document.getElementById('play').textContent='Play';draw();}};
+draw(); requestAnimationFrame(loop);
+</script></body></html>
+"##
+    )
 }
 
 #[cfg(test)]
@@ -515,6 +795,62 @@ mod tests {
         // ...but propagation on the same grid is fine
         execute_line("qm3 packet 0 0 0, 1 1 1, 1 0 0", &mut st).unwrap();
         assert!(execute_line("qm3 run 0.05 steps 2", &mut st).is_ok());
+    }
+
+    /// The 3-D drive must move only the axis it acts on.
+    #[test]
+    fn a_drive_moves_only_its_own_axis() {
+        let (st, out) = run(&[
+            "def v(x, y, z) { 0.5 * (x * x + y * y + z * z) }",
+            "def dip(x, y, z) { x }",
+            "def f(t) { 0.6 * cos(0.7 * t) }",
+            "qm3 grid -7 7 26, -7 7 26, -7 7 26",
+            "qm3 potential v",
+            "qm3 state 0",
+            "qm3 drive dip, f",
+            "qm3 run 5 steps 250",
+            "qm3 norm",
+        ]);
+        let (x, y, z) = st.qm3.psi.as_ref().unwrap().centroid();
+        assert!(x > 0.5, "<x> = {x}, the drive should have displaced it");
+        assert!(y.abs() < 1e-8, "<y> = {y}, must not move");
+        assert!(z.abs() < 1e-8, "<z> = {z}, must not move");
+        let norm: f64 = out[8].trim().parse().unwrap();
+        assert!((norm - 1.0).abs() < 1e-10, "driven but must stay unitary: {norm}");
+    }
+
+    /// `QM3 ANIMATE` writes a self-contained page whose marginals are
+    /// probability densities. Checked by parsing the numbers back out
+    /// of the file rather than trusting that it was written.
+    #[test]
+    fn animate_writes_marginals_that_integrate_to_one() {
+        let dir = std::env::temp_dir().join("posim_qm3_anim_test");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("v.html");
+        let p = path.to_string_lossy().to_string();
+        let (_, out) = run(&[
+            "qm3 grid -6 6 16, -6 6 16, -6 6 16",
+            "qm3 potential zero",
+            "qm3 packet -1 0 0, 1 1 1, 1 0 0",
+            &format!("qm3 animate \"{p}\" 0.4 frames 3"),
+        ]);
+        assert!(out[3].contains("marginal densities"), "got: {}", out[3]);
+        let html = std::fs::read_to_string(&path).unwrap();
+        assert!(html.starts_with("<!DOCTYPE html>"));
+        // nothing fetched from the network
+        assert!(!html.contains("http://") && !html.contains("https://"), "external reference");
+        // the first XY marginal must sum to 1 / (dx dy)
+        let body = html.split("const XY=[").nth(1).unwrap();
+        let first = body.split(']').next().unwrap().trim_start_matches('\n').trim_start_matches('[');
+        let vals: Vec<f64> = first
+            .split(',')
+            .filter_map(|t| t.trim().parse::<f64>().ok())
+            .collect();
+        assert_eq!(vals.len(), 16 * 16, "wrong marginal size: {}", vals.len());
+        let h = 12.0 / 17.0;
+        let total: f64 = vals.iter().sum::<f64>() * h * h;
+        assert!((total - 1.0).abs() < 1e-4, "marginal integrates to {total}, want 1");
+        std::fs::remove_dir_all(&dir).ok();
     }
 
     #[test]

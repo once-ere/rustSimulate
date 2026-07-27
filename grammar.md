@@ -1198,7 +1198,9 @@ be worse than a third word.
 | `QM3 STEP <dt>` / `QM3 RUN <t> [STEPS <n>]` | ADI propagation |
 | `QM3 NORM`, `QM3 ENERGY`, `QM3 CENTROID` | observables |
 | `QM3 PROB <xa> <xb>, <ya> <yb>, <za> <zb>` | probability in a box |
+| `QM3 DRIVE <shape> <modulation>` / `OFF` | time-dependent `V(x,y,z,t)` |
 | `QM3 ABSORB <width> <strength> [<power>]` / `OFF` | absorbing faces on all six sides |
+| `QM3 ANIMATE "<file>" <t> [FRAMES <n>]` | three marginal densities, animated |
 | `QM3 RESET` | forget the 3-D problem |
 
 The scheme is the 2-D one with a third direction, Strang-composed so
@@ -1241,6 +1243,36 @@ Err[3]: QM3 STATES: 216000 grid points is beyond what the eigensolver can do...
 
 Propagation on that same grid still works. Use a coarser grid for the
 spectrum and a fine one for the dynamics.
+
+#### Looking at a volume
+
+A volume cannot be drawn on a flat canvas without an isosurface mesh or
+a ray-caster, and either would mean shipping a WebGL pipeline inside a
+file that has to work from `file://`. `QM3 ANIMATE` takes the honest
+route instead and shows the three **marginal densities**:
+
+```
+P(x, y) = ∫ |psi|² dz,   P(x, z) = ∫ |psi|² dy,   P(y, z) = ∫ |psi|² dx
+```
+
+Each is a genuine observable — the probability of finding the particle
+at those two coordinates whatever the third — not a rendering
+convention. Each integrates to the total norm, and the page prints that
+integral under every panel so you can see it holding.
+
+Together they locate the packet on every axis. What they cannot show is
+correlation between axes: a state concentrated on a diagonal shell and
+one spread over a box can share all three marginals. That is a real
+limit of the representation, not of the solver, and it is the reason a
+true isosurface view is listed as unfinished rather than unnecessary.
+
+Brightness is scaled per panel per frame, so the panels compare
+*shapes*; the norms in the captions carry the relative weight.
+
+Verified in a browser on a driven 34³ run: all three marginals integrate
+to 1.000000 in every sampled frame, the `P(x, y)` peak travels along x
+while its y coordinate does not move, and `P(y, z)` does not move at all
+— which is exactly right for a drive along x.
 
 #### The 3-D oscillator
 
