@@ -1,0 +1,227 @@
+# ===========================================================================
+# STAGE #2G - Closing the mutation survivors
+# ===========================================================================
+#
+# Stage 24 re-verified as sound, then the two real survivors closed and the third explained.
+#
+# This notebook is COMPLETE IN ITSELF. It does not depend on, and does not
+# refer you to, any other notebook. Everything needed to reproduce, run,
+# view and understand this stage is written out below.
+#
+# WHAT THIS STAGE WAS ABOUT
+#
+# It opened with a question: does the earlier Bessel stage need redoing?
+#
+# ANSWER: NO, AND THE EVIDENCE IS NOT AN OPINION. All three of that stage's
+# fixes are independently corroborated by a mutation probe built two stages
+# LATER, by a different method - deliberately breaking the Debye branch
+# discriminator, the sector guard and the validity threshold each causes the
+# suite to fail. Its three regression tests pass. A stage whose conclusions
+# can be re-derived by a tool written afterwards is as verified as this
+# project gets. Redoing sound work would have cost a stage and found nothing.
+#
+# What it HAD left was one thing in the same module that nothing asserted.
+#
+# SURVIVOR 1 - THE ESTIMATE FLOOR. CLOSED. A constant exists because an
+# error estimate that bottoms out too low wins every comparison in the
+# route selector. The first attempt to pin it used the J-Y Wronskian at the
+# point the code's own comment cites - and the residual there is 4.11e-17,
+# three decades below the 3.2e-14 the comment records. THE INSTRUMENT WAS
+# WRONG, not the constant: a Wronskian can be small while the values are
+# not. The floor actually binds where optimal truncation reports EXACTLY
+# ZERO, which happens at nu = 1/2 where the 1/z series TERMINATES. Pinned
+# against the closed form J_(1/2)(z) = sqrt(2/(pi z)) sin z.
+#
+# SURVIVOR 2 - THE ABSORBER'S CELL RESOLUTION. CLOSED. The convergence test
+# built its own geometry to measure the 1/n^2 law, so the LAW was pinned and
+# the SHIPPED CONSTANT was not. A test can verify the right property of the
+# wrong object.
+#
+# SURVIVOR 3 - THE ZENO THRESHOLD. STILL OPEN, AND NOW UNDERSTOOD. A corner
+# impact was written specifically to exercise it and did not: the collision
+# solver handles every flagged pair in ONE event, so simultaneous contacts
+# produce one event carrying two contacts, not two events, and the burst
+# counter never rises.
+#
+# The corner test was kept anyway - an elastic corner reflection must
+# preserve speed and reverse both velocity components, and nothing asserted
+# that before.
+
+# ---------------------------------------------------------------------------
+# HOW TO RUN THIS NOTEBOOK
+# ---------------------------------------------------------------------------
+#
+# Everything below is posim notebook source. Lines beginning with '#' are
+# comments and are ignored by the interpreter; every other line is a command
+# that will be executed in order.
+#
+# From the repository root (the directory holding Cargo.toml), run ONE of:
+#
+#     cargo run -p posim --release -- --notebook StageNbks/Stage_2G.posim
+#     cargo run -p posim --release -- --script   StageNbks/Stage_2G.posim
+#
+#   --notebook  prints an In[n]:= / Out[n]= transcript, like a Mathematica
+#               notebook. This is the mode to use when reading along.
+#   --script    prints the same transcript; the two differ only in how the
+#               prompt lines are laid out. Either is reproducible.
+#
+# To work through it by hand instead, start the interactive interpreter:
+#
+#     cargo run -p posim --release
+#
+# and paste the command lines one at a time. Type HELP for the full command
+# language, and %quit to leave.
+#
+# First run will compile the workspace (a few minutes). Later runs are
+# immediate. If 'cargo' is not found, install Rust from https://rustup.rs .
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# LAUNCHING THE BROWSER GUI TO INVESTIGATE THIS STAGE
+# ---------------------------------------------------------------------------
+#
+# posim ships a live 3-D scene window that is served over HTTP and viewed in
+# an ordinary web browser. There is no separate application to install.
+#
+# COMPLETE PROCEDURE, from nothing to a moving picture:
+#
+#   1. Open a terminal at the repository root and start posim interactively:
+#
+#          cargo run -p posim --release
+#
+#      You will get the banner and an 'In[1]:=' prompt.
+#
+#   2. Build a scene. You must create bodies BEFORE opening the window,
+#      because the window shows the entities that exist when it is created.
+#      (The command lines further down this notebook do exactly that.)
+#
+#   3. Open the window:
+#
+#          scene create
+#
+#      posim replies with, for example:
+#
+#          scene window created: http://127.0.0.1:41234/
+#          (opened in your browser; if no window appeared, open that address
+#           yourself)
+#          showing 4 entities; SCENE START begins the evolution
+#
+#      The port is chosen freely each run. To pin it, pass one:
+#
+#          scene create 8080
+#
+#      then the address is always http://127.0.0.1:8080/ .
+#
+#   4. If no browser opened by itself, copy the printed address into any
+#      browser (Firefox, Chrome, Safari, Edge - it is plain HTML, CSS and
+#      JavaScript over a websocket; nothing else is required).
+#
+#   5. Drive the animation from the SAME posim prompt while the page is open:
+#
+#          scene start          begin evolving
+#          scene pause          freeze
+#          scene stop           halt
+#          scene reverse        play backwards through the snapshot history
+#          scene set_time_step 0.001      seconds of simulated time per frame
+#          scene refresh        re-read the body list after adding bodies
+#          scene close          shut the window and free the port
+#
+#      In the page itself: drag with the mouse to orbit, scroll to zoom,
+#      shift-drag or the arrow keys to pan, and the on-screen buttons mirror
+#      the commands above.
+#
+#   6. HELP lists every scene command with its arguments.
+#
+# TROUBLESHOOTING, precisely:
+#   * 'no scene window - run SCENE CREATE first' means step 3 was skipped.
+#   * A blank page means no bodies existed at 'scene create' time: add them,
+#     then issue 'scene refresh'.
+#   * If the port is busy, 'scene close' then 'scene create <other port>'.
+#   * The window is local only (127.0.0.1). It is not reachable from another
+#     machine, by design.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# ANIMATING THIS STAGE - PARTLY POSSIBLE
+# ---------------------------------------------------------------------------
+#
+# PART 2 of the scenario above (the corner impact) IS a rigid-body scene and
+# animates properly. PARTS 1 and 3 cannot be animated: a Bessel function has
+# no time coordinate and no position, and a shell harness has no state that
+# evolves - the scene window draws simulator bodies, and neither creates one.
+#
+# COMPLETE PROCEDURE for the corner impact:
+#
+#   1. cargo run -p posim --release
+#
+#   2. Paste the PART 2 lines above, down to and including the
+#      'new sphere { ... }' line. Do not run 'run' yet.
+#
+#   3. scene create
+#      posim replies with an address such as
+#          scene window created: http://127.0.0.1:41234/
+#      and normally opens it. If not, paste that address into any browser.
+#      To pin the port:  scene create 8080  ->  http://127.0.0.1:8080/
+#
+#   4. scene set_time_step 0.002
+#      scene zoom 2
+#      scene start
+#
+#   5. Watch the ball come in diagonally, strike both slabs at the same
+#      instant, and leave along the reversed diagonal at the same speed.
+#      Drag to orbit, scroll to zoom, shift-drag or arrows to pan.
+#      'energy' at the prompt reads the invariant while it plays.
+#
+#   6. scene close   when finished.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# RECREATING THE STAGE SCENARIO
+# ---------------------------------------------------------------------------
+#
+# PART 1 - the special-function survivor, reproducible in posim.
+#
+# The estimate floor binds at nu = 1/2, where the 1/z Hankel series
+# TERMINATES and optimal truncation would report an error of exactly zero.
+# The closed form is elementary there:
+#
+#     J_(1/2)(z) = sqrt(2/(pi z)) sin z
+#
+# Compute both and compare.
+bessel_j_nu(0.5, 18.0)
+sqrt(2 / (3.14159265358979 * 18.0)) * sin(18.0)
+
+bessel_j_nu(0.5, 40.0)
+sqrt(2 / (3.14159265358979 * 40.0)) * sin(40.0)
+
+# And the companion closed form, Y_(1/2)(z) = -sqrt(2/(pi z)) cos z.
+bessel_y_nu(0.5, 18.0)
+-sqrt(2 / (3.14159265358979 * 18.0)) * cos(18.0)
+
+# PART 2 - the collision survivor, reproducible in posim. A ball driven
+# into the corner where two static slabs meet gives two contacts at the
+# same instant. An elastic corner reflection must preserve the speed and
+# reverse both components.
+reset
+set system.g_constant = 0
+new cuboid { mass = 1, half_extents = [0.5, 4, 4], position = [-1.5, 0, 0] }
+set obj0.inverse_mass = 0
+new cuboid { mass = 1, half_extents = [4, 0.5, 4], position = [0, -1.5, 0] }
+set obj1.inverse_mass = 0
+new sphere { mass = 1, radius = 0.25, position = [2, 2, 0], velocity = [-3, -3, 0] }
+energy
+run 2 steps 20
+energy
+get obj2.velocity
+
+# PART 3 - the mutation probe itself, from a normal shell at the repo root:
+#
+#     bash scripts/mutation_probe.sh
+#     bash scripts/mutation_probe.sh debye     # just the Stage 24 artifacts
+#
+# Expect the three Debye mutations to be CAUGHT: that is the re-verification
+# described above.
+
+# ===========================================================================
+# END OF STAGE #2G NOTEBOOK
+# ===========================================================================

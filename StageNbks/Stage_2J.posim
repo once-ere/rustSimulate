@@ -1,0 +1,240 @@
+# ===========================================================================
+# STAGE #2J - A measured guard for the reflection route
+# ===========================================================================
+#
+# Paying a deferred debt: guarding a route with a loss the code measures about itself, rather than a law fitted to its behaviour.
+#
+# This notebook is COMPLETE IN ITSELF. It does not depend on, and does not
+# refer you to, any other notebook. Everything needed to reproduce, run,
+# view and understand this stage is written out below.
+#
+# WHAT THIS STAGE WAS ABOUT
+#
+# The previous stage found a routine returning 3.09e4 relative error and
+# DELIBERATELY DID NOT GUARD IT, on the grounds that calibrating a threshold
+# needed a sweep there was no budget for, and that a guessed threshold
+# 'would have looked like progress and been worse than the note'.
+#
+# This stage paid that debt. A deferral is only honest if it is actually a
+# deferral.
+#
+# MEASURED, NOT MODELLED. The obvious guard is the documented law
+# 1e-16 * exp(|z|), which the module's own notes say runs one to two decades
+# pessimistic. Instead the ascending series now reports its OWN
+# cancellation:
+#
+#     loss = max|term| / |sum|
+#
+# the largest quantity the series forms, over the answer it produces. The
+# reflection then multiplies that by its own combination loss. There is no
+# fitted constant inside the indicator; the only tuned number is the
+# threshold it is compared against, and that is stated with its margin.
+#
+# THE FIRST CALIBRATION FAILED, AND THE INSTRUMENT WAS AT FAULT AGAIN. A
+# 2480-point sweep of actual-error-versus-indicator gave a worst ratio of
+# 3.1e14, which read as 'the indicator is worthless'. It was the METRIC:
+# relative error is unbounded near the ZEROS of Y, so that sweep was
+# measuring the reference rather than the routine.
+#
+# That was the FOURTH distinct time in this project that an instrument,
+# rather than a routine, was the thing at fault. It is the single most
+# common way to be wrong here.
+#
+# CALIBRATED AT CHARACTERISED POINTS - places where the true error was
+# already known from the previous stage:
+#
+#     nu = 36.8, z = 54.46   err 3.09e4    loss*eps 1.02      refuse
+#     nu = 36.8, z = 47.84   err 2.18      loss*eps 9.1e-3    refuse
+#     nu = 20.5, z = 30.34   err 7.8e-8    loss*eps 1.9e-6    allow
+#     nu = 12.3, z = 16.60   err 7.5e-12   loss*eps 1.2e-11   allow
+#
+# The threshold 1e-3 separates every measured case with the closest allowed
+# one 500x inside it. THE INDICATOR IS NOT A PROVEN BOUND - at
+# nu = 36.8, z = 47.84 the actual error is 240x larger than loss*eps - and
+# the threshold carries that margin explicitly rather than pretending
+# otherwise.
+#
+# THE TEST MOVED, NOT THE THRESHOLD. An existing check used nu = 1/2,
+# z = 30, which the new guard refuses. The tempting repair is to loosen the
+# threshold until the suite is green - and it would have been wrong, because
+# the module ALREADY DOCUMENTED Y as 'unusable past 30'. Loosening a guard
+# to preserve a test is how a guard becomes decoration.
+
+# ---------------------------------------------------------------------------
+# HOW TO RUN THIS NOTEBOOK
+# ---------------------------------------------------------------------------
+#
+# Everything below is posim notebook source. Lines beginning with '#' are
+# comments and are ignored by the interpreter; every other line is a command
+# that will be executed in order.
+#
+# From the repository root (the directory holding Cargo.toml), run ONE of:
+#
+#     cargo run -p posim --release -- --notebook StageNbks/Stage_2J.posim
+#     cargo run -p posim --release -- --script   StageNbks/Stage_2J.posim
+#
+#   --notebook  prints an In[n]:= / Out[n]= transcript, like a Mathematica
+#               notebook. This is the mode to use when reading along.
+#   --script    prints the same transcript; the two differ only in how the
+#               prompt lines are laid out. Either is reproducible.
+#
+# To work through it by hand instead, start the interactive interpreter:
+#
+#     cargo run -p posim --release
+#
+# and paste the command lines one at a time. Type HELP for the full command
+# language, and %quit to leave.
+#
+# First run will compile the workspace (a few minutes). Later runs are
+# immediate. If 'cargo' is not found, install Rust from https://rustup.rs .
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# LAUNCHING THE BROWSER GUI TO INVESTIGATE THIS STAGE
+# ---------------------------------------------------------------------------
+#
+# posim ships a live 3-D scene window that is served over HTTP and viewed in
+# an ordinary web browser. There is no separate application to install.
+#
+# COMPLETE PROCEDURE, from nothing to a moving picture:
+#
+#   1. Open a terminal at the repository root and start posim interactively:
+#
+#          cargo run -p posim --release
+#
+#      You will get the banner and an 'In[1]:=' prompt.
+#
+#   2. Build a scene. You must create bodies BEFORE opening the window,
+#      because the window shows the entities that exist when it is created.
+#      (The command lines further down this notebook do exactly that.)
+#
+#   3. Open the window:
+#
+#          scene create
+#
+#      posim replies with, for example:
+#
+#          scene window created: http://127.0.0.1:41234/
+#          (opened in your browser; if no window appeared, open that address
+#           yourself)
+#          showing 4 entities; SCENE START begins the evolution
+#
+#      The port is chosen freely each run. To pin it, pass one:
+#
+#          scene create 8080
+#
+#      then the address is always http://127.0.0.1:8080/ .
+#
+#   4. If no browser opened by itself, copy the printed address into any
+#      browser (Firefox, Chrome, Safari, Edge - it is plain HTML, CSS and
+#      JavaScript over a websocket; nothing else is required).
+#
+#   5. Drive the animation from the SAME posim prompt while the page is open:
+#
+#          scene start          begin evolving
+#          scene pause          freeze
+#          scene stop           halt
+#          scene reverse        play backwards through the snapshot history
+#          scene set_time_step 0.001      seconds of simulated time per frame
+#          scene refresh        re-read the body list after adding bodies
+#          scene close          shut the window and free the port
+#
+#      In the page itself: drag with the mouse to orbit, scroll to zoom,
+#      shift-drag or the arrow keys to pan, and the on-screen buttons mirror
+#      the commands above.
+#
+#   6. HELP lists every scene command with its arguments.
+#
+# TROUBLESHOOTING, precisely:
+#   * 'no scene window - run SCENE CREATE first' means step 3 was skipped.
+#   * A blank page means no bodies existed at 'scene create' time: add them,
+#     then issue 'scene refresh'.
+#   * If the port is busy, 'scene close' then 'scene create <other port>'.
+#   * The window is local only (127.0.0.1). It is not reachable from another
+#     machine, by design.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# ANIMATION: NOT POSSIBLE HERE, AND THE EXACT REASON WHY
+# ---------------------------------------------------------------------------
+#
+# This stage cannot be animated, and the cause is precise rather than a
+# matter of effort:
+#
+#   The scene window renders SIMULATOR ENTITIES. Concretely, it draws the
+#   bodies held in the PhysicalObjectSystem - points, spheres, cuboids,
+#   tori, disks, cylinders and dumbbells - by reading their positions and
+#   orientations each frame and sending them over a websocket.
+#
+#   This stage evaluates SPECIAL FUNCTIONS. A call such as
+#   bessel_j_nu(0.5, 2.0) creates no body, has no position, and has no time
+#   coordinate: it is a pure function of its arguments. There is therefore
+#   nothing for the renderer to draw, and 'scene create' on this session
+#   would open a window showing an empty grid and the world axes.
+#
+#   That is not a defect and there is no workaround inside the scene window.
+#   A function of a complex variable is not a moving object.
+#
+# What you CAN watch instead, and how, is written in the section above: the
+# numbers printed by the command lines below change as you vary the order
+# and the argument, and that variation IS the phenomenon this stage is about.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# RECREATING THE STAGE SCENARIO
+# ---------------------------------------------------------------------------
+#
+# READ THIS FIRST - IT DETERMINES WHAT YOU WILL SEE.
+#
+# The guard added by this stage is on bessel_complex::bessel_y_nu, the
+# single RAW route. The posim function 'bessel_y_nu(nu, z)' does NOT call
+# it: the language is wired to bessel_cnu::bessel_y_cnu, the SELECTOR,
+# which compares error estimates across several routes. So the lines below
+# all return correct values rather than refusals - the selector never needed
+# the guard.
+#
+# To see the guard REFUSE, you must call the raw route from Rust. From the
+# repository root:
+#
+#     cargo test -p special_functions --release the_selector_is_accurate -- --nocapture
+#
+# That test asserts both halves: the selector is accurate at these points,
+# AND the raw route refuses with a message naming the entry point to use
+# instead. It is in special_functions/src/bessel_cnu.rs.
+#
+# Walk outward along the argument at fixed non-integer order. Through the
+# language every one of these is answered correctly; the numbers are here so
+# you can see the region the guard governs.
+
+# Comfortably inside: the reflection has spent almost none of its precision.
+bessel_y_nu(12.3, 16.6)
+
+# Further out, still allowed: loss*eps is about 1.9e-6 here, and the answer
+# is good to about 8e-8.
+bessel_y_nu(20.5, 30.34)
+
+# Past the threshold: this is where the RAW route now refuses, with a
+# message stating how much precision it has spent and naming the entry
+# point to use instead. Through the language you get the selector, so these
+# print correct values (Cephes gives 6.801992e-2 for the second).
+bessel_y_nu(36.8, 47.84)
+bessel_y_nu(36.8, 54.464)
+
+# The boundary case that moved an existing test. At nu = 1/2 the closed form
+# is exact, yet at z = 30 the RAW reflection has spent 1.1e-3 of its
+# precision - and the module's own accuracy notes already called Y
+# 'unusable past 30'. Compare the two lines below against the elementary
+# closed form that follows them.
+bessel_y_nu(0.5, 22.0)
+bessel_y_nu(0.5, 30.0)
+
+# For comparison, the closed forms at nu = 1/2, which are elementary:
+#     J_(1/2)(z) =  sqrt(2/(pi z)) sin z
+#     Y_(1/2)(z) = -sqrt(2/(pi z)) cos z
+bessel_j_nu(0.5, 22.0)
+sqrt(2 / (3.14159265358979 * 22.0)) * sin(22.0)
+-sqrt(2 / (3.14159265358979 * 22.0)) * cos(22.0)
+
+# ===========================================================================
+# END OF STAGE #2J NOTEBOOK
+# ===========================================================================

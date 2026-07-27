@@ -1,0 +1,272 @@
+# ===========================================================================
+# STAGE #2A - A faithful port of EVOLVE_NASH, with a Strang variant
+# ===========================================================================
+#
+# Porting the one piece of original numerical work in the legacy C++ - a Bessel-expanded split-operator propagator - and wiring it into the language.
+#
+# This notebook is COMPLETE IN ITSELF. It does not depend on, and does not
+# refer you to, any other notebook. Everything needed to reproduce, run,
+# view and understand this stage is written out below.
+#
+# WHAT THIS STAGE WAS ABOUT
+#
+# The legacy SolveIt C++ contained one genuinely original numerical method,
+# about twenty lines long, called EVOLVE_NASH. Everything else in its
+# quantum tree was either standard Crank-Nicolson or a licence-encumbered
+# library routine. This stage ported it.
+#
+# THE SCHEME, IN FULL
+#
+# Discretise H = -hbar^2/2m d2/dx2 + V(x) on a PERIODIC grid of spacing h.
+# Write S for the one-site shift, (S psi)_j = psi_(j+1). Then
+#
+#     H = kappa (2 - S - S^-1) + V,        kappa = hbar^2 / (2 m h^2)
+#
+# and the time step splits into a diagonal part and an off-diagonal part:
+#
+#     exp(-i H dt/hbar) ~ exp(-i L (1+v)) * exp(i (L/2)(S + S^-1))
+#
+#     L = hbar dt / (m h^2)          v_j = V_j m h^2 / hbar^2
+#
+# The first factor is diagonal - a pointwise phase. The second is the idea.
+# S has Fourier symbol exp(i theta), so (S + S^-1)/2 has symbol cos theta,
+# and the Jacobi-Anger expansion
+#
+#     exp(i L cos theta) = sum_M i^M J_M(L) exp(i M theta)
+#
+# turns the kinetic exponential into a FINITE-DIFFERENCE STENCIL whose
+# coefficients are Bessel functions:
+#
+#     psi_j <- exp(-i L (1+v_j)) [ J_0(L) psi_j
+#              + sum_(M=1..K) i^M J_M(L) (psi_(j-M) + psi_(j+M)) ]
+#
+# It is EXPLICIT and MATRIX-FREE - Crank-Nicolson solves a tridiagonal
+# system every step; this solves nothing - and it is unitary at any step
+# size, because each factor is unitary.
+#
+# WHY THE PORT IS 'FAITHFUL' AND WHAT THAT COST
+#
+# Every other port in this project runs clean-room: read the mathematics,
+# never the encumbered code. That rule is exactly WRONG here, because the
+# scheme is the author's own. So the port was checked against the ORIGINAL
+# ALGORITHM: a statement-for-statement transliteration of the C++ loop lives
+# in the test module, and the port must match it at the original's own
+# constants (Lambda = 0.92, NumOrder = 16). Measured agreement: 3.5e-16
+# after one step, 1.9e-13 after a thousand - floating-point summation order
+# and nothing else.
+#
+# The one encumbered dependency inside that kernel - 'bessj', a Numerical
+# Recipes routine - was NOT transliterated; the clean-room Bessel routine
+# supplies the same J_M(Lambda).
+#
+# THE SPLITTING, AND THE SECOND-ORDER VARIANT
+#
+# The original orders the factors as Lie-Trotter, which is FIRST order in
+# dt. Putting half a potential phase on each side of the stencil (Strang)
+# is SECOND order for essentially no extra cost, because consecutive steps
+# fuse their adjacent half-phases. Measured error ratios per halving of dt:
+# 2.00 for Lie, 4.00 for Strang, exactly as theory says.
+#
+# Lie remains the DEFAULT, because the default behaviour of a port has to
+# be what the original does.
+#
+# BOUNDARY CONDITIONS - READ THIS BEFORE INTERPRETING ANY RESULT
+#
+# The Nash method is PERIODIC: the two ends of the domain are identified and
+# a packet leaving the right edge re-enters at the left. Crank-Nicolson in
+# this crate is DIRICHLET: the walls reflect. They are different physics on
+# the same grid. The status line always says which is in force.
+
+# ---------------------------------------------------------------------------
+# HOW TO RUN THIS NOTEBOOK
+# ---------------------------------------------------------------------------
+#
+# Everything below is posim notebook source. Lines beginning with '#' are
+# comments and are ignored by the interpreter; every other line is a command
+# that will be executed in order.
+#
+# From the repository root (the directory holding Cargo.toml), run ONE of:
+#
+#     cargo run -p posim --release -- --notebook StageNbks/Stage_2A.posim
+#     cargo run -p posim --release -- --script   StageNbks/Stage_2A.posim
+#
+#   --notebook  prints an In[n]:= / Out[n]= transcript, like a Mathematica
+#               notebook. This is the mode to use when reading along.
+#   --script    prints the same transcript; the two differ only in how the
+#               prompt lines are laid out. Either is reproducible.
+#
+# To work through it by hand instead, start the interactive interpreter:
+#
+#     cargo run -p posim --release
+#
+# and paste the command lines one at a time. Type HELP for the full command
+# language, and %quit to leave.
+#
+# First run will compile the workspace (a few minutes). Later runs are
+# immediate. If 'cargo' is not found, install Rust from https://rustup.rs .
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# LAUNCHING THE BROWSER GUI TO INVESTIGATE THIS STAGE
+# ---------------------------------------------------------------------------
+#
+# posim ships a live 3-D scene window that is served over HTTP and viewed in
+# an ordinary web browser. There is no separate application to install.
+#
+# COMPLETE PROCEDURE, from nothing to a moving picture:
+#
+#   1. Open a terminal at the repository root and start posim interactively:
+#
+#          cargo run -p posim --release
+#
+#      You will get the banner and an 'In[1]:=' prompt.
+#
+#   2. Build a scene. You must create bodies BEFORE opening the window,
+#      because the window shows the entities that exist when it is created.
+#      (The command lines further down this notebook do exactly that.)
+#
+#   3. Open the window:
+#
+#          scene create
+#
+#      posim replies with, for example:
+#
+#          scene window created: http://127.0.0.1:41234/
+#          (opened in your browser; if no window appeared, open that address
+#           yourself)
+#          showing 4 entities; SCENE START begins the evolution
+#
+#      The port is chosen freely each run. To pin it, pass one:
+#
+#          scene create 8080
+#
+#      then the address is always http://127.0.0.1:8080/ .
+#
+#   4. If no browser opened by itself, copy the printed address into any
+#      browser (Firefox, Chrome, Safari, Edge - it is plain HTML, CSS and
+#      JavaScript over a websocket; nothing else is required).
+#
+#   5. Drive the animation from the SAME posim prompt while the page is open:
+#
+#          scene start          begin evolving
+#          scene pause          freeze
+#          scene stop           halt
+#          scene reverse        play backwards through the snapshot history
+#          scene set_time_step 0.001      seconds of simulated time per frame
+#          scene refresh        re-read the body list after adding bodies
+#          scene close          shut the window and free the port
+#
+#      In the page itself: drag with the mouse to orbit, scroll to zoom,
+#      shift-drag or the arrow keys to pan, and the on-screen buttons mirror
+#      the commands above.
+#
+#   6. HELP lists every scene command with its arguments.
+#
+# TROUBLESHOOTING, precisely:
+#   * 'no scene window - run SCENE CREATE first' means step 3 was skipped.
+#   * A blank page means no bodies existed at 'scene create' time: add them,
+#     then issue 'scene refresh'.
+#   * If the port is busy, 'scene close' then 'scene create <other port>'.
+#   * The window is local only (127.0.0.1). It is not reachable from another
+#     machine, by design.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# ANIMATING THIS STAGE
+# ---------------------------------------------------------------------------
+#
+# This stage CAN be animated, and the animation is the clearest way to see
+# the periodic boundary.
+#
+# posim writes a SELF-CONTAINED HTML animation of |psi(x,t)|^2 - one file,
+# no server, no dependencies, openable directly in any browser:
+#
+#     qm animate "nash_wrap.html" 1.5 frames 200
+#
+# The arguments are: the output path (quoted), the total simulated time,
+# and optionally the number of frames. Run it after setting up the grid,
+# potential, packet and method, exactly as in the section above.
+#
+# COMPLETE PROCEDURE:
+#
+#   1. cargo run -p posim --release
+#   2. Paste the setup lines from the section above (grid, potential,
+#      packet, method).
+#   3. qm animate "nash_wrap.html" 1.5 frames 200
+#   4. posim prints the path it wrote.
+#   5. Open that file in a browser. On Linux:
+#          xdg-open nash_wrap.html
+#      on macOS:
+#          open nash_wrap.html
+#      or use File > Open in the browser, or drag the file onto a window.
+#
+# WHAT TO LOOK FOR: the packet drifts right, reaches the right-hand edge,
+# and REAPPEARS AT THE LEFT without any reflection. Repeat with
+# 'qm method cayley' before the animate line and the same packet BOUNCES
+# instead. The two films are the boundary condition made visible.
+#
+# NOTE ON THE 3-D SCENE WINDOW: 'scene create' is for rigid-body scenes and
+# will show an empty grid here, because a wavefunction is not one of the
+# body types the renderer draws. The HTML animation above is the correct
+# viewer for quantum stages.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# RECREATING THE STAGE SCENARIO
+# ---------------------------------------------------------------------------
+#
+# A free particle on a periodic domain, propagated by the ported scheme.
+
+# The domain and its resolution.
+qm grid 0 20 400
+
+# A free particle: no potential at all.
+qm potential zero
+
+# A Gaussian wavepacket at x0 = 17, width sigma = 0.8, mean wavenumber 6.
+# It is launched near the RIGHT-hand edge on purpose, so that the periodic
+# boundary is exercised rather than merely asserted.
+qm packet 17 0.8 6
+
+# Select the ported propagator. 'nash' alone is the original Lie ordering;
+# 'nash strang' is the second-order variant. Both are periodic.
+qm method nash strang
+
+# Report the whole configuration, including which boundary is in force.
+qm
+
+# Where is the packet now? Almost all of it is in the right-hand fifth.
+qm prob 0 5
+qm prob 15 20
+
+# Propagate. 400 steps to t = 0.85.
+qm run 0.85 steps 400
+
+# And now? Under the PERIODIC Nash method the packet has crossed the seam
+# and arrived at the far left: expect roughly 0.98 in [0,5] and 0.02 in
+# [15,20]. Under Crank-Nicolson the same run reflects off the wall and
+# leaves ~0.999 in [15,20]. That contrast IS the boundary condition.
+qm prob 0 5
+qm prob 15 20
+
+# The norm is conserved to rounding regardless of step size, because the
+# scheme is a product of unitary factors. This is a property of the METHOD,
+# not a consequence of choosing a small dt.
+qm norm
+
+# The energy of a free packet is a constant of the motion here.
+qm energy
+
+# For contrast, repeat with the reflecting method. Same grid, same packet.
+qm reset
+qm grid 0 20 400
+qm potential zero
+qm packet 17 0.8 6
+qm method cayley
+qm run 0.85 steps 400
+qm prob 0 5
+qm prob 15 20
+
+# ===========================================================================
+# END OF STAGE #2A NOTEBOOK
+# ===========================================================================

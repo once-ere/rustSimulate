@@ -1,0 +1,244 @@
+# ===========================================================================
+# STAGE #2C - The output-granularity defect, repaired
+# ===========================================================================
+#
+# Asking for fewer snapshots changed the physics: 23% of the energy vanished with no warning. The cause, the repair, and how to see it.
+#
+# This notebook is COMPLETE IN ITSELF. It does not depend on, and does not
+# refer you to, any other notebook. Everything needed to reproduce, run,
+# view and understand this stage is written out below.
+#
+# WHAT THIS STAGE WAS ABOUT
+#
+# This is the most serious defect found in the project, and it was in the
+# core rigid-body simulator rather than in any special function.
+#
+# THE SYMPTOM. The trajectory depended on HOW OFTEN OUTPUT WAS REQUESTED.
+# Running the same scenario to the same end time, and changing only the
+# number of snapshots asked for:
+#
+#     run 1 steps 1000   ->  9293 collisions, |dE/E| = 6.9e-8   correct
+#     run 1 steps 8      ->   898 collisions, |dE/E| = 2.3e-1   23% GONE
+#
+# No error, no warning, and a perfectly smooth-looking animation. In a
+# reproduction written for the repair it was worse still: a sphere between
+# two static walls went from E = 80000 to E = 0 - the ball simply stopped.
+#
+# THE CAUSE. The collision solver has a Zeno guard. Genuine 'chattering'
+# contact - a ball settling on a floor - produces infinitely many impacts in
+# finite time, so something must eventually force the collisions inelastic
+# or the run never terminates. That guard counted impulse events PER OUTPUT
+# INTERVAL: past 64 it forced restitution to zero, past 128 it disarmed
+# collision detection entirely.
+#
+# But 'chattering contact' and 'many collisions since the last snapshot' are
+# NOT the same thing. Conflating them meant that asking for fewer snapshots
+# turned ordinary elastic collisions plastic. Requesting output is an
+# OBSERVATION, and an observation must not change the physics.
+#
+# THE REPAIR - A CHANGE OF DEFINITION, NOT OF THRESHOLDS. A 'burst' is a run
+# of events separated by essentially no time, which is what chattering
+# physically IS. The guard now compares the gap between events against
+# 1e-9 * max(|t|, 1); any real flight between two impacts resets the count.
+# The state lives across output intervals, so the rule refers to the output
+# interval nowhere.
+#
+# AFTER THE REPAIR, same scenario, same commands:
+#
+#     run 1 steps 1000   ->  9293 collisions, |dE/E| = 6.9e-8
+#     run 1 steps 8      ->  9160 collisions, |dE/E| = 1.0e-7
+#
+# The coarse run now resolves 9160 collisions instead of 898. One output
+# interval spanning an entire 10-unit run resolves 109251 collisions and
+# still conserves energy to a part in 1e6.
+#
+# A GUARD THAT STOPS GUARDING IS WORSE THAN THE DEFECT IT REPLACED, so the
+# repair is pinned from both sides: a settling ball with restitution 0.5
+# must still terminate and come to rest, and ordinary collisions must stay
+# elastic however coarse the output.
+
+# ---------------------------------------------------------------------------
+# HOW TO RUN THIS NOTEBOOK
+# ---------------------------------------------------------------------------
+#
+# Everything below is posim notebook source. Lines beginning with '#' are
+# comments and are ignored by the interpreter; every other line is a command
+# that will be executed in order.
+#
+# From the repository root (the directory holding Cargo.toml), run ONE of:
+#
+#     cargo run -p posim --release -- --notebook StageNbks/Stage_2C.posim
+#     cargo run -p posim --release -- --script   StageNbks/Stage_2C.posim
+#
+#   --notebook  prints an In[n]:= / Out[n]= transcript, like a Mathematica
+#               notebook. This is the mode to use when reading along.
+#   --script    prints the same transcript; the two differ only in how the
+#               prompt lines are laid out. Either is reproducible.
+#
+# To work through it by hand instead, start the interactive interpreter:
+#
+#     cargo run -p posim --release
+#
+# and paste the command lines one at a time. Type HELP for the full command
+# language, and %quit to leave.
+#
+# First run will compile the workspace (a few minutes). Later runs are
+# immediate. If 'cargo' is not found, install Rust from https://rustup.rs .
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# LAUNCHING THE BROWSER GUI TO INVESTIGATE THIS STAGE
+# ---------------------------------------------------------------------------
+#
+# posim ships a live 3-D scene window that is served over HTTP and viewed in
+# an ordinary web browser. There is no separate application to install.
+#
+# COMPLETE PROCEDURE, from nothing to a moving picture:
+#
+#   1. Open a terminal at the repository root and start posim interactively:
+#
+#          cargo run -p posim --release
+#
+#      You will get the banner and an 'In[1]:=' prompt.
+#
+#   2. Build a scene. You must create bodies BEFORE opening the window,
+#      because the window shows the entities that exist when it is created.
+#      (The command lines further down this notebook do exactly that.)
+#
+#   3. Open the window:
+#
+#          scene create
+#
+#      posim replies with, for example:
+#
+#          scene window created: http://127.0.0.1:41234/
+#          (opened in your browser; if no window appeared, open that address
+#           yourself)
+#          showing 4 entities; SCENE START begins the evolution
+#
+#      The port is chosen freely each run. To pin it, pass one:
+#
+#          scene create 8080
+#
+#      then the address is always http://127.0.0.1:8080/ .
+#
+#   4. If no browser opened by itself, copy the printed address into any
+#      browser (Firefox, Chrome, Safari, Edge - it is plain HTML, CSS and
+#      JavaScript over a websocket; nothing else is required).
+#
+#   5. Drive the animation from the SAME posim prompt while the page is open:
+#
+#          scene start          begin evolving
+#          scene pause          freeze
+#          scene stop           halt
+#          scene reverse        play backwards through the snapshot history
+#          scene set_time_step 0.001      seconds of simulated time per frame
+#          scene refresh        re-read the body list after adding bodies
+#          scene close          shut the window and free the port
+#
+#      In the page itself: drag with the mouse to orbit, scroll to zoom,
+#      shift-drag or the arrow keys to pan, and the on-screen buttons mirror
+#      the commands above.
+#
+#   6. HELP lists every scene command with its arguments.
+#
+# TROUBLESHOOTING, precisely:
+#   * 'no scene window - run SCENE CREATE first' means step 3 was skipped.
+#   * A blank page means no bodies existed at 'scene create' time: add them,
+#     then issue 'scene refresh'.
+#   * If the port is busy, 'scene close' then 'scene create <other port>'.
+#   * The window is local only (127.0.0.1). It is not reachable from another
+#     machine, by design.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# ANIMATING THIS STAGE - FULLY POSSIBLE, AND THE BEST WAY TO SEE IT
+# ---------------------------------------------------------------------------
+#
+# This stage animates properly: it is a rigid-body scene with six bodies in
+# a box, which is exactly what the 3-D scene window draws.
+#
+# COMPLETE PROCEDURE, from nothing to a moving picture:
+#
+#   1. cargo run -p posim --release
+#
+#   2. Paste the scenario lines from the section above, down to and
+#      including the last 'new cylinder { ... }' line. Do NOT run the
+#      'run' commands yet.
+#
+#   3. Open the window:
+#          scene create
+#      posim replies with an address such as
+#          scene window created: http://127.0.0.1:41234/
+#      and normally opens it for you. If it did not, paste that address
+#      into any browser. To pin the port instead, use  scene create 8080
+#      and the address is always http://127.0.0.1:8080/ .
+#
+#   4. Set the playback step. THIS MATTERS FOR THIS STAGE. The point
+#      crosses the 4-unit box in about 0.016 time units, so:
+#          scene set_time_step 0.0002
+#      gives smooth, correct-looking motion.
+#
+#   5. scene zoom 2
+#      scene start
+#
+#   6. Drag to orbit, scroll to zoom, shift-drag or arrow keys to pan.
+#      scene pause / scene stop / scene reverse all work while watching.
+#
+# THE EXPERIMENT TO WATCH: set  scene set_time_step 0.1  instead - 500x
+# larger, about 24 units of travel per frame inside a 4-unit box. Before
+# the repair this ran happily at 37 fps and destroyed the physics silently.
+# After the repair the energy holds. Use 'energy' at the prompt while the
+# window runs to read the invariant as it plays.
+#
+#   7. scene close   when finished, to shut the window and free the port.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# RECREATING THE STAGE SCENARIO
+# ---------------------------------------------------------------------------
+#
+# The scenario is a heavy point ricocheting inside a rigid box among five
+# other bodies. Gravity is off and every restitution is 1, so all collisions
+# are perfectly elastic and the total energy is an exact invariant:
+#
+#     E = 1/2 * m * |v|^2 = 1/2 * 32 * 60000 = 960000
+#
+set system.g_constant = 0
+box 4
+new torus { mass = 1, inner_radius = 1, outer_radius = 2, orientation = [0.888073833977115, -0.325057583671868, 0.325057583671868, 0] }
+new point { mass = 32, position = [1.406590, -0.995859, 0.569601], velocity = [100, 200, 100] }
+new sphere { mass = 2, radius = 1/2, position = [1.424704, 1.367496, -0.493612] }
+new disk { mass = 2/3, radius = 1, position = [-0.677386, -1.041493, -1.091679], orientation = [0.900447102352677, 0.307567078752479, -0.307567078752479, 0] }
+new cuboid { mass = 5/3, half_extents = [0.5, 0.5, 0.5], position = [1.074397, 0.816223, 1.102099] }
+new cylinder { mass = 2, radius = 1/2, height = 3/2, position = [-1.027024, -1.403890, -0.485619], orientation = [0.968912421710645, 0, 0.247403959254523, 0] }
+
+# Confirm the starting energy: 960000.
+energy
+
+# THE EXPERIMENT. Run to t = 1 asking for 1000 snapshots, and read the
+# energy drift reported on the run line.
+run 1 steps 1000
+energy
+
+# Now the SAME physics with only 8 snapshots. Before the repair this
+# destroyed 23% of the energy and resolved 898 collisions instead of 9293.
+# After the repair it resolves ~9160 and conserves to ~1e-7.
+reset
+set system.g_constant = 0
+box 4
+new torus { mass = 1, inner_radius = 1, outer_radius = 2, orientation = [0.888073833977115, -0.325057583671868, 0.325057583671868, 0] }
+new point { mass = 32, position = [1.406590, -0.995859, 0.569601], velocity = [100, 200, 100] }
+new sphere { mass = 2, radius = 1/2, position = [1.424704, 1.367496, -0.493612] }
+new disk { mass = 2/3, radius = 1, position = [-0.677386, -1.041493, -1.091679], orientation = [0.900447102352677, 0.307567078752479, -0.307567078752479, 0] }
+new cuboid { mass = 5/3, half_extents = [0.5, 0.5, 0.5], position = [1.074397, 0.816223, 1.102099] }
+new cylinder { mass = 2, radius = 1/2, height = 3/2, position = [-1.027024, -1.403890, -0.485619], orientation = [0.968912421710645, 0, 0.247403959254523, 0] }
+run 1 steps 8
+energy
+
+# The two energies should now agree to about seven digits. That agreement
+# is the repair.
+
+# ===========================================================================
+# END OF STAGE #2C NOTEBOOK
+# ===========================================================================

@@ -1,0 +1,210 @@
+# ===========================================================================
+# STAGE #2D - DLMF 10.20 past the turning point
+# ===========================================================================
+#
+# A band of parameter space stayed uncovered for three stages because a note explaining a limit had become a reason not to revisit it.
+#
+# This notebook is COMPLETE IN ITSELF. It does not depend on, and does not
+# refer you to, any other notebook. Everything needed to reproduce, run,
+# view and understand this stage is written out below.
+#
+# WHAT THIS STAGE WAS ABOUT
+#
+# An earlier stage had measured a band that no method would serve:
+# 1 < |z/nu| < 8 away from the real axis. The Airy-type expansion of
+# DLMF 10.20 is UNIFORMLY VALID across exactly that band - but it had been
+# restricted to a small neighbourhood of the turning point |z| ~ |nu|, and
+# the module documentation said that outside that neighbourhood '10.20 is
+# not the right tool anyway'.
+#
+# That sentence was wrong, and it had been standing long enough to read as
+# settled. It is the reason the band stayed open through a later stage that
+# MEASURED the gap without connecting it to the expansion sitting next to it.
+#
+# THE REAL OBSTACLE WAS A BRANCH, NOT A LIMIT.
+#
+# The expansion needs the variable zeta, defined by
+#
+#     (2/3) zeta^(3/2) = ln((1 + s)/x) - s ,     s = (1 - x^2)^(1/2)
+#
+# with x = z/nu. zeta is ANALYTIC through the turning point - the two real
+# formulas either side of x = 1 are one function - but the EXPRESSION is
+# not: s, the logarithm and the 2/3 power each carry a branch, and taking
+# all three principal gives the wrong answer beyond x = 1. Measured on the
+# real axis at x > 1, the principal value comes out at arg = pi/3 where the
+# truth is arg = pi: a cube-root branch away.
+#
+# THE FIX - CHOOSE THE BRANCH AGAINST A KNOWN LEADING BEHAVIOUR.
+#
+# As w = 1 - x tends to 0, zeta ~ 2^(1/3) w, so the exponent's argument must
+# approach 1.5 * arg(w). Unwrapping to the representative nearest that value
+# pins the branch everywhere. This is the same technique an earlier stage
+# reached for a different expansion, reused deliberately.
+#
+# VERIFIED TWO WAYS, sharing no arithmetic with it:
+#   * against a 70-digit generated Taylor series, over ~1000 points around
+#     the FULL circle in w - agreement better than 1e-9;
+#   * against the real-order routine on both sides of the turning point,
+#     including that zeta must come out NEGATIVE past x = 1.
+#
+# RESULT: coverage of the band went from 41.0% to 97.5% inside
+# |arg(z/nu)| <= 0.8. Beyond that sector the branch anchor is not measured
+# and the route REFUSES rather than guessing - so what remains open is the
+# same band at large argument, honestly stated.
+
+# ---------------------------------------------------------------------------
+# HOW TO RUN THIS NOTEBOOK
+# ---------------------------------------------------------------------------
+#
+# Everything below is posim notebook source. Lines beginning with '#' are
+# comments and are ignored by the interpreter; every other line is a command
+# that will be executed in order.
+#
+# From the repository root (the directory holding Cargo.toml), run ONE of:
+#
+#     cargo run -p posim --release -- --notebook StageNbks/Stage_2D.posim
+#     cargo run -p posim --release -- --script   StageNbks/Stage_2D.posim
+#
+#   --notebook  prints an In[n]:= / Out[n]= transcript, like a Mathematica
+#               notebook. This is the mode to use when reading along.
+#   --script    prints the same transcript; the two differ only in how the
+#               prompt lines are laid out. Either is reproducible.
+#
+# To work through it by hand instead, start the interactive interpreter:
+#
+#     cargo run -p posim --release
+#
+# and paste the command lines one at a time. Type HELP for the full command
+# language, and %quit to leave.
+#
+# First run will compile the workspace (a few minutes). Later runs are
+# immediate. If 'cargo' is not found, install Rust from https://rustup.rs .
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# LAUNCHING THE BROWSER GUI TO INVESTIGATE THIS STAGE
+# ---------------------------------------------------------------------------
+#
+# posim ships a live 3-D scene window that is served over HTTP and viewed in
+# an ordinary web browser. There is no separate application to install.
+#
+# COMPLETE PROCEDURE, from nothing to a moving picture:
+#
+#   1. Open a terminal at the repository root and start posim interactively:
+#
+#          cargo run -p posim --release
+#
+#      You will get the banner and an 'In[1]:=' prompt.
+#
+#   2. Build a scene. You must create bodies BEFORE opening the window,
+#      because the window shows the entities that exist when it is created.
+#      (The command lines further down this notebook do exactly that.)
+#
+#   3. Open the window:
+#
+#          scene create
+#
+#      posim replies with, for example:
+#
+#          scene window created: http://127.0.0.1:41234/
+#          (opened in your browser; if no window appeared, open that address
+#           yourself)
+#          showing 4 entities; SCENE START begins the evolution
+#
+#      The port is chosen freely each run. To pin it, pass one:
+#
+#          scene create 8080
+#
+#      then the address is always http://127.0.0.1:8080/ .
+#
+#   4. If no browser opened by itself, copy the printed address into any
+#      browser (Firefox, Chrome, Safari, Edge - it is plain HTML, CSS and
+#      JavaScript over a websocket; nothing else is required).
+#
+#   5. Drive the animation from the SAME posim prompt while the page is open:
+#
+#          scene start          begin evolving
+#          scene pause          freeze
+#          scene stop           halt
+#          scene reverse        play backwards through the snapshot history
+#          scene set_time_step 0.001      seconds of simulated time per frame
+#          scene refresh        re-read the body list after adding bodies
+#          scene close          shut the window and free the port
+#
+#      In the page itself: drag with the mouse to orbit, scroll to zoom,
+#      shift-drag or the arrow keys to pan, and the on-screen buttons mirror
+#      the commands above.
+#
+#   6. HELP lists every scene command with its arguments.
+#
+# TROUBLESHOOTING, precisely:
+#   * 'no scene window - run SCENE CREATE first' means step 3 was skipped.
+#   * A blank page means no bodies existed at 'scene create' time: add them,
+#     then issue 'scene refresh'.
+#   * If the port is busy, 'scene close' then 'scene create <other port>'.
+#   * The window is local only (127.0.0.1). It is not reachable from another
+#     machine, by design.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# ANIMATION: NOT POSSIBLE HERE, AND THE EXACT REASON WHY
+# ---------------------------------------------------------------------------
+#
+# This stage cannot be animated, and the cause is precise rather than a
+# matter of effort:
+#
+#   The scene window renders SIMULATOR ENTITIES. Concretely, it draws the
+#   bodies held in the PhysicalObjectSystem - points, spheres, cuboids,
+#   tori, disks, cylinders and dumbbells - by reading their positions and
+#   orientations each frame and sending them over a websocket.
+#
+#   This stage evaluates SPECIAL FUNCTIONS. A call such as
+#   bessel_j_nu(0.5, 2.0) creates no body, has no position, and has no time
+#   coordinate: it is a pure function of its arguments. There is therefore
+#   nothing for the renderer to draw, and 'scene create' on this session
+#   would open a window showing an empty grid and the world axes.
+#
+#   That is not a defect and there is no workaround inside the scene window.
+#   A function of a complex variable is not a moving object.
+#
+# What you CAN watch instead, and how, is written in the section above: the
+# numbers printed by the command lines below change as you vary the order
+# and the argument, and that variation IS the phenomenon this stage is about.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# RECREATING THE STAGE SCENARIO
+# ---------------------------------------------------------------------------
+#
+# The band in question is |z| a few times |nu|. These lines walk across it
+# at several orders. Every one of them was refused before this stage and is
+# answered now.
+
+# Moderate order, argument ratio inside the band.
+bessel_j_nu(12.0, 24.0)
+bessel_y_nu(12.0, 24.0)
+
+# Larger order, same ratio.
+bessel_j_nu(30.0, 60.0)
+bessel_y_nu(30.0, 60.0)
+
+# Walk the ratio from just past the turning point out to the edge of the
+# band. The turning point is z/nu = 1; the 1/z expansions need |4 nu^2|
+# small compared with |z|, which at nu = 20 means |z| well past 1600.
+bessel_j_nu(20.0, 22.0)
+bessel_j_nu(20.0, 30.0)
+bessel_j_nu(20.0, 60.0)
+bessel_j_nu(20.0, 120.0)
+
+# The referee. J_(nu+1) Y_nu - J_nu Y_(nu+1) = 2/(pi z), whose right-hand
+# side contains no Bessel function at all. Compute both sides at a point
+# well inside the band and compare.
+bessel_j_nu(21.0, 60.0) * bessel_y_nu(20.0, 60.0) - bessel_j_nu(20.0, 60.0) * bessel_y_nu(21.0, 60.0)
+2 / (3.14159265358979 * 60.0)
+
+# Those agree to about fifteen digits. Repeat at nu = 30, z = 60 by editing
+# the four orders and the argument; the identity holds there too.
+
+# ===========================================================================
+# END OF STAGE #2D NOTEBOOK
+# ===========================================================================

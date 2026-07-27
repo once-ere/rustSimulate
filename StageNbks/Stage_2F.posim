@@ -1,0 +1,203 @@
+# ===========================================================================
+# STAGE #2F - Mutation-probing the numerical core
+# ===========================================================================
+#
+# A passing suite is evidence only if a broken program would fail it. Breaking the program deliberately, in fourteen places.
+#
+# This notebook is COMPLETE IN ITSELF. It does not depend on, and does not
+# refer you to, any other notebook. Everything needed to reproduce, run,
+# view and understand this stage is written out below.
+#
+# WHAT THIS STAGE WAS ABOUT
+#
+# The dominant failure mode in this project's history is A CHECK THAT CANNOT
+# FAIL. Three examples, all real:
+#
+#   * a certification gate anchored '^' against '<sha> <path>' lines, which
+#     matched the SHA and never fired - it reported PASS with 676 forbidden
+#     objects present;
+#   * a Wronskian residual scaled by its own largest term, reporting 8.2e-24
+#     while actually measuring the ratio |H1/H2| and nothing about accuracy;
+#   * a refusal test that looped over cases and fell through to SUCCESS when
+#     nothing was refused.
+#
+# Every one looked like coverage. Mutation testing existed only as a
+# sentence claiming two of the smallest modules had been checked, with no
+# artifact anyone could re-run.
+#
+# WHAT WAS BUILT. scripts/mutation_probe.sh breaks the program deliberately
+# in the places where the real defects have historically lived - branch
+# discriminators, sector and validity guards, safety factors, estimate
+# floors, sampling offsets - and requires the suite to catch each one. The
+# exit status is the number of survivors.
+#
+# RESULT: 10 of 14 caught. The four survivors were worked through rather
+# than filed, because a survivor is not automatically a bug - it may be an
+# EQUIVALENT MUTANT, a change that cannot alter behaviour in the domain the
+# code serves.
+#
+# THE MOST VALUABLE OUTPUT WAS AN EXPLAINED SURVIVOR. Chasing one of them
+# revealed that a verification written one stage earlier had compared two
+# routes IN THEIR OVERLAP - precisely the region where the answer was
+# already known - and never exercised the far field the new code exists to
+# serve. It was a real test, it passed, and it verified the wrong region.
+# Reading it would not have revealed that; it looks exactly right.
+#
+# THE HARNESS HAD TO BE MADE TRUSTWORTHY TWICE, and both failures were the
+# thing it exists to prevent:
+#   * its table used '|' as a delimiter, which collides with Rust closure
+#     syntax '|i|'. A search string was split in half, a mutation NOBODY
+#     CHOSE was applied, and it was reported CAUGHT.
+#   * a rule that every anchor must match EXACTLY ONCE, or the run aborts,
+#     fired for real on an anchor matching 0 and one matching 3.
+
+# ---------------------------------------------------------------------------
+# HOW TO RUN THIS NOTEBOOK
+# ---------------------------------------------------------------------------
+#
+# Everything below is posim notebook source. Lines beginning with '#' are
+# comments and are ignored by the interpreter; every other line is a command
+# that will be executed in order.
+#
+# From the repository root (the directory holding Cargo.toml), run ONE of:
+#
+#     cargo run -p posim --release -- --notebook StageNbks/Stage_2F.posim
+#     cargo run -p posim --release -- --script   StageNbks/Stage_2F.posim
+#
+#   --notebook  prints an In[n]:= / Out[n]= transcript, like a Mathematica
+#               notebook. This is the mode to use when reading along.
+#   --script    prints the same transcript; the two differ only in how the
+#               prompt lines are laid out. Either is reproducible.
+#
+# To work through it by hand instead, start the interactive interpreter:
+#
+#     cargo run -p posim --release
+#
+# and paste the command lines one at a time. Type HELP for the full command
+# language, and %quit to leave.
+#
+# First run will compile the workspace (a few minutes). Later runs are
+# immediate. If 'cargo' is not found, install Rust from https://rustup.rs .
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# LAUNCHING THE BROWSER GUI TO INVESTIGATE THIS STAGE
+# ---------------------------------------------------------------------------
+#
+# posim ships a live 3-D scene window that is served over HTTP and viewed in
+# an ordinary web browser. There is no separate application to install.
+#
+# COMPLETE PROCEDURE, from nothing to a moving picture:
+#
+#   1. Open a terminal at the repository root and start posim interactively:
+#
+#          cargo run -p posim --release
+#
+#      You will get the banner and an 'In[1]:=' prompt.
+#
+#   2. Build a scene. You must create bodies BEFORE opening the window,
+#      because the window shows the entities that exist when it is created.
+#      (The command lines further down this notebook do exactly that.)
+#
+#   3. Open the window:
+#
+#          scene create
+#
+#      posim replies with, for example:
+#
+#          scene window created: http://127.0.0.1:41234/
+#          (opened in your browser; if no window appeared, open that address
+#           yourself)
+#          showing 4 entities; SCENE START begins the evolution
+#
+#      The port is chosen freely each run. To pin it, pass one:
+#
+#          scene create 8080
+#
+#      then the address is always http://127.0.0.1:8080/ .
+#
+#   4. If no browser opened by itself, copy the printed address into any
+#      browser (Firefox, Chrome, Safari, Edge - it is plain HTML, CSS and
+#      JavaScript over a websocket; nothing else is required).
+#
+#   5. Drive the animation from the SAME posim prompt while the page is open:
+#
+#          scene start          begin evolving
+#          scene pause          freeze
+#          scene stop           halt
+#          scene reverse        play backwards through the snapshot history
+#          scene set_time_step 0.001      seconds of simulated time per frame
+#          scene refresh        re-read the body list after adding bodies
+#          scene close          shut the window and free the port
+#
+#      In the page itself: drag with the mouse to orbit, scroll to zoom,
+#      shift-drag or the arrow keys to pan, and the on-screen buttons mirror
+#      the commands above.
+#
+#   6. HELP lists every scene command with its arguments.
+#
+# TROUBLESHOOTING, precisely:
+#   * 'no scene window - run SCENE CREATE first' means step 3 was skipped.
+#   * A blank page means no bodies existed at 'scene create' time: add them,
+#     then issue 'scene refresh'.
+#   * If the port is busy, 'scene close' then 'scene create <other port>'.
+#   * The window is local only (127.0.0.1). It is not reachable from another
+#     machine, by design.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# ANIMATION: NOT POSSIBLE HERE, AND THE EXACT REASON WHY
+# ---------------------------------------------------------------------------
+#
+# This stage cannot be animated, and the cause is precise:
+#
+#   The subject of this stage is the PROJECT'S OWN VERIFICATION MACHINERY -
+#   shell scripts and test code that run at build time. It has no state that
+#   evolves in simulated time, no bodies, and no wavefunction. The scene
+#   window animates the contents of a PhysicalObjectSystem over time; this
+#   stage never constructs one.
+#
+#   Opening 'scene create' during this stage would produce a window showing
+#   an empty ground grid and the world axes, and 'scene start' would advance
+#   a simulation containing nothing.
+#
+#   There is no workaround, because there is nothing in motion to show. The
+#   observable output of this stage is the PASS/FAIL text printed by the
+#   commands in the section above, and that text is the result.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# RECREATING THE STAGE SCENARIO
+# ---------------------------------------------------------------------------
+#
+# This stage's subject is a shell harness, not a simulation. Run these AT
+# THE REPOSITORY ROOT, in a normal shell.
+#
+# IMPORTANT: the harness EDITS SOURCE FILES IN PLACE and restores them with
+# 'git checkout'. It refuses to run if the tree has uncommitted changes, so
+# that it cannot discard your work. Commit or stash first.
+#
+#     bash scripts/mutation_probe.sh
+#
+# It prints one line per mutation - 'caught' or 'SURVIVED' - then a summary.
+# A full run compiles and tests once per mutation, so allow several minutes.
+#
+# To run a subset, pass a substring of the mutation id:
+#
+#     bash scripts/mutation_probe.sh debye     # only the Debye mutations
+#     bash scripts/mutation_probe.sh zeno      # only the collision guard
+#     bash scripts/mutation_probe.sh airy
+#
+# TO SEE THE HARNESS'S OWN SAFETY RULE FIRE, edit the table inside the
+# script and change any anchor string so that it no longer appears in its
+# file, or appears twice. The run ABORTS with an explanation rather than
+# applying a mutation that would land somewhere unintended.
+#
+# The posim line below is here only so that this notebook still executes as
+# a notebook; the simulator is not the subject of this stage. It prints the
+# number of certification gates the script above runs.
+13
+
+# ===========================================================================
+# END OF STAGE #2F NOTEBOOK
+# ===========================================================================

@@ -1,0 +1,207 @@
+# ===========================================================================
+# STAGE #2E - Mechanising the staleness rule
+# ===========================================================================
+#
+# Three stages in a row wrote 'treat documentation as a claim with an expiry date' as an action. This one made the build enforce it.
+#
+# This notebook is COMPLETE IN ITSELF. It does not depend on, and does not
+# refer you to, any other notebook. Everything needed to reproduce, run,
+# view and understand this stage is written out below.
+#
+# WHAT THIS STAGE WAS ABOUT
+#
+# Three consecutive stages had each ended by finding prose that was accurate
+# when written and false by the time it was read - and each had ended by
+# writing 'treat documentation as a claim with an expiry date' as an ACTION.
+#
+# An action written three times and never enforced is the failure mode this
+# project already has a name for: a rule kept by discipline is a rule not
+# kept.
+#
+# WHAT THE AUDIT FOUND BEFORE THE GATE EXISTED. Two more live claims, both
+# in PROVENANCE documents - the files a reader uses to audit the release:
+#
+#     CLEANROOM_PROVENANCE.md        '230 passed, 0 failed'   (actual 556)
+#     SPECIAL_FUNCTIONS_PROVENANCE   '256 tests pass'         (actual 556)
+#
+# The first is instructive: 230 happened to be the current lib-test count of
+# one crate, so the stale number looked plausible against a real figure from
+# the same tree. Staleness does not usually announce itself as absurd.
+#
+# THE TWO GATES ADDED
+#
+#  1. DOCUMENTED TEST COUNTS MUST MATCH THE TREE. Only two canonical LIVE
+#     phrasings are read - 'expect N passed' and 'N passed workspace-wide' -
+#     and every occurrence must equal the measured total.
+#
+#  2. NO RETIRED CLAIM MAY REAPPEAR. A list of real sentences that shipped
+#     and became false, each tagged with the stage that retired it.
+#
+# THE HARD PART WAS NOT DETECTION - IT WAS NOT CRYING WOLF.
+#
+#   * A RECORD IS NOT A CLAIM. One document legitimately RECORDS '104
+#     passed' as the state at export time; another records 304 for its
+#     round. Those are history and must not be rewritten. So the stale live
+#     claims were rewritten INTO the canonical form rather than the gate
+#     being made blunter.
+#
+#   * QUOTING A CLAIM IS NOT ASSERTING IT. Two files quote their retired
+#     sentence WHILE EXPLAINING that it was retired - exactly the wanted
+#     behaviour - so quoted spans are stripped before matching. A gate that
+#     punishes the honest write-up teaches people to stop writing carefully.
+#
+# Both gates carry self-tests, and both were verified to FAIL on
+# deliberately reintroduced staleness before being trusted. The script's own
+# history is why: its first version shipped a check anchored '^' against
+# '<sha> <path>' lines and reported PASS with 676 forbidden objects present.
+
+# ---------------------------------------------------------------------------
+# HOW TO RUN THIS NOTEBOOK
+# ---------------------------------------------------------------------------
+#
+# Everything below is posim notebook source. Lines beginning with '#' are
+# comments and are ignored by the interpreter; every other line is a command
+# that will be executed in order.
+#
+# From the repository root (the directory holding Cargo.toml), run ONE of:
+#
+#     cargo run -p posim --release -- --notebook StageNbks/Stage_2E.posim
+#     cargo run -p posim --release -- --script   StageNbks/Stage_2E.posim
+#
+#   --notebook  prints an In[n]:= / Out[n]= transcript, like a Mathematica
+#               notebook. This is the mode to use when reading along.
+#   --script    prints the same transcript; the two differ only in how the
+#               prompt lines are laid out. Either is reproducible.
+#
+# To work through it by hand instead, start the interactive interpreter:
+#
+#     cargo run -p posim --release
+#
+# and paste the command lines one at a time. Type HELP for the full command
+# language, and %quit to leave.
+#
+# First run will compile the workspace (a few minutes). Later runs are
+# immediate. If 'cargo' is not found, install Rust from https://rustup.rs .
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# LAUNCHING THE BROWSER GUI TO INVESTIGATE THIS STAGE
+# ---------------------------------------------------------------------------
+#
+# posim ships a live 3-D scene window that is served over HTTP and viewed in
+# an ordinary web browser. There is no separate application to install.
+#
+# COMPLETE PROCEDURE, from nothing to a moving picture:
+#
+#   1. Open a terminal at the repository root and start posim interactively:
+#
+#          cargo run -p posim --release
+#
+#      You will get the banner and an 'In[1]:=' prompt.
+#
+#   2. Build a scene. You must create bodies BEFORE opening the window,
+#      because the window shows the entities that exist when it is created.
+#      (The command lines further down this notebook do exactly that.)
+#
+#   3. Open the window:
+#
+#          scene create
+#
+#      posim replies with, for example:
+#
+#          scene window created: http://127.0.0.1:41234/
+#          (opened in your browser; if no window appeared, open that address
+#           yourself)
+#          showing 4 entities; SCENE START begins the evolution
+#
+#      The port is chosen freely each run. To pin it, pass one:
+#
+#          scene create 8080
+#
+#      then the address is always http://127.0.0.1:8080/ .
+#
+#   4. If no browser opened by itself, copy the printed address into any
+#      browser (Firefox, Chrome, Safari, Edge - it is plain HTML, CSS and
+#      JavaScript over a websocket; nothing else is required).
+#
+#   5. Drive the animation from the SAME posim prompt while the page is open:
+#
+#          scene start          begin evolving
+#          scene pause          freeze
+#          scene stop           halt
+#          scene reverse        play backwards through the snapshot history
+#          scene set_time_step 0.001      seconds of simulated time per frame
+#          scene refresh        re-read the body list after adding bodies
+#          scene close          shut the window and free the port
+#
+#      In the page itself: drag with the mouse to orbit, scroll to zoom,
+#      shift-drag or the arrow keys to pan, and the on-screen buttons mirror
+#      the commands above.
+#
+#   6. HELP lists every scene command with its arguments.
+#
+# TROUBLESHOOTING, precisely:
+#   * 'no scene window - run SCENE CREATE first' means step 3 was skipped.
+#   * A blank page means no bodies existed at 'scene create' time: add them,
+#     then issue 'scene refresh'.
+#   * If the port is busy, 'scene close' then 'scene create <other port>'.
+#   * The window is local only (127.0.0.1). It is not reachable from another
+#     machine, by design.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# ANIMATION: NOT POSSIBLE HERE, AND THE EXACT REASON WHY
+# ---------------------------------------------------------------------------
+#
+# This stage cannot be animated, and the cause is precise:
+#
+#   The subject of this stage is the PROJECT'S OWN VERIFICATION MACHINERY -
+#   shell scripts and test code that run at build time. It has no state that
+#   evolves in simulated time, no bodies, and no wavefunction. The scene
+#   window animates the contents of a PhysicalObjectSystem over time; this
+#   stage never constructs one.
+#
+#   Opening 'scene create' during this stage would produce a window showing
+#   an empty ground grid and the world axes, and 'scene start' would advance
+#   a simulation containing nothing.
+#
+#   There is no workaround, because there is nothing in motion to show. The
+#   observable output of this stage is the PASS/FAIL text printed by the
+#   commands in the section above, and that text is the result.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# RECREATING THE STAGE SCENARIO
+# ---------------------------------------------------------------------------
+#
+# This stage's subject is a shell script, not a simulation, so the scenario
+# is recreated from a terminal rather than from posim. Run these AT THE
+# REPOSITORY ROOT, in a normal shell:
+#
+#     bash scripts/certify_clean.sh
+#
+# Expect thirteen PASS lines and a final CLEAN, including these two, which
+# are the gates this stage added:
+#
+#     PASS  documented test counts match the tree (561)
+#     PASS  no retired claim has reappeared
+#
+# TO PROVE THE GATES CAN ACTUALLY FAIL - which is the whole point, and was
+# done before trusting them - break the tree deliberately and watch:
+#
+#     sed -i 's/expect 561 passed/expect 104 passed/' EXPORT_PROVENANCE.md
+#     bash scripts/certify_clean.sh          # -> FAIL, naming the file
+#     git checkout -- EXPORT_PROVENANCE.md   # put it back
+#
+#     printf '\nThe defect remains unfixed.\n' >> PROJECT_STATUS.md
+#     bash scripts/certify_clean.sh          # -> FAIL, naming the sentence
+#     git checkout -- PROJECT_STATUS.md      # put it back
+#
+# The posim line below is here only so that this notebook still executes as
+# a notebook; the simulator is not the subject of this stage. It prints the
+# number of certification gates the script above runs.
+13
+
+# ===========================================================================
+# END OF STAGE #2E NOTEBOOK
+# ===========================================================================

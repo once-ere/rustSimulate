@@ -1,0 +1,225 @@
+# ===========================================================================
+# STAGE #2B - T(E) by transfer matrix, and an absorber that is designed
+# ===========================================================================
+#
+# Resonance peaks a wavepacket can never resolve, and an absorbing boundary computed instead of tuned.
+#
+# This notebook is COMPLETE IN ITSELF. It does not depend on, and does not
+# refer you to, any other notebook. Everything needed to reproduce, run,
+# view and understand this stage is written out below.
+#
+# WHAT THIS STAGE WAS ABOUT
+#
+# Three gaps had been recorded. One turned out to be already closed, and
+# saying so was part of the work.
+#
+# GAP 1 - RESONANCES NEED T(E), NOT WAVEPACKETS.
+#
+# A double barrier has quasi-bound states: at particular energies a wave
+# tunnels through almost perfectly, and between them hardly at all. An
+# earlier round tried to see those peaks by firing wavepackets and reading
+# off what came through. It found a smooth monotone rise and NO peak, tried
+# a four-times narrower packet in k, still found none, and recorded the
+# negative result rather than tuning until something appeared.
+#
+# The diagnosis was right: a packet is a SUPERPOSITION of energies, so what
+# it reports is T(E) AVERAGED over its own momentum spread. Narrowing the
+# packet in k means widening it in x, which needs a longer domain and a
+# longer run - and a resonance can always be made narrower than whatever
+# packet you can afford.
+#
+# A transfer matrix removes the packet from the question. It solves the
+# time-INDEPENDENT equation at ONE energy. The method carries (psi, psi')
+# across each cell, and because both are continuous there are no interface
+# matrices - the cell matrices simply multiply:
+#
+#     [ psi  ]     [   cos(k d)     sin(k d)/k ] [ psi  ]
+#     [ psi' ]  =  [ -k sin(k d)    cos(k d)   ] [ psi' ]
+#
+# It is EXACT when the potential is piecewise constant on the cells, and
+# second order otherwise.
+#
+# GAP 2 - THE ABSORBER WAS HAND-TUNED.
+#
+# An absorbing boundary lets a packet leave without bouncing off the wall.
+# It was tuned by firing Gaussians for 5000 steps and looking. But an
+# absorber is a POTENTIAL, so what it does to a wave of wavenumber k is a
+# fixed-energy scattering problem - which the transfer matrix solves
+# exactly, in 0.2 ms, with no packet at all.
+#
+# That also SEPARATES the two failure modes the packet sweep could only see
+# the sum of: R is reflection off a too-strong absorber, T is leakage
+# through a too-weak one. The practical conclusion follows immediately and
+# could not have come from packets: over a band of wavenumbers the worst
+# case is set by the LONGEST wavelength, and the cure for that is WIDTH,
+# not strength.
+#
+# GAP 3 - '2-D NEEDS ADI' WAS STALE.
+#
+# The two-dimensional solver had been ADI since an earlier stage: Strang-
+# composed Cayley steps, exactly unitary at any dt, O(nx*ny) per step.
+# Nothing to implement. Checking cost one grep and saved building something
+# that already existed.
+
+# ---------------------------------------------------------------------------
+# HOW TO RUN THIS NOTEBOOK
+# ---------------------------------------------------------------------------
+#
+# Everything below is posim notebook source. Lines beginning with '#' are
+# comments and are ignored by the interpreter; every other line is a command
+# that will be executed in order.
+#
+# From the repository root (the directory holding Cargo.toml), run ONE of:
+#
+#     cargo run -p posim --release -- --notebook StageNbks/Stage_2B.posim
+#     cargo run -p posim --release -- --script   StageNbks/Stage_2B.posim
+#
+#   --notebook  prints an In[n]:= / Out[n]= transcript, like a Mathematica
+#               notebook. This is the mode to use when reading along.
+#   --script    prints the same transcript; the two differ only in how the
+#               prompt lines are laid out. Either is reproducible.
+#
+# To work through it by hand instead, start the interactive interpreter:
+#
+#     cargo run -p posim --release
+#
+# and paste the command lines one at a time. Type HELP for the full command
+# language, and %quit to leave.
+#
+# First run will compile the workspace (a few minutes). Later runs are
+# immediate. If 'cargo' is not found, install Rust from https://rustup.rs .
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# LAUNCHING THE BROWSER GUI TO INVESTIGATE THIS STAGE
+# ---------------------------------------------------------------------------
+#
+# posim ships a live 3-D scene window that is served over HTTP and viewed in
+# an ordinary web browser. There is no separate application to install.
+#
+# COMPLETE PROCEDURE, from nothing to a moving picture:
+#
+#   1. Open a terminal at the repository root and start posim interactively:
+#
+#          cargo run -p posim --release
+#
+#      You will get the banner and an 'In[1]:=' prompt.
+#
+#   2. Build a scene. You must create bodies BEFORE opening the window,
+#      because the window shows the entities that exist when it is created.
+#      (The command lines further down this notebook do exactly that.)
+#
+#   3. Open the window:
+#
+#          scene create
+#
+#      posim replies with, for example:
+#
+#          scene window created: http://127.0.0.1:41234/
+#          (opened in your browser; if no window appeared, open that address
+#           yourself)
+#          showing 4 entities; SCENE START begins the evolution
+#
+#      The port is chosen freely each run. To pin it, pass one:
+#
+#          scene create 8080
+#
+#      then the address is always http://127.0.0.1:8080/ .
+#
+#   4. If no browser opened by itself, copy the printed address into any
+#      browser (Firefox, Chrome, Safari, Edge - it is plain HTML, CSS and
+#      JavaScript over a websocket; nothing else is required).
+#
+#   5. Drive the animation from the SAME posim prompt while the page is open:
+#
+#          scene start          begin evolving
+#          scene pause          freeze
+#          scene stop           halt
+#          scene reverse        play backwards through the snapshot history
+#          scene set_time_step 0.001      seconds of simulated time per frame
+#          scene refresh        re-read the body list after adding bodies
+#          scene close          shut the window and free the port
+#
+#      In the page itself: drag with the mouse to orbit, scroll to zoom,
+#      shift-drag or the arrow keys to pan, and the on-screen buttons mirror
+#      the commands above.
+#
+#   6. HELP lists every scene command with its arguments.
+#
+# TROUBLESHOOTING, precisely:
+#   * 'no scene window - run SCENE CREATE first' means step 3 was skipped.
+#   * A blank page means no bodies existed at 'scene create' time: add them,
+#     then issue 'scene refresh'.
+#   * If the port is busy, 'scene close' then 'scene create <other port>'.
+#   * The window is local only (127.0.0.1). It is not reachable from another
+#     machine, by design.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# ANIMATION: PARTLY POSSIBLE, WITH THE EXACT LIMIT STATED
+# ---------------------------------------------------------------------------
+#
+# The MAIN RESULT of this stage cannot be animated, for a precise reason:
+#
+#   T(E) is a solution of the TIME-INDEPENDENT Schrodinger equation. It has
+#   no time coordinate. There is no state that evolves, so there is nothing
+#   to play as a film. Asking for an animation of T(E) is asking for a
+#   movie of a stationary quantity.
+#
+# What you CAN animate is the thing this stage replaced - the wavepacket
+# whose average obscured the peaks - and doing so is instructive:
+#
+#     qm grid -12 12 4800
+#     qm potential dbl
+#     qm packet -8 1.5 1.0
+#     qm method cayley
+#     qm animate "double_barrier_packet.html" 12 frames 240
+#
+# Then open the written file in any browser. On Linux:  xdg-open <file>
+# on macOS:  open <file>  - or use the browser's File > Open.
+#
+# WHAT TO LOOK FOR: the packet hits the barrier, part reflects, a little
+# transmits, and the film gives you ONE number for that packet - the
+# average of T(E) over its spread. Run 'qm scan' and you get the whole
+# curve including both peaks. The contrast between the film and the scan
+# IS the stage.
+#
+# NOTE ON THE 3-D SCENE WINDOW: 'scene create' draws rigid bodies. A
+# wavefunction is not one of them, so the window would show an empty grid
+# here. The HTML animation above is the correct viewer.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# RECREATING THE STAGE SCENARIO
+# ---------------------------------------------------------------------------
+#
+# A double barrier: two walls of height 3, each 0.5 wide, with a well of
+# width 3 between them. This language has comparison operators, so the
+# piecewise shape is an ordinary user function.
+def dbl(x) { 3 * ((abs(x) > 1.5) * (abs(x) < 2)) }
+
+# A domain wide enough that the potential has reached its asymptote at both
+# ends, sampled finely enough to resolve the barriers.
+qm grid -12 12 4800
+qm potential dbl
+
+# THE RESULT THE WAVEPACKET COULD NOT SEE. Scan T(E) at 1200 energies and
+# report the interior maxima. Expect two resonances at essentially unit
+# transmission - about E = 0.316 and E = 1.288.
+qm scan 0.05 2.9 1200
+
+# Between the peaks the same barrier is nearly opaque. Compare:
+qm transmission 0.5
+
+# Flux balance, T + R = 1, comes free with the method and holds at every
+# energy where the potential is real. It is printed on each line above.
+qm transmission 0.316
+qm transmission 1.288
+
+# Sharpen the scan around the lower peak to see how narrow it is. This is
+# the width that no affordable wavepacket could resolve.
+qm scan 0.30 0.33 400
+
+# ===========================================================================
+# END OF STAGE #2B NOTEBOOK
+# ===========================================================================

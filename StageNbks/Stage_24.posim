@@ -1,0 +1,226 @@
+# ===========================================================================
+# STAGE #24 - The sliver at 4 <= |nu| <= 8
+# ===========================================================================
+#
+# Why a whole band of Bessel parameter space had no usable method, and how measuring the instrument first changed the answer.
+#
+# This notebook is COMPLETE IN ITSELF. It does not depend on, and does not
+# refer you to, any other notebook. Everything needed to reproduce, run,
+# view and understand this stage is written out below.
+#
+# WHAT THIS STAGE WAS ABOUT
+#
+# The crate evaluates Bessel functions of COMPLEX ORDER by offering several
+# different expansions and picking whichever reports the smallest error
+# estimate. Each expansion is valid somewhere and useless elsewhere:
+#
+#   * the ascending series          - good for small |z|, loses digits as
+#                                     exp(|z|) grows
+#   * the 1/z asymptotic expansions - good for large |z|, needs |4 nu^2|
+#                                     small compared with |z|
+#   * the Debye expansion           - a large-order expansion
+#   * the Airy-type expansion       - valid near the turning point |z| ~ |nu|
+#
+# The task was a band where NONE of them would accept: |nu| between about 4
+# and 8, with |z| a few times larger. On a map of (order, argument ratio)
+# it is a thin diagonal strip, which is why it was called a 'sliver'.
+#
+# WHAT WAS ACTUALLY FOUND
+#
+# Measuring first, before writing any new expansion, found three things:
+#
+#  1. THE MEASURING INSTRUMENT WAS BROKEN. Accuracy at complex order had
+#     been judged by the J-Y Wronskian
+#
+#         J_(nu+1) Y_nu - J_nu Y_(nu+1) = 2 / (pi z)
+#
+#     divided by its own largest term. Off the real axis this is vacuous:
+#     J and Y are both (H1 +- H2)/2, so when one Hankel function dominates
+#     the other they are THE SAME FUNCTION to within |H1/H2|, and the
+#     scaled residual reports that ratio rather than any error. At
+#     nu = 5+2i, z = 200+80i it read 8.2e-24 - which looked like a triumph
+#     and was simply |H1|/|H2|.
+#
+#  2. THREE BRANCH DEFECTS in the Debye route, each returning a confident,
+#     plausible, wrong number:
+#       - the square root t = (1 - x^2)^(1/2) taken on the principal
+#         branch, whose CUT IS the oscillatory region the expansion covers;
+#         crossing it exchanges the two solutions, so H1 came back as H2 -
+#         wrong by a factor of 2e23;
+#       - the same defect at REAL order as soon as z is complex;
+#       - the prefactor (2 pi nu t)^(-1/2), a SEPARATE branch, crossed once
+#         arg z > pi/2, negating both members. A Wronskian is bilinear, so
+#         it is blind to a sign shared by both - that defect survived every
+#         check in the crate by construction.
+#
+#  3. THE GUARD WAS WRITTEN IN THE WRONG VARIABLE. It refused the region by
+#     ORDER (|nu| >= 8) when accuracy is actually governed by |z|/|nu| and
+#     arg(z/nu). It was simultaneously too strict (refusing good small-order
+#     points) and far too loose (accepting large-order points whose error
+#     estimate was 1e14 times too small).
+#
+# The sliver went from 94% to 97% served - not by adding a method, but by
+# repairing the branches and restating the guard in the measured variables.
+
+# ---------------------------------------------------------------------------
+# HOW TO RUN THIS NOTEBOOK
+# ---------------------------------------------------------------------------
+#
+# Everything below is posim notebook source. Lines beginning with '#' are
+# comments and are ignored by the interpreter; every other line is a command
+# that will be executed in order.
+#
+# From the repository root (the directory holding Cargo.toml), run ONE of:
+#
+#     cargo run -p posim --release -- --notebook StageNbks/Stage_24.posim
+#     cargo run -p posim --release -- --script   StageNbks/Stage_24.posim
+#
+#   --notebook  prints an In[n]:= / Out[n]= transcript, like a Mathematica
+#               notebook. This is the mode to use when reading along.
+#   --script    prints the same transcript; the two differ only in how the
+#               prompt lines are laid out. Either is reproducible.
+#
+# To work through it by hand instead, start the interactive interpreter:
+#
+#     cargo run -p posim --release
+#
+# and paste the command lines one at a time. Type HELP for the full command
+# language, and %quit to leave.
+#
+# First run will compile the workspace (a few minutes). Later runs are
+# immediate. If 'cargo' is not found, install Rust from https://rustup.rs .
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# LAUNCHING THE BROWSER GUI TO INVESTIGATE THIS STAGE
+# ---------------------------------------------------------------------------
+#
+# posim ships a live 3-D scene window that is served over HTTP and viewed in
+# an ordinary web browser. There is no separate application to install.
+#
+# COMPLETE PROCEDURE, from nothing to a moving picture:
+#
+#   1. Open a terminal at the repository root and start posim interactively:
+#
+#          cargo run -p posim --release
+#
+#      You will get the banner and an 'In[1]:=' prompt.
+#
+#   2. Build a scene. You must create bodies BEFORE opening the window,
+#      because the window shows the entities that exist when it is created.
+#      (The command lines further down this notebook do exactly that.)
+#
+#   3. Open the window:
+#
+#          scene create
+#
+#      posim replies with, for example:
+#
+#          scene window created: http://127.0.0.1:41234/
+#          (opened in your browser; if no window appeared, open that address
+#           yourself)
+#          showing 4 entities; SCENE START begins the evolution
+#
+#      The port is chosen freely each run. To pin it, pass one:
+#
+#          scene create 8080
+#
+#      then the address is always http://127.0.0.1:8080/ .
+#
+#   4. If no browser opened by itself, copy the printed address into any
+#      browser (Firefox, Chrome, Safari, Edge - it is plain HTML, CSS and
+#      JavaScript over a websocket; nothing else is required).
+#
+#   5. Drive the animation from the SAME posim prompt while the page is open:
+#
+#          scene start          begin evolving
+#          scene pause          freeze
+#          scene stop           halt
+#          scene reverse        play backwards through the snapshot history
+#          scene set_time_step 0.001      seconds of simulated time per frame
+#          scene refresh        re-read the body list after adding bodies
+#          scene close          shut the window and free the port
+#
+#      In the page itself: drag with the mouse to orbit, scroll to zoom,
+#      shift-drag or the arrow keys to pan, and the on-screen buttons mirror
+#      the commands above.
+#
+#   6. HELP lists every scene command with its arguments.
+#
+# TROUBLESHOOTING, precisely:
+#   * 'no scene window - run SCENE CREATE first' means step 3 was skipped.
+#   * A blank page means no bodies existed at 'scene create' time: add them,
+#     then issue 'scene refresh'.
+#   * If the port is busy, 'scene close' then 'scene create <other port>'.
+#   * The window is local only (127.0.0.1). It is not reachable from another
+#     machine, by design.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# ANIMATION: NOT POSSIBLE HERE, AND THE EXACT REASON WHY
+# ---------------------------------------------------------------------------
+#
+# This stage cannot be animated, and the cause is precise rather than a
+# matter of effort:
+#
+#   The scene window renders SIMULATOR ENTITIES. Concretely, it draws the
+#   bodies held in the PhysicalObjectSystem - points, spheres, cuboids,
+#   tori, disks, cylinders and dumbbells - by reading their positions and
+#   orientations each frame and sending them over a websocket.
+#
+#   This stage evaluates SPECIAL FUNCTIONS. A call such as
+#   bessel_j_nu(0.5, 2.0) creates no body, has no position, and has no time
+#   coordinate: it is a pure function of its arguments. There is therefore
+#   nothing for the renderer to draw, and 'scene create' on this session
+#   would open a window showing an empty grid and the world axes.
+#
+#   That is not a defect and there is no workaround inside the scene window.
+#   A function of a complex variable is not a moving object.
+#
+# What you CAN watch instead, and how, is written in the section above: the
+# numbers printed by the command lines below change as you vary the order
+# and the argument, and that variation IS the phenomenon this stage is about.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# RECREATING THE STAGE SCENARIO
+# ---------------------------------------------------------------------------
+#
+# The commands below evaluate Bessel functions across the band in question.
+# Watch how the values behave as the order and argument ratio change.
+#
+# A real order and a real argument, well inside the easy region: every
+# method agrees here and the answer is machine-precision.
+bessel_j_nu(5.0, 15.0)
+bessel_y_nu(5.0, 15.0)
+
+# Now walk the argument ratio z/nu across the sliver at nu = 5.
+# 1/z asymptotics need |4 nu^2| = 100 small compared with |z|, so they
+# only become available once |z| is comfortably past 12.5.
+bessel_j_nu(5.0, 6.0)
+bessel_j_nu(5.0, 10.0)
+bessel_j_nu(5.0, 20.0)
+bessel_j_nu(5.0, 40.0)
+
+# The same walk for Y, which is the harder of the pair because it is built
+# from a reflection that cancels.
+bessel_y_nu(5.0, 6.0)
+bessel_y_nu(5.0, 10.0)
+bessel_y_nu(5.0, 20.0)
+
+# The identity that adjudicates all of this. For any order and argument,
+#     J_(nu+1) Y_nu - J_nu Y_(nu+1) = 2 / (pi z)
+# The right-hand side involves no Bessel function at all, which is what
+# makes it a usable referee - PROVIDED you remember the resolution limit
+# described above. At real order and real argument it is trustworthy.
+bessel_j_nu(6.0, 20.0) * bessel_y_nu(5.0, 20.0) - bessel_j_nu(5.0, 20.0) * bessel_y_nu(6.0, 20.0)
+2 / (3.14159265358979 * 20.0)
+
+# Those two lines should agree to about fifteen digits. If you change 20.0
+# to 60.0 in all four places they still agree; that is the check the stage
+# used, and the point of the stage is that the SCALED version of it stops
+# working off the real axis while looking like it still works.
+
+# ===========================================================================
+# END OF STAGE #24 NOTEBOOK
+# ===========================================================================
