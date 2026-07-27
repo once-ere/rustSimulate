@@ -64,20 +64,28 @@
 //!   settings — `lambda = 0.92`, `K = 16` — it is below `1e-16` and the
 //!   kinetic half costs nothing in accuracy at all.
 //!
-//! # What limits it
+//! # What limits it, and the one-line fix
 //!
 //! The accuracy is set by the **splitting**, not by the Bessel series.
-//! `1 + v` and `S + S^-1` do not commute unless `V` is constant, so this
-//! Lie–Trotter product is first order: the global error is `O(dt)`.
-//! [`NashPropagator::run`] measures exactly that in
-//! `the_splitting_error_is_first_order_in_dt`.
+//! `1 + v` and `S + S^-1` do not commute unless `V` is constant, so the
+//! original's Lie–Trotter product is first order: the global error is
+//! `O(dt)`, measured in `the_splitting_error_is_first_order_in_dt`.
 //!
-//! That is a property of the *splitting*, not of the Bessel idea, and a
-//! Strang arrangement — half a potential phase, the full kinetic stencil,
-//! half a potential phase — would be second order for one extra pointwise
-//! multiply. This module deliberately does **not** do that: the request
-//! was a faithful port, and the original is Lie. The observation is
-//! recorded here rather than acted on.
+//! That is a property of the *ordering*, not of the Bessel idea, and
+//! reordering fixes it. [`Splitting::Strang`] puts half a potential
+//! phase on each side of the stencil and is **second order** —
+//! `strang_is_second_order_in_dt` measures the error quartering as `dt`
+//! halves, and `strang_beats_lie_at_the_same_step` measures it landing
+//! more than 100x closer at the same step size.
+//!
+//! It is very nearly free. Consecutive Strang steps put a trailing
+//! half-phase against a leading one, and those fuse into a single full
+//! phase, so [`NashPropagator::run`] pays one extra half-phase over the
+//! whole run rather than one per step.
+//!
+//! The default is still [`Splitting::Lie`], because the default has to
+//! be what the original does — this is a port. Strang is opt-in through
+//! [`NashPropagator::with_splitting`].
 //!
 //! The stencil is dense over `2K+1` points, so a step costs `O(n K)`
 //! against Crank–Nicolson's `O(n)`. At `K = 16` that is real work, and
@@ -213,6 +221,30 @@ pub fn truncation_bound(lambda: f64, k: usize) -> Result<f64, String> {
 ///
 /// Built once for a fixed potential and time step; every step then costs
 /// `O(n K)` multiply-adds and no allocation beyond one scratch buffer.
+/// Which way the exponential is split.
+///
+/// The two share every ingredient — the same Bessel stencil, the same
+/// `lambda`, the same diagonal phase. They differ only in how the
+/// factors are ordered, and that ordering is worth a whole order of
+/// accuracy.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Splitting {
+    /// `exp(-i L (1+v)) exp(i (L/2)(S + S^-1))` — what the original C++
+    /// does, and the default here. First order in `dt`.
+    Lie,
+    /// `exp(-i L (1+v)/2) exp(i (L/2)(S + S^-1)) exp(-i L (1+v)/2)` —
+    /// **second** order in `dt`, for one extra pointwise multiply.
+    ///
+    /// The gain is free in a way that is easy to miss: consecutive steps
+    /// have a trailing half-phase against a leading half-phase, and
+    /// those fuse into a single full phase. So `run` costs one extra
+    /// half-phase in total, not one per step, and a run of `N` Strang
+    /// steps costs essentially what `N` Lie steps cost while converging
+    /// an order faster. [`NashPropagator::run`] does that fusion and
+    /// `the_fused_run_matches_repeated_steps` proves it changes nothing.
+    Strang,
+}
+
 pub struct NashPropagator {
     grid: PeriodicGrid,
     hbar: f64,
@@ -223,6 +255,9 @@ pub struct NashPropagator {
     coeff: Vec<C>,
     /// `exp(-i lambda (1 + v_j))`, the diagonal factor.
     phase: Vec<C>,
+    /// The same factor at half a step, for [`Splitting::Strang`].
+    half_phase: Vec<C>,
+    splitting: Splitting,
     truncation: f64,
 }
 
@@ -293,12 +328,44 @@ impl NashPropagator {
         }
 
         let scale = mass * h * h / (hbar * hbar);
-        let phase = v
-            .iter()
-            .map(|&vi| C::from_polar(1.0, -lambda * (1.0 + vi * scale)))
-            .collect();
+        let arg: Vec<f64> = v.iter().map(|&vi| -lambda * (1.0 + vi * scale)).collect();
+        let phase = arg.iter().map(|&a| C::from_polar(1.0, a)).collect();
+        let half_phase = arg.iter().map(|&a| C::from_polar(1.0, 0.5 * a)).collect();
 
-        Ok(Self { grid, hbar, mass, dt, lambda, coeff, phase, truncation })
+        Ok(Self {
+            grid,
+            hbar,
+            mass,
+            dt,
+            lambda,
+            coeff,
+            phase,
+            half_phase,
+            splitting: Splitting::Lie,
+            truncation,
+        })
+    }
+
+    /// Choose the splitting. The default is [`Splitting::Lie`], which
+    /// is what the original C++ does.
+    ///
+    /// # Examples
+    /// ```
+    /// use quantum::nash::{NashPropagator, PeriodicGrid, Splitting};
+    /// let grid = PeriodicGrid::new(0.0, 1.0, 16).unwrap();
+    /// let p = NashPropagator::new(grid, &[0.0; 16], 1.0, 1.0, 1e-3, None)
+    ///     .unwrap()
+    ///     .with_splitting(Splitting::Strang);
+    /// assert_eq!(p.splitting(), Splitting::Strang);
+    /// ```
+    #[must_use]
+    pub fn with_splitting(mut self, splitting: Splitting) -> Self {
+        self.splitting = splitting;
+        self
+    }
+
+    pub fn splitting(&self) -> Splitting {
+        self.splitting
     }
 
     pub fn grid(&self) -> &PeriodicGrid {
@@ -335,7 +402,9 @@ impl NashPropagator {
     }
 
     /// One step, in place. `scratch` is resized to hold a copy of `psi`.
-    fn step_with(&self, psi: &mut [C], scratch: &mut Vec<C>) {
+    /// The Bessel stencil alone — `exp(i (lambda/2)(S + S^-1))`, with
+    /// no diagonal factor. Both splittings are built from this.
+    fn kinetic(&self, psi: &mut [C], scratch: &mut Vec<C>) {
         scratch.clear();
         scratch.extend_from_slice(psi);
         let n = psi.len();
@@ -347,13 +416,34 @@ impl NashPropagator {
                 // added N exactly once, which reads outside the array
                 // whenever the stencil is wider than the grid — latent
                 // in the C++ because NumOrder was 16 and NDATA was in
-                // the hundreds. `refuses_nothing_and_wraps_correctly`
+                // the hundreds.
+                // `a_stencil_wider_than_the_grid_still_wraps_correctly`
                 // pins the case that would have caught it.
                 let left = y[(i + n - m % n) % n];
                 let right = y[(i + m) % n];
                 acc = acc + (left + right) * c;
             }
-            *out = self.phase[i] * acc;
+            *out = acc;
+        }
+    }
+
+    fn apply(psi: &mut [C], phase: &[C]) {
+        for (z, p) in psi.iter_mut().zip(phase) {
+            *z = *p * *z;
+        }
+    }
+
+    fn step_with(&self, psi: &mut [C], scratch: &mut Vec<C>) {
+        match self.splitting {
+            Splitting::Lie => {
+                self.kinetic(psi, scratch);
+                Self::apply(psi, &self.phase);
+            }
+            Splitting::Strang => {
+                Self::apply(psi, &self.half_phase);
+                self.kinetic(psi, scratch);
+                Self::apply(psi, &self.half_phase);
+            }
         }
     }
 
@@ -370,13 +460,38 @@ impl NashPropagator {
 
     /// Advance `psi` by `steps` steps, in place, allocating once.
     ///
+    /// For [`Splitting::Strang`] the half-phases between consecutive
+    /// steps are **fused** into full phases, so `N` steps cost `N`
+    /// stencils, `N - 1` full phases and two half phases rather than
+    /// `2N` half phases. The result is identical — that is what
+    /// `the_fused_run_matches_repeated_steps` checks — and the cost
+    /// comes out level with Lie for an order more accuracy.
+    ///
     /// # Errors
     /// A length mismatch with the grid.
     pub fn run(&self, psi: &mut [C], steps: usize) -> Result<(), String> {
         self.check(psi)?;
+        if steps == 0 {
+            return Ok(());
+        }
         let mut scratch = Vec::with_capacity(psi.len());
-        for _ in 0..steps {
-            self.step_with(psi, &mut scratch);
+        match self.splitting {
+            Splitting::Lie => {
+                for _ in 0..steps {
+                    self.step_with(psi, &mut scratch);
+                }
+            }
+            Splitting::Strang => {
+                Self::apply(psi, &self.half_phase);
+                for k in 0..steps {
+                    self.kinetic(psi, &mut scratch);
+                    if k + 1 == steps {
+                        Self::apply(psi, &self.half_phase);
+                    } else {
+                        Self::apply(psi, &self.phase);
+                    }
+                }
+            }
         }
         Ok(())
     }
@@ -545,6 +660,132 @@ mod tests {
             );
         }
         assert!(errs[3] < 1e-3, "and the finest step should be accurate: {:.2e}", errs[3]);
+    }
+
+    /// Strang is **second** order: halving `dt` quarters the error.
+    ///
+    /// Same reference as the Lie test — diagonalising `H` — so the two
+    /// convergence rates are measured by the same instrument and the
+    /// comparison between them means something.
+    #[test]
+    fn strang_is_second_order_in_dt() {
+        let grid = PeriodicGrid::new(-6.0, 6.0, 48).unwrap();
+        let v: Vec<f64> = grid.points().iter().map(|x| 0.5 * x * x).collect();
+        let psi0 = packet(&grid, -1.0, 2.0, 0.8);
+        let t = 0.05;
+        let want = exact(&grid, &v, 1.0, 1.0, t, &psi0);
+
+        let mut errs = vec![];
+        for steps in [25_usize, 50, 100, 200] {
+            let dt = t / steps as f64;
+            let p = NashPropagator::new(grid.clone(), &v, 1.0, 1.0, dt, None)
+                .unwrap()
+                .with_splitting(Splitting::Strang);
+            let mut psi = psi0.clone();
+            p.run(&mut psi, steps).unwrap();
+            errs.push(max_diff(&psi, &want));
+        }
+        for w in errs.windows(2) {
+            let ratio = w[0] / w[1];
+            assert!(
+                (3.4..4.6).contains(&ratio),
+                "halving dt should quarter the error; got ratio {ratio:.3} from {errs:?}"
+            );
+        }
+    }
+
+    /// The whole point, stated as a comparison rather than a claim:
+    /// at the *same* step size Strang is dramatically closer.
+    #[test]
+    fn strang_beats_lie_at_the_same_step() {
+        let grid = PeriodicGrid::new(-6.0, 6.0, 48).unwrap();
+        let v: Vec<f64> = grid.points().iter().map(|x| 0.5 * x * x).collect();
+        let psi0 = packet(&grid, -1.0, 2.0, 0.8);
+        let t = 0.05;
+        let steps = 100_usize;
+        let want = exact(&grid, &v, 1.0, 1.0, t, &psi0);
+        let base = NashPropagator::new(grid.clone(), &v, 1.0, 1.0, t / steps as f64, None).unwrap();
+
+        let mut a = psi0.clone();
+        base.run(&mut a, steps).unwrap();
+        let lie = max_diff(&a, &want);
+
+        let mut b = psi0.clone();
+        base.with_splitting(Splitting::Strang).run(&mut b, steps).unwrap();
+        let strang = max_diff(&b, &want);
+
+        assert!(strang * 100.0 < lie, "Strang {strang:.2e} vs Lie {lie:.2e}");
+    }
+
+    /// `run` fuses the half-phases between consecutive Strang steps
+    /// into full ones. That is an optimisation, so it has to be proved
+    /// to change nothing.
+    #[test]
+    fn the_fused_run_matches_repeated_steps() {
+        let grid = PeriodicGrid::new(-4.0, 4.0, 64).unwrap();
+        let v: Vec<f64> = grid.points().iter().map(|x| 0.3 * x * x - 0.2 * x).collect();
+        let p = NashPropagator::new(grid.clone(), &v, 1.0, 1.0, 3e-3, None)
+            .unwrap()
+            .with_splitting(Splitting::Strang);
+        let psi0 = packet(&grid, -1.0, 3.0, 0.7);
+
+        for steps in [0_usize, 1, 2, 5, 37] {
+            let mut fused = psi0.clone();
+            p.run(&mut fused, steps).unwrap();
+            let mut plain = psi0.clone();
+            for _ in 0..steps {
+                p.step(&mut plain).unwrap();
+            }
+            let e = max_diff(&fused, &plain);
+            assert!(e < 1e-14, "{steps} steps: fused and plain differ by {e:.2e}");
+        }
+    }
+
+    /// Strang is still a product of unitaries, so it still conserves the
+    /// norm at any step size — the second order buys accuracy, not
+    /// stability, and those remain independent.
+    #[test]
+    fn strang_is_unitary_too() {
+        let grid = PeriodicGrid::new(-8.0, 8.0, 128).unwrap();
+        let v: Vec<f64> = grid.points().iter().map(|x| 0.5 * x * x).collect();
+        for &dt in &[1e-4, 1e-2, 0.1, 1.0] {
+            let p = NashPropagator::new(grid.clone(), &v, 1.0, 1.0, dt, None)
+                .unwrap()
+                .with_splitting(Splitting::Strang);
+            let mut psi = packet(&grid, -2.0, 3.0, 0.7);
+            let n0 = norm(&psi, grid.h());
+            p.run(&mut psi, 40).unwrap();
+            assert!((norm(&psi, grid.h()) - n0).abs() < 1e-12, "dt = {dt}");
+        }
+    }
+
+    /// With `V = 0` the diagonal factor is constant, so it commutes with
+    /// the stencil and the two splittings are the *same operator*.
+    /// Strang must therefore still be exact on a plane wave, and must
+    /// agree with Lie to rounding.
+    #[test]
+    fn with_no_potential_the_two_splittings_coincide() {
+        let grid = PeriodicGrid::new(0.0, 1.0, 64).unwrap();
+        let v = vec![0.0; grid.n];
+        let lie = NashPropagator::new(grid.clone(), &v, 1.0, 1.0, 2.0e-4, None).unwrap();
+        let strang = NashPropagator::new(grid.clone(), &v, 1.0, 1.0, 2.0e-4, None)
+            .unwrap()
+            .with_splitting(Splitting::Strang);
+        for m in [1_i32, 7, 31] {
+            let k = 2.0 * std::f64::consts::PI * f64::from(m);
+            let psi0: Vec<C> =
+                (0..grid.n).map(|i| C::from_polar(1.0, k * grid.x(i))).collect();
+            let want = C::from_polar(1.0, -lie.lambda() * (1.0 - (k * grid.h()).cos()));
+            let target: Vec<C> = psi0.iter().map(|z| *z * want).collect();
+
+            let mut a = psi0.clone();
+            strang.step(&mut a).unwrap();
+            assert!(max_diff(&a, &target) < 1e-13, "Strang is not exact at m = {m}");
+
+            let mut b = psi0.clone();
+            lie.step(&mut b).unwrap();
+            assert!(max_diff(&a, &b) < 1e-14, "the splittings must coincide at V = 0");
+        }
     }
 
     /// The Bessel tail is the *only* thing the kinetic factor gets

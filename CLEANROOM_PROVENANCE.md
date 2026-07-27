@@ -427,8 +427,19 @@ mapping, so the mapping is exercised rather than asserted.
   derives it from `lambda` and a tolerance, by summing the Bessel tail
   rather than estimating it. At `lambda = 0.92` the needed order is 14,
   so the shipped 16 carried a small margin.
-* **The splitting is left alone.** It is Lie–Trotter and therefore first
-  order in `dt`, and a Strang arrangement would be second order for one
-  extra pointwise multiply. The request was a faithful port; the
-  observation is recorded here and in the module documentation instead
-  of being acted on silently.
+* **The splitting is offered both ways, and the default is the
+  original's.** Lie–Trotter is first order in `dt`; `Splitting::Strang`
+  puts half a potential phase on each side of the stencil and is second
+  order. Measured against the same diagonalised reference, the error
+  quarters rather than halves per step refinement, and at a fixed step
+  it lands over 100x closer.
+
+  It is close to free: consecutive Strang steps fuse their adjacent
+  half-phases into full ones, so a run pays one extra half-phase in
+  total rather than one per step, and `the_fused_run_matches_repeated_steps`
+  proves that optimisation changes nothing.
+
+  `NashPropagator::new` still defaults to `Splitting::Lie`, because the
+  default behaviour of a port must be what the original does. Strang is
+  reached through `with_splitting`, so nothing about the faithfulness
+  claim above is weakened by its existence.

@@ -8,12 +8,13 @@
 //! 1. against a **closed form**, on a plane wave, where the scheme is
 //!    exact and the answer is a single known phase;
 //! 2. against **diagonalisation**, with a potential switched on, where
-//!    the Lie–Trotter splitting is the only error left;
+//!    the splitting is the only error left — for both the original's
+//!    Lie ordering and the second-order Strang one;
 //! 3. against **its own error bound**, for the Bessel truncation.
 //!
 //! Run: cargo run -p quantum --release --example nash_propagator
 
-use quantum::nash::{norm, order_for, truncation_bound, NashPropagator, PeriodicGrid};
+use quantum::nash::{norm, order_for, truncation_bound, NashPropagator, PeriodicGrid, Splitting};
 use special_functions::complex::Complex64 as C;
 use special_functions::eigen::jacobi_eigen;
 
@@ -90,34 +91,69 @@ fn main() {
     }
 
     // -----------------------------------------------------------------
-    println!("\n\n2. With a potential: what is left is the SPLITTING, and it is O(dt).\n");
+    println!("\n\n2. With a potential, the SPLITTING is what is left — and how it is");
+    println!("   ordered decides whether that is O(dt) or O(dt^2).\n");
     println!("Harmonic well on [-6, 6], measured against diagonalising H.\n");
     let grid = PeriodicGrid::new(-6.0, 6.0, 48).unwrap();
     let v: Vec<f64> = grid.points().iter().map(|x| 0.5 * x * x).collect();
     let psi0 = packet(&grid, -1.0, 2.0, 0.8);
     let t = 0.05;
     let want = exact(&grid, &v, t, &psi0);
-    println!("   {:>8} {:>12} {:>12} {:>10} {:>16}", "steps", "dt", "error", "ratio", "norm drift");
-    let mut prev = f64::NAN;
+    println!("   {:>8} {:>10} {:>12} {:>7} {:>12} {:>7} {:>10}",
+             "steps", "dt", "Lie", "ratio", "Strang", "ratio", "gain");
+    let (mut plie, mut pstrang) = (f64::NAN, f64::NAN);
     for steps in [25_usize, 50, 100, 200, 400] {
         let dt = t / steps as f64;
-        let p = NashPropagator::new(grid.clone(), &v, 1.0, 1.0, dt, None).unwrap();
-        let mut psi = psi0.clone();
-        p.run(&mut psi, steps).unwrap();
-        let e = max_diff(&psi, &want);
-        let drift = (norm(&psi, grid.h()) - 1.0).abs();
-        if prev.is_finite() {
-            println!("   {steps:>8} {dt:>12.2e} {e:>12.3e} {:>10.2} {drift:>16.2e}", prev / e);
-        } else {
-            println!("   {steps:>8} {dt:>12.2e} {e:>12.3e} {:>10} {drift:>16.2e}", "-");
-        }
-        prev = e;
+        let base = NashPropagator::new(grid.clone(), &v, 1.0, 1.0, dt, None).unwrap();
+
+        let mut a = psi0.clone();
+        base.run(&mut a, steps).unwrap();
+        let lie = max_diff(&a, &want);
+
+        let strang_prop = NashPropagator::new(grid.clone(), &v, 1.0, 1.0, dt, None)
+            .unwrap()
+            .with_splitting(Splitting::Strang);
+        let mut b = psi0.clone();
+        strang_prop.run(&mut b, steps).unwrap();
+        let strang = max_diff(&b, &want);
+
+        let rl = if plie.is_finite() { format!("{:.2}", plie / lie) } else { "-".into() };
+        let rs =
+            if pstrang.is_finite() { format!("{:.2}", pstrang / strang) } else { "-".into() };
+        println!("   {steps:>8} {dt:>10.2e} {lie:>12.3e} {rl:>7} {strang:>12.3e} {rs:>7} {:>10.0}x",
+                 lie / strang);
+        plie = lie;
+        pstrang = strang;
     }
-    println!("\n   The ratio is 2: halving dt halves the error, which is Lie-Trotter.");
-    println!("   The norm does NOT drift with dt — each factor is unitary whatever");
-    println!("   the step size, so accuracy and stability fail independently here.");
-    println!("   A Strang arrangement would make this second order for one extra");
-    println!("   pointwise multiply; the original is Lie and the port is faithful.");
+    println!("\n   Lie halves, Strang quarters — first order against second. The gain");
+    println!("   column is what that is worth at a fixed step, and it grows as the");
+    println!("   step shrinks, because the two are converging at different rates.");
+    println!("\n   Strang costs one extra pointwise multiply per step in principle and");
+    println!("   almost nothing in practice: consecutive steps put a trailing half");
+    println!("   phase against a leading one and `run` fuses them, so a whole run");
+    println!("   pays one extra half phase rather than one per step.");
+    println!("\n   Lie remains the default. This is a port, so the default has to be");
+    println!("   what the original does; Strang is reached by with_splitting.");
+
+    println!("\n   Norm drift, which the splitting does NOT affect — both are products");
+    println!("   of unitaries, so this is flat in dt for either:\n");
+    println!("   {:>10} {:>16} {:>16}", "dt", "Lie", "Strang");
+    for &dt in &[1e-4_f64, 1e-2, 0.1, 1.0] {
+        let base = NashPropagator::new(grid.clone(), &v, 1.0, 1.0, dt, None).unwrap();
+        let mut a = psi0.clone();
+        base.run(&mut a, 40).unwrap();
+        let mut b = psi0.clone();
+        NashPropagator::new(grid.clone(), &v, 1.0, 1.0, dt, None)
+            .unwrap()
+            .with_splitting(Splitting::Strang)
+            .run(&mut b, 40)
+            .unwrap();
+        println!("   {dt:>10.0e} {:>16.2e} {:>16.2e}",
+                 (norm(&a, grid.h()) - 1.0).abs(),
+                 (norm(&b, grid.h()) - 1.0).abs());
+    }
+    println!("\n   Accuracy and stability fail independently here: at dt = 1 both are");
+    println!("   normalised to 1e-15 and neither is remotely accurate.");
 
     // -----------------------------------------------------------------
     println!("\n\n3. The Bessel truncation, which is NOT what limits the scheme.\n");
@@ -144,7 +180,11 @@ fn main() {
     println!("  boundaries    periodic — a packet leaving one edge re-enters at the");
     println!("                other. qm1d's Grid is Dirichlet; they are not the same");
     println!("                domain and results are not interchangeable");
-    println!("  accuracy      first order in dt. Halve dt to halve the error");
+    println!("  accuracy      Lie (the default, and the original) is first order in");
+    println!("                dt; Strang is second. Prefer Strang unless you are");
+    println!("                reproducing SolveIt output — it costs almost nothing");
+    println!("  splitting     with_splitting(Splitting::Strang). At V = 0 the two");
+    println!("                coincide exactly, so it only matters with a potential");
     println!("  stability     unconditional: norm is conserved to rounding at any dt,");
     println!("                so a wrong answer here stays a normalised wrong answer");
     println!("  cost          O(n K) per step and no solver, against Crank-Nicolson's");
