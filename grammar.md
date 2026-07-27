@@ -1023,6 +1023,8 @@ your commands. A second word is cheaper than either.
 | `QM2 GRID <x0> <x1> <nx>, <y0> <y1> <ny>` | domain and resolution per axis |
 | `QM2 POTENTIAL ZERO` / `<function>` | a `DEF`ined `V(x, y)` |
 | `QM2 PACKET <x0> <y0>, <sx> <sy>, <kx> <ky>` | 2-D Gaussian packet |
+| `QM2 STATES <k>` | the `k` lowest bound-state energies |
+| `QM2 STATE <n>` | load bound state `n` as psi |
 | `QM2 STEP <dt>` / `QM2 RUN <t> [STEPS <n>]` | ADI propagation |
 | `QM2 NORM`, `QM2 ENERGY`, `QM2 CENTROID` | observables |
 | `QM2 PROB <xa> <xb>, <ya> <yb>` | probability in a rectangle |
@@ -1072,12 +1074,64 @@ rather than a magnitude. Splitting `V` by axis would cancel it, but a
 general `V` does not decompose that way, so the even split is the honest
 default.
 
-#### Cost
+#### Bound states, and why they need a different eigensolver
 
-Bound states are **not** provided in 2-D. On an `nx × ny` grid the
-Hamiltonian is `(nx·ny)²`, so a modest 200 × 200 grid gives a 40 000 ×
-40 000 dense matrix — far beyond the Jacobi eigensolver. Propagation has
-no such limit: the double-slit run below uses 180 000 points comfortably.
+On an `nx × ny` grid the Hamiltonian is `(nx·ny)²`. A modest 200 × 200
+grid gives a 40 000 × 40 000 matrix — about 12 GB dense, before any
+arithmetic. The Jacobi solver used in 1-D is simply not applicable.
+
+`QM2 STATES` uses **Lanczos**, which never forms the matrix: it needs
+only `H·v`, which is the five-point stencil at `O(nx·ny)`. It builds a
+Krylov basis, projects `H` onto it as a small tridiagonal, and the
+eigenvalues of that converge fastest to the *extremes* of the spectrum —
+which is where bound states are.
+
+Two separate things have to go right for degeneracies, and they are
+easy to confuse:
+
+* **Ghosts.** Lanczos vectors lose orthogonality in floating point as
+  soon as a value converges, and the method then rediscovers eigenvalues
+  it already has. Those spurious copies look exactly like degeneracy.
+  Cured by **full reorthogonalisation**.
+* **Genuine multiplicity.** Full reorthogonalisation does *not* help
+  here. A Krylov space built from one starting vector contains exactly
+  **one** direction from each degenerate eigenspace, so plain Lanczos
+  finds each distinct eigenvalue once however long it runs. No tolerance
+  fixes it. Cured by **deflation**: each converged state is shifted to
+  the top of the spectrum and the solver re-run *from a different
+  starting vector* — reusing the same start would re-derive the
+  direction just removed.
+
+That matters because these systems really are degenerate. The 2-D
+isotropic oscillator on a 70 × 70 grid:
+
+```
+In[4]:= qm2 states 6
+Out[4]= 6 lowest bound state(s) — Lanczos, 620 iterations:
+  E[0] = 0.9975639778   residual 3.86e-8
+  E[1] = 1.9926799032   residual 1.92e-8
+  E[2] = 1.9926799032   residual 2.89e-8
+  E[3] = 2.9828813394   residual 3.03e-8
+  E[4] = 2.9828813394   residual 5.15e-8
+  E[5] = 2.9877958286   residual 5.21e-8
+```
+
+Against the exact 1, 2, 2, 3, 3, 3. Note what the grid does to the
+third level: `E[3]` and `E[4]` agree to **ten digits**, because the
+square grid keeps the x↔y symmetry that relates the (2,0) and (0,2)
+states — while `E[5]`, the (1,1) state, sits 0.005 away because the
+continuum *rotational* symmetry that would complete the degeneracy is
+not a symmetry of the grid. The splitting is discretisation, not solver
+error.
+
+**Residuals are printed as part of the answer.** An iterative
+eigensolver has no exact stopping point, and a caller who cannot see how
+well a state converged cannot know whether to trust it. If the iteration
+budget runs out, the results still come back — with a warning and the
+residuals that justify it.
+
+Propagation has no comparable limit: the double-slit run below uses
+180 000 points comfortably.
 
 ---
 

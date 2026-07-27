@@ -468,6 +468,14 @@ two-dimensional quantum mechanics (ADI; see grammar.md):
                             its own Cayley transform, so the propagator
                             is EXACTLY unitary for any dt, with the
                             splitting error confined to the dynamics
+  QM2 STATES <k>            the k lowest bound-state energies, by
+                            matrix-free Lanczos with deflation. The 2-D
+                            Hamiltonian is (nx*ny)^2, far too big to
+                            form, so no dense solver is possible here.
+                            Degeneracies ARE resolved. Residuals are
+                            printed: an iterative solver has no exact
+                            stopping point
+  QM2 STATE <n>             load bound state n as psi
   QM2 NORM | ENERGY | CENTROID
   QM2 PROB <xa> <xb>, <ya> <yb>
   QM2 ABSORB <width> <strength> [<power>] | QM2 ABSORB OFF

@@ -17,7 +17,7 @@
 //! qm2 animate "slit.html" 20 frames 80
 //! ```
 
-use quantum::qm2d::{Grid2, Hamiltonian2, Propagator2, Wavefunction2};
+use quantum::qm2d::{BoundStates2, Grid2, Hamiltonian2, Propagator2, Wavefunction2};
 
 use crate::vm::{SimState, Value};
 
@@ -45,6 +45,10 @@ pub enum Qm2Cmd {
     Absorb,
     AbsorbOff,
     Reset,
+    /// Pops k: the k lowest bound-state energies, by Lanczos.
+    States,
+    /// Pops n: load bound state n as psi.
+    LoadState,
     /// Pops frames, then total time; writes an HTML heat-map animation.
     Animate(String),
 }
@@ -60,6 +64,9 @@ pub struct Qm2State {
     pub psi: Option<Wavefunction2>,
     pub time: f64,
     pub absorber: Option<(f64, f64, f64)>,
+    /// Cached bound states, so `QM2 STATE n` after `QM2 STATES k` does
+    /// not pay for a second Lanczos run.
+    pub states: Option<BoundStates2>,
 }
 
 impl Qm2State {
@@ -164,6 +171,7 @@ pub fn exec_qm2(
             state.qm2.potential_name = None;
             state.qm2.psi = None;
             state.qm2.time = 0.0;
+            state.qm2.states = None;
             Ok(format!(
                 "grid x [{x_min}, {x_max}] x {nx}, y [{y_min}, {y_max}] x {ny} — {n} points, \
                  hx = {hx:.6}, hy = {hy:.6} (potential and psi cleared)"
@@ -212,6 +220,7 @@ pub fn exec_qm2(
             state.qm2.potential_name = Some(name.clone());
             state.qm2.psi = None;
             state.qm2.time = 0.0;
+            state.qm2.states = None;
             Ok(format!(
                 "potential `{name}` sampled at {n} points, V in [{lo}, {hi}] (psi cleared)"
             ))
@@ -304,6 +313,7 @@ pub fn exec_qm2(
                 probe.with_absorber(width, strength, power)?;
             }
             state.qm2.absorber = Some((width, strength, power));
+            state.qm2.states = None;
             Ok(format!(
                 "absorbing edges on all four walls: width {width}, strength {strength}, \
                  power {power}. Propagation is no longer unitary — the norm decays by design."
@@ -311,7 +321,53 @@ pub fn exec_qm2(
         }
         Qm2Cmd::AbsorbOff => {
             state.qm2.absorber = None;
+            state.qm2.states = None;
             Ok("absorbing edges removed — all four walls reflect again".to_string())
+        }
+
+        Qm2Cmd::States => {
+            let k = pop_count(stack, "the state count")?;
+            if k == 0 {
+                return Err("QM2 STATES: ask for at least one state".to_string());
+            }
+            let ham = state.qm2.hamiltonian()?;
+            let b = ham.bound_states(k, 0)?;
+            let mut s = format!(
+                "{k} lowest bound state(s) — Lanczos, {} iterations{}:\n",
+                b.iterations,
+                if b.converged { "" } else { " (NOT converged)" }
+            );
+            for (i, e) in b.energies.iter().enumerate() {
+                s.push_str(&format!("  E[{i}] = {e:.10}   residual {:.2e}\n", b.residuals[i]));
+            }
+            if !b.converged {
+                s.push_str(
+                    "  warning: the iteration limit was reached — the residuals above say \
+                     how far off these are\n",
+                );
+            }
+            state.qm2.states = Some(b);
+            Ok(s.trim_end().to_string())
+        }
+
+        Qm2Cmd::LoadState => {
+            let n = pop_count(stack, "the state index")?;
+            let ham = state.qm2.hamiltonian()?;
+            let need = n + 1;
+            let have = state.qm2.states.as_ref().map(|b| b.energies.len()).unwrap_or(0);
+            if have < need {
+                state.qm2.states = Some(ham.bound_states(need, 0)?);
+            }
+            let b = state.qm2.states.as_ref().expect("just filled");
+            let e = b.energies[n];
+            let mut w = Wavefunction2::new(
+                ham.grid.clone(),
+                b.states[n].iter().map(quantum::qm2d::real_to_complex).collect(),
+            )?;
+            w.normalise()?;
+            state.qm2.psi = Some(w);
+            state.qm2.time = 0.0;
+            Ok(format!("psi = 2-D bound state {n}, E = {e:.10}, t reset to 0"))
         }
 
         Qm2Cmd::Reset => {

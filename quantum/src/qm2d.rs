@@ -45,6 +45,7 @@
 //! `A_y = T_y + V/2`, so each direction carries half of it.
 
 use special_functions::complex::Complex64 as C;
+use special_functions::lanczos::{lanczos_lowest, Stop};
 use special_functions::tridiag::solve_tridiag_c;
 
 /// A uniform 2-D grid of interior points, with Dirichlet walls all
@@ -261,6 +262,111 @@ impl Hamiltonian2 {
         out
     }
 
+    /// `H psi` for a REAL vector — what the eigensolver needs.
+    ///
+    /// Bound states of a real Hamiltonian can be chosen real, so the
+    /// eigenproblem is real symmetric and there is no reason to carry
+    /// complex arithmetic through it.
+    pub fn apply_real(&self, psi: &[f64]) -> Vec<f64> {
+        let g = &self.grid;
+        let (ox, oy) = (self.off_x(), self.off_y());
+        let mut out = vec![0.0; g.len()];
+        for iy in 0..g.ny {
+            for ix in 0..g.nx {
+                let k = g.idx(ix, iy);
+                let mut s = (-2.0 * ox - 2.0 * oy + self.potential[k]) * psi[k];
+                if ix > 0 {
+                    s += ox * psi[g.idx(ix - 1, iy)];
+                }
+                if ix + 1 < g.nx {
+                    s += ox * psi[g.idx(ix + 1, iy)];
+                }
+                if iy > 0 {
+                    s += oy * psi[g.idx(ix, iy - 1)];
+                }
+                if iy + 1 < g.ny {
+                    s += oy * psi[g.idx(ix, iy + 1)];
+                }
+                out[k] = s;
+            }
+        }
+        out
+    }
+
+    /// The lowest `k` bound states, by matrix-free Lanczos.
+    ///
+    /// The 2-D Hamiltonian is `(nx*ny)^2`, so a dense eigensolver is out
+    /// of the question — a 200 x 200 grid would need a 40 000 x 40 000
+    /// matrix, about 12 GB. Lanczos needs only the five-point stencil,
+    /// at `O(nx*ny)` per application.
+    ///
+    /// Wavefunctions are normalised so that `integral |psi|^2 dx dy = 1`,
+    /// which means dividing the unit-length eigenvector by
+    /// `sqrt(hx*hy)`. Skipping that is a silent factor-of-cell-area
+    /// error in every expectation value afterwards.
+    ///
+    /// Degeneracies are resolved: see the note in
+    /// `special_functions::lanczos`. The 2-D isotropic oscillator's
+    /// `E = 2, 2` and `E = 3, 3, 3` come out with the right
+    /// multiplicities and orthogonal partners.
+    ///
+    /// # Errors
+    /// `k == 0` or `k > nx*ny`, an absorbing Hamiltonian (not
+    /// Hermitian), or a Lanczos failure. A run that hits `max_iters`
+    /// without converging is NOT an error — the residuals are returned
+    /// so the caller can judge — but `converged` says so.
+    pub fn bound_states(
+        &self,
+        k: usize,
+        max_iters: usize,
+    ) -> Result<BoundStates2, String> {
+        if self.is_absorbing() {
+            return Err(
+                "bound_states: an absorbing potential makes the Hamiltonian NON-Hermitian, so a \
+                 symmetric eigensolver would return confident nonsense. Remove the absorber."
+                    .to_string(),
+            );
+        }
+        let n = self.grid.len();
+        // A Krylov space of 4k+40 is far too small for a 2-D grid: the
+        // first attempt used it and every state came back unconverged.
+        // Scale with the problem, and let the caller override.
+        let budget = if max_iters > 0 {
+            max_iters
+        } else {
+            (30 * k + 200).min(n)
+        };
+        let r = lanczos_lowest(n, k, |v| self.apply_real(v), 1e-7, budget)?;
+        let s = 1.0 / self.grid.cell().sqrt();
+        let states = r
+            .vectors
+            .into_iter()
+            .map(|mut v| {
+                for x in v.iter_mut() {
+                    *x *= s;
+                }
+                // reproducible sign: largest component positive
+                let lead = v
+                    .iter()
+                    .cloned()
+                    .fold(0.0_f64, |acc, x| if x.abs() > acc.abs() { x } else { acc });
+                if lead < 0.0 {
+                    for x in v.iter_mut() {
+                        *x = -*x;
+                    }
+                }
+                v
+            })
+            .collect();
+        Ok(BoundStates2 {
+            energies: r.values,
+            states,
+            residuals: r.residuals,
+            iterations: r.iterations,
+            converged: r.stop != Stop::MaxIters,
+        })
+    }
+
     /// Diagonal of the directional operator `A_d = T_d + V/2` (plus the
     /// absorber's half share) at a point.
     fn diag_dir(&self, k: usize, off: f64) -> C {
@@ -270,6 +376,31 @@ impl Hamiltonian2 {
             None => C::real(re),
         }
     }
+}
+
+/// What [`Hamiltonian2::bound_states`] returns.
+///
+/// The residuals are part of the answer, not diagnostics: an iterative
+/// eigensolver has no exact stopping point, and a caller who cannot see
+/// how well a state converged cannot know whether to trust it.
+#[derive(Clone, Debug)]
+pub struct BoundStates2 {
+    /// Ascending.
+    pub energies: Vec<f64>,
+    /// Normalised so `integral |psi|^2 dx dy = 1`, row-major.
+    pub states: Vec<Vec<f64>>,
+    /// `‖H psi - E psi‖` per state.
+    pub residuals: Vec<f64>,
+    /// Total Lanczos iterations across all deflation passes.
+    pub iterations: usize,
+    /// False if the iteration limit was hit before the tolerance.
+    pub converged: bool,
+}
+
+/// Lift a real amplitude to a complex one — a named function so callers
+/// outside this crate need not depend on the complex type's spelling.
+pub fn real_to_complex(v: &f64) -> C {
+    C::real(*v)
 }
 
 /// A 2-D wavefunction.
@@ -788,6 +919,129 @@ mod tests {
             w.probability_in(-11.0, 11.0, -11.0, 11.0) < 1e-4,
             "the absorber reflected back into the interior"
         );
+    }
+
+    /// The 2-D isotropic oscillator: `E = nx + ny + 1`, so the spectrum
+    /// is 1, 2, 2, 3, 3, 3 — **degenerate**, which is exactly what a
+    /// single-vector Krylov method cannot see and deflation exists to
+    /// fix. This is the test the whole Lanczos design is for.
+    #[test]
+    fn the_2d_oscillator_spectrum_with_its_degeneracies() {
+        let g = Grid2::new(-7.0, 7.0, 70, -7.0, 7.0, 70).unwrap();
+        let ham =
+            Hamiltonian2::from_fn(g.clone(), |x, y| 0.5 * (x * x + y * y), 1.0, 1.0).unwrap();
+        let b = ham.bound_states(6, 400).unwrap();
+        let want = [1.0, 2.0, 2.0, 3.0, 3.0, 3.0];
+        for (j, w) in want.iter().enumerate() {
+            assert!(
+                (b.energies[j] - w).abs() < 0.02,
+                "E[{j}] = {}, want {w} (all: {:?})",
+                b.energies[j],
+                b.energies
+            );
+        }
+        assert!(b.converged, "did not converge in the iteration budget");
+        assert!(
+            b.residuals.iter().all(|r| *r < 1e-6),
+            "residuals too large: {:?}",
+            b.residuals
+        );
+    }
+
+    /// Degenerate partners must be genuinely different states, not two
+    /// copies of one. Checked by orthogonality under the grid inner
+    /// product — the giveaway for a ghost.
+    #[test]
+    fn degenerate_states_are_orthonormal() {
+        let g = Grid2::new(-7.0, 7.0, 60, -7.0, 7.0, 60).unwrap();
+        let ham =
+            Hamiltonian2::from_fn(g.clone(), |x, y| 0.5 * (x * x + y * y), 1.0, 1.0).unwrap();
+        let b = ham.bound_states(6, 400).unwrap();
+        let cell = g.cell();
+        for i in 0..6 {
+            for j in 0..6 {
+                let ip: f64 =
+                    b.states[i].iter().zip(&b.states[j]).map(|(a, c)| a * c).sum::<f64>() * cell;
+                let want = if i == j { 1.0 } else { 0.0 };
+                assert!(
+                    (ip - want).abs() < 1e-6,
+                    "<{i}|{j}> = {ip}, want {want}"
+                );
+            }
+        }
+    }
+
+    /// A separable potential must give the 1-D spectrum summed: the 2-D
+    /// energies are `E_i + E_j` from the 1-D solver, which is a
+    /// cross-check against an entirely different eigensolver (dense
+    /// Jacobi in 1-D versus matrix-free Lanczos here).
+    #[test]
+    fn separable_2d_spectrum_is_the_sum_of_1d_spectra() {
+        // an ASYMMETRIC well, so the levels are non-degenerate and the
+        // pairing is unambiguous
+        let vx = |x: f64| 0.5 * x * x;
+        let vy = |y: f64| 2.0 * y * y;
+        let g1x = qm1d::Grid::new(-7.0, 7.0, 60).unwrap();
+        let g1y = qm1d::Grid::new(-7.0, 7.0, 60).unwrap();
+        let ex = qm1d::Hamiltonian::from_fn(g1x, vx, 1.0, 1.0)
+            .unwrap()
+            .bound_states(3)
+            .unwrap()
+            .0;
+        let ey = qm1d::Hamiltonian::from_fn(g1y, vy, 1.0, 1.0)
+            .unwrap()
+            .bound_states(3)
+            .unwrap()
+            .0;
+        let mut sums: Vec<f64> = Vec::new();
+        for a in &ex {
+            for b in &ey {
+                sums.push(a + b);
+            }
+        }
+        sums.sort_by(|a, b| a.partial_cmp(b).unwrap());
+
+        let g = Grid2::new(-7.0, 7.0, 60, -7.0, 7.0, 60).unwrap();
+        let ham = Hamiltonian2::from_fn(g, move |x, y| vx(x) + vy(y), 1.0, 1.0).unwrap();
+        let b = ham.bound_states(4, 400).unwrap();
+        for (j, (got, want)) in b.energies.iter().zip(&sums).take(4).enumerate() {
+            assert!((got - want).abs() < 1e-6, "E[{j}] = {got} vs 1-D sum {want}");
+        }
+    }
+
+    /// A bound state must be stationary under ADI propagation — the
+    /// eigensolver and the propagator must agree about the Hamiltonian.
+    #[test]
+    fn a_2d_bound_state_is_stationary() {
+        let g = Grid2::new(-6.0, 6.0, 48, -6.0, 6.0, 48).unwrap();
+        let ham =
+            Hamiltonian2::from_fn(g.clone(), |x, y| 0.5 * (x * x + y * y), 1.0, 1.0).unwrap();
+        let b = ham.bound_states(1, 400).unwrap();
+        let mut w =
+            Wavefunction2::new(g, b.states[0].iter().map(|&v| C::real(v)).collect()).unwrap();
+        w.normalise().unwrap();
+        let e0 = w.energy(&ham);
+        assert!((e0 - b.energies[0]).abs() < 1e-6, "E {e0} vs eigenvalue {}", b.energies[0]);
+        let d0 = w.density();
+        Propagator2::new(ham.clone(), 0.01).unwrap().run(&mut w, 100).unwrap();
+        let worst = d0
+            .iter()
+            .zip(&w.density())
+            .map(|(a, c)| (a - c).abs())
+            .fold(0.0_f64, f64::max);
+        assert!(worst < 1e-5, "the ground-state density moved by {worst}");
+        assert!((w.energy(&ham) - e0).abs() < 1e-8, "energy drifted");
+    }
+
+    /// The eigensolver must refuse an absorbing Hamiltonian.
+    #[test]
+    fn bound_states_refuse_an_absorbing_hamiltonian() {
+        let g = Grid2::new(-6.0, 6.0, 30, -6.0, 6.0, 30).unwrap();
+        let ham = Hamiltonian2::from_fn(g, |x, y| 0.5 * (x * x + y * y), 1.0, 1.0)
+            .unwrap()
+            .with_absorber(2.0, 1.0, 2.0)
+            .unwrap();
+        assert!(ham.bound_states(2, 200).unwrap_err().contains("Hermitian"));
     }
 
     #[test]

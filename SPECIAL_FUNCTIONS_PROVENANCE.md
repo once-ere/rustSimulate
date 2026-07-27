@@ -79,8 +79,10 @@ and the matrix below states plainly what is absent.
 
 Beyond the DLMF chapters, the crate also carries the numerical
 infrastructure a simulator needs and the DLMF does not catalogue:
-`eigen` (cyclic Jacobi), `quadrature` (Gauss–Legendre, adaptive Simpson,
-Brent roots), `tridiag` (Thomas, Sherman–Morrison) and `complex`.
+`eigen` (cyclic Jacobi, dense), `lanczos` (matrix-free symmetric
+eigensolver for problems too large to form), `quadrature`
+(Gauss–Legendre, adaptive Simpson, Brent roots), `tridiag` (Thomas,
+Sherman–Morrison) and `complex`.
 
 ---
 
@@ -138,6 +140,7 @@ record is separate and detailed:
 | `bessel` | native, **clean-room** | Miller downward recurrence, scale fixed by `J₀+2(J₂+J₄+…)=1` | DLMF 10.6.1, 10.12.4; A&S 9.1.27, 9.1.46 |
 | `tridiag` | native, **clean-room** | Thomas algorithm; Sherman–Morrison for the cyclic case | textbook |
 | `eigen` | native | cyclic Jacobi, ≤100 sweeps | textbook |
+| `lanczos` | native | Lanczos with full reorthogonalisation + deflation, matrix-free | textbook |
 | `quadrature` | native | Gauss–Legendre via Newton on Legendre roots; adaptive Simpson; Brent | textbook |
 | `complex` | native | from the definitions | — |
 | chapters 5–9, 19, 22, 25 | **vendored** Cephes | Moshier's rational approximations and continued fractions | upstream |
@@ -216,7 +219,8 @@ recorded here because it shaped the suite:
 | `bessel` | ≤1e-10 vs Cephes | **weakest regime:** the seed order must sit well above x. At `x = 45` an under-sized seed gave only ~9 correct digits — caught by the cross-check, fixed, and the measurement recorded in the source |
 | `wigner` | ≤1e-12 on orthogonality sums | **weakest regime:** large j, where the alternating Racah sum cancels catastrophically. This is a property of the formula, not the implementation, and it is stated in the module docs |
 | `tridiag` | residual ≤1e-11; CN norm drift **1.47e-12** over 6000 steps | no pivoting — stable for diagonally dominant systems only, documented rather than hidden |
-| `eigen` | ≤1e-12 | |
+| `eigen` | ≤1e-12 | dense, `O(n^3)` — practical to a few hundred rows |
+| `lanczos` | residuals ≤1e-8 on 4900-dim problems | matrix-free; **weakest regime:** clustered-but-not-equal eigenvalues, where deflation needs more passes to separate them. Cross-checked against `eigen` on problems small enough for both |
 | `quadrature` | degree-exactness to 2n−1, **and the converse** (not exact at 2n, so the bound is sharp) | |
 
 ### End-to-end evidence

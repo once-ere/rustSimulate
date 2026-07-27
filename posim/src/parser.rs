@@ -110,6 +110,7 @@
 //!           | "GRID" expr expr expr expr expr expr
 //!           | "POTENTIAL" ( "ZERO" | IDENT )    (* a DEF'd V(x, y)     *)
 //!           | "PACKET" expr expr expr expr expr expr
+//!           | "STATES" expr | "STATE" expr
 //!           | "STEP" expr | "RUN" expr [ "STEPS" expr ]
 //!           | "NORM" | "ENERGY" | "CENTROID"
 //!           | "PROB" expr expr expr expr
@@ -725,6 +726,14 @@ impl Parser {
                     Qm2Cmd::Absorb
                 }
             }
+            "states" => {
+                args(self, 1, &mut prog)?;
+                Qm2Cmd::States
+            }
+            "state" => {
+                args(self, 1, &mut prog)?;
+                Qm2Cmd::LoadState
+            }
             "reset" => Qm2Cmd::Reset,
             "animate" => {
                 let path = match self.next() {
@@ -753,8 +762,9 @@ impl Parser {
             }
             other => {
                 return Err(format!(
-                    "QM2: unknown subcommand `{other}` (grid, potential, packet, step, run, \
-                     norm, energy, centroid, prob, absorb, animate, status, reset)"
+                    "QM2: unknown subcommand `{other}` (grid, potential, packet, states, \
+                     state, step, run, norm, energy, centroid, prob, absorb, animate, \
+                     status, reset)"
                 ))
             }
         };

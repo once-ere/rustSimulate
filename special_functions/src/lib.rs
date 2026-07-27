@@ -49,6 +49,7 @@ pub mod wigner;
 pub mod complex;
 pub mod tridiag;
 pub mod eigen;
+pub mod lanczos;
 pub mod legendre;
 pub mod orthopoly;
 pub mod quadrature;
