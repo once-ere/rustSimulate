@@ -280,6 +280,28 @@ fn ab_closed(k: usize, x: f64, zeta: f64) -> (f64, f64) {
     (a.re, b.re)
 }
 
+/// [`ab_closed`] at **complex** `x` and `zeta`.
+///
+/// The body is the real one with the narrowing removed: those closed
+/// forms were always evaluated in complex arithmetic, because `p` is
+/// imaginary past the turning point and `zeta^(-3j/2)` carries a phase
+/// for negative `zeta`. Only the inputs widen — and with [`zeta_c`]
+/// supplying the branch, nothing else has to change.
+fn ab_closed_c(k: usize, x: C, zeta: C) -> (C, C) {
+    let p = (C::ONE - x * x).powf(-0.5);
+    let zp = |e: f64| zeta.powf(e);
+    let mut a = C::ZERO;
+    for (j, &m) in MU.iter().enumerate().take(2 * k + 1) {
+        a = a + u_poly(2 * k - j, p) * zp(-1.5 * j as f64) * m;
+    }
+    let mut b = C::ZERO;
+    for (j, &l) in LAMBDA.iter().enumerate().take(2 * k + 2) {
+        b = b + u_poly(2 * k + 1 - j, p) * zp(-1.5 * j as f64) * l;
+    }
+    b = b * zp(-0.5) * -1.0;
+    (a, b)
+}
+
 /// `(A_k, B_k)` for `k = 0, 1, 2`, by whichever route is sound here.
 fn ab(x: f64, zeta: f64) -> ([f64; 3], [f64; 3]) {
     let w = 1.0 - x;
@@ -377,8 +399,7 @@ fn horner_c(c: &[f64], w: C) -> C {
 /// `J_nu(z)` and `Y_nu(z)` by DLMF 10.20 at **complex order**, near the
 /// turning point.
 ///
-/// # Why this is restricted to the turning point, and why that is not a
-/// compromise
+/// # The turning point, and (since Stage 2D) beyond it
 ///
 /// The closed forms for `zeta` and for `A_k`, `B_k` do not continue
 /// naively to complex `x`: `zeta`'s two branch formulas meet at `x = 1`
@@ -389,37 +410,133 @@ fn horner_c(c: &[f64], w: C) -> C {
 /// closed forms — and a Taylor series does not care whether its
 /// variable is real. So `|w| <= 0.25` needs no new mathematics at all.
 ///
-/// Outside that neighbourhood 10.20 is not the right tool anyway. The
-/// Debye and `1/z` expansions of [`crate::bessel_cnu_large`] already
-/// cover complex order there, and they are what the selector uses. The
-/// gap this closes is exactly the one they leave: `|z|` comparable to
-/// `|nu|`, both complex.
+/// That was the whole story until Stage 2D. It was written here that
+/// "outside that neighbourhood 10.20 is not the right tool anyway",
+/// which was wrong: Stage 24 measured a real band — `1 < |z/nu| < 8`
+/// off the real axis — that the Debye and `1/z` routes both refuse and
+/// that this expansion is uniformly valid across.
 ///
-/// Returns `None` outside the neighbourhood, or where the value leaves
-/// `f64`.
+/// What blocked it was arithmetic, not mathematics: `zeta`'s closed
+/// form needs a branch that the principal `2/3` power gets wrong past
+/// `x = 1`. [`zeta_c`] chooses that branch against the known behaviour
+/// at the turning point, and [`ab_closed_c`] is the existing real
+/// closed form with its narrowing removed. Inside `|arg(z/nu)| <= 0.8`,
+/// where the anchor is measured to hold, the band goes from **41 %** to
+/// **97.5 %** served.
+///
+/// Returns `None` outside that sector, where the branch anchor is not
+/// measured, or where the value leaves `f64`.
+/// `zeta(x)` at **complex** `x`, from the closed form, with the branch
+/// chosen rather than assumed.
+///
+/// ```text
+///     (2/3) zeta^(3/2) = ln((1 + s)/x) - s ,      s = (1 - x^2)^(1/2)
+/// ```
+///
+/// `zeta` is analytic through the turning point — the two real formulas
+/// either side of `x = 1` are one function — but the *expression* is
+/// not: `s`, the logarithm and the `2/3` power each carry a branch, and
+/// taking all three principal gives the wrong answer beyond `x = 1`.
+/// Measured on the real axis at `x > 1`, the principal value comes out
+/// at `arg = pi/3` where the truth is `arg = pi`: a cube-root branch
+/// away.
+///
+/// The branch is fixed by the **known behaviour at the turning point**,
+/// which is the technique Stage 24 arrived at for the Debye expansion.
+/// As `w = 1 - x -> 0`,
+///
+/// ```text
+///     zeta ~ 2^(1/3) w    so    F = (2/3) zeta^(3/2) ~ (2/3) 2^(1/2) w^(3/2)
+/// ```
+///
+/// so `arg F` must approach `(3/2) arg w`. Unwrapping `arg F` to the
+/// representative nearest that value pins the branch everywhere, and
+/// `the_closed_form_zeta_agrees_with_the_series` checks it against the
+/// independently generated Taylor series across the whole overlap.
+fn zeta_c(x: C) -> Option<C> {
+    if x.abs() == 0.0 {
+        return None;
+    }
+    let s = (C::ONE - x * x).powf(0.5);
+    let f = ((C::ONE + s) * x.inv()).ln() - s;
+    if !f.is_finite() {
+        return None;
+    }
+    if f.abs() == 0.0 {
+        return Some(C::ZERO);
+    }
+    let w = C::ONE - x;
+    // Unwrap arg(3F/2) to the branch nearest 1.5 arg(w).
+    let target = 1.5 * w.arg();
+    let raw = f.arg();
+    let two_pi = 2.0 * std::f64::consts::PI;
+    let k = ((target - raw) / two_pi).round();
+    let theta = raw + k * two_pi;
+    let modulus = (1.5 * f.abs()).powf(2.0 / 3.0);
+    let zeta = C::from_polar(modulus, theta * (2.0 / 3.0));
+    zeta.is_finite().then_some(zeta)
+}
+
 pub fn jy_airy_c(nu: C, z: C) -> Option<(Uniform, Uniform)> {
     if !nu.is_finite() || !z.is_finite() || nu.abs() == 0.0 {
         return None;
     }
     let x = z * nu.inv();
     let w = C::ONE - x;
-    if w.abs() > W_SERIES {
+    // Near the turning point the Taylor series is used, because the
+    // closed forms divide two vanishing quantities there. Away from it
+    // the closed forms are used, which is what extends this expansion
+    // from a neighbourhood of `x = 1` to the whole plane — the band
+    // Stage 24 measured as uncovered, `1 < |z/nu| < 8` off the real
+    // axis, is exactly here.
+    let near = w.abs() <= W_SERIES;
+    // **Sector guard on the extended branch.** Away from the turning
+    // point `zeta_c` fixes its branch by anchoring `arg F` to
+    // `1.5 arg(w)`, which is exact near `w = 0` and degrades as the
+    // argument grows. Measured against the `1/z` Hankel pair over a
+    // sweep in `|nu|` and `|z/nu|`, the reported estimate bounds the
+    // actual error to a factor of **2.6** while `|arg(z/nu)| <= 0.8`,
+    // and the first point found outside it — `nu = 0.5 + 5i`,
+    // `arg z = -2.4` — was wrong by 1.4 with a small estimate.
+    //
+    // So the extension is offered only inside that sector. The band
+    // Stage 24 left open is closed there and remains open beyond it;
+    // that is a smaller gap than before, honestly stated, rather than
+    // a larger claim.
+    if !near && x.arg().abs() > 0.8 {
         return None;
     }
-    // zeta = w * (zeta/w), and the ratio 4 zeta/(1 - x^2) in the form
-    // that does not divide two vanishing quantities: 4(zeta/w)/(2 - w).
-    let g = horner_c(&ZETA_OVER_W, w);
-    let zeta = g * w;
-    let ratio = g * 4.0 * (C::real(2.0) - w).inv();
+    let (zeta, ratio) = if near {
+        // zeta = w (zeta/w), and 4 zeta/(1 - x^2) as 4(zeta/w)/(2 - w),
+        // which divides no vanishing quantities.
+        let g = horner_c(&ZETA_OVER_W, w);
+        (g * w, g * 4.0 * (C::real(2.0) - w).inv())
+    } else {
+        let zeta = zeta_c(x)?;
+        let denom = C::ONE - x * x;
+        if denom.abs() == 0.0 {
+            return None;
+        }
+        (zeta, zeta * 4.0 * denom.inv())
+    };
     let pref = ratio.powf(0.25);
     let t = nu.powc(C::real(2.0 / 3.0)) * zeta;
     let a = crate::airy_complex::airy_c(t).ok()?;
 
-    let a1 = horner_c(&A1_W, w);
-    let a2 = horner_c(&A2_W, w);
-    let b0 = horner_c(&B0_W, w);
-    let b1 = horner_c(&B1_W, w);
-    let b2 = horner_c(&B2_W, w);
+    let (a1, a2, b0, b1, b2) = if near {
+        (
+            horner_c(&A1_W, w),
+            horner_c(&A2_W, w),
+            horner_c(&B0_W, w),
+            horner_c(&B1_W, w),
+            horner_c(&B2_W, w),
+        )
+    } else {
+        let (_, b0) = ab_closed_c(0, x, zeta);
+        let (a1, b1) = ab_closed_c(1, x, zeta);
+        let (a2, b2) = ab_closed_c(2, x, zeta);
+        (a1, a2, b0, b1, b2)
+    };
     let n2 = nu * nu;
     let n4 = n2 * n2;
     let sa = C::ONE + a1 * n2.inv() + a2 * n4.inv();
@@ -666,6 +783,62 @@ mod tests {
     ///
     /// This is the region Stage 18 recorded as unreachable and Stage 21
     /// supplied the missing ingredient for.
+    /// The closed-form complex `zeta` against the Taylor series, over
+    /// the whole overlap where both are valid.
+    ///
+    /// These share no arithmetic: one is a 70-digit generated series in
+    /// `w`, the other is logs and roots with a hand-chosen branch. They
+    /// agree only if the branch rule is right.
+    #[test]
+    fn the_closed_form_zeta_agrees_with_the_series() {
+        let mut worst: f64 = 0.0;
+        let mut n = 0;
+        for i in 0..24 {
+            let r = 0.02 + 0.01 * i as f64; // |w| within the series radius
+            for k in 0..48 {
+                let th = -std::f64::consts::PI + std::f64::consts::TAU * k as f64 / 48.0;
+                let w = C::from_polar(r, th);
+                let x = C::ONE - w;
+                if x.abs() < 1e-6 {
+                    continue;
+                }
+                let series = horner_c(&ZETA_OVER_W, w) * w;
+                let Some(closed) = zeta_c(x) else { continue };
+                let e = (closed - series).abs() / series.abs().max(1e-300);
+                worst = worst.max(e);
+                n += 1;
+            }
+        }
+        assert!(n > 900, "only {n} points were compared");
+        assert!(worst < 1e-9, "worst relative disagreement {worst:.2e} over {n} points");
+    }
+
+    /// On the real axis the closed form must reproduce the real-order
+    /// routine exactly — including **past the turning point**, where a
+    /// principal branch gives `arg = pi/3` instead of `pi` and the sign
+    /// of `zeta` comes out wrong.
+    #[test]
+    fn the_complex_zeta_reproduces_the_real_one_on_both_sides() {
+        for &x in &[0.05_f64, 0.3, 0.6, 0.9, 0.99, 1.01, 1.2, 2.0, 5.0, 40.0] {
+            let (want, _) = zeta_and_ratio(x).expect("real zeta");
+            let got = zeta_c(C::real(x)).expect("complex zeta");
+            assert!(
+                got.im.abs() < 1e-9 * got.abs().max(1.0),
+                "x = {x}: zeta should be real, got {got:?}"
+            );
+            assert!(
+                (got.re - want).abs() <= 1e-9 * want.abs().max(1e-12),
+                "x = {x}: {} vs {want}",
+                got.re
+            );
+            // And past the turning point it must be NEGATIVE, which is
+            // the whole branch question.
+            if x > 1.0 {
+                assert!(got.re < 0.0, "x = {x}: zeta must be negative beyond the turning point");
+            }
+        }
+    }
+
     #[test]
     fn complex_order_at_the_turning_point_satisfies_the_wronskian() {
         let mut checked = 0;
@@ -704,7 +877,14 @@ mod tests {
     #[test]
     fn airy_uniform_edge_cases() {
         // The complex route is a turning-point tool and says so.
-        assert!(jy_airy_c(C::real(100.0), C::real(10.0)).is_none(), "far from x = 1");
+        // `x = 0.1` is far from the turning point and used to be
+        // refused; the closed-form branch now covers it. What is still
+        // refused is the sector the branch anchor cannot speak for.
+        assert!(jy_airy_c(C::real(100.0), C::real(10.0)).is_some(), "closed form covers x = 0.1");
+        assert!(
+            jy_airy_c(C::new(0.5, 5.0), C::from_polar(26.0, -2.4)).is_none(),
+            "outside the measured sector it must refuse"
+        );
         assert!(jy_airy_c(C::ZERO, C::ONE).is_none(), "nu = 0");
         assert!(jy_airy(0.0, 1.0).0.is_none(), "nu = 0");
         assert!(jy_airy(10.0, 0.0).0.is_none(), "z = 0");

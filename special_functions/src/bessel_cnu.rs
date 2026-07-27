@@ -79,11 +79,18 @@
 //! the real axis, including at *real* order with complex argument, so
 //! every check in the crate had missed them.
 //!
-//! What is uncovered now is a different and larger-order region: the
-//! band `1 < |z/nu| < 8` off the real axis, and `1 < |z/nu| < 2` at
-//! orders past about 8. Before Stage 24 those points were *accepted*,
-//! with estimates up to 1e14 times too small. Refusing them is the
-//! improvement, even though it shows up as coverage lost.
+//! Stage 24 left a band uncovered — `1 < |z/nu| < 8` off the real axis,
+//! and `1 < |z/nu| < 2` past order 8 — having established that the
+//! points there had previously been *accepted* with estimates up to
+//! 1e14 too small.
+//!
+//! **Stage 2D closed most of it.** The Airy-type expansion of DLMF
+//! 10.20 is uniformly valid across exactly that band; what restricted
+//! it to a neighbourhood of the turning point was a branch, not a
+//! limit. With [`crate::airy_uniform::zeta_c`] supplying it, the band
+//! goes from 41 % to **97.5 %** served inside `|arg(z/nu)| <= 0.8`.
+//! Beyond that sector the branch anchor is not measured and the route
+//! refuses, so what remains open is the same band at large argument.
 
 use crate::bessel_complex::{bessel_i_nu, bessel_j_nu, bessel_k_nu, bessel_y_nu};
 use crate::complex::Complex64 as C;

@@ -254,10 +254,13 @@ restated here so the move does not quietly bury them.
    0.125) gives `2.3e-1` — 23 % of the energy gone. The same failure
    hits the scene playback at large `dt` (at `dt = 0.1`, E falls
    30000 → 78.66 while the window reports `mode = running`). The rule of
-   thumb is to keep the output interval below the mean free time between
-   collisions; full measurements in `box_of_shapes_m32.md`. **This is a
-   real defect and remains unfixed** — the trajectory must not depend on
-   how often output is requested.
+   thumb was to keep the output interval below the mean free time
+   between collisions; full measurements in `box_of_shapes_m32.md`.
+   **Repaired in Stage 2C.** The cause was the Zeno guard counting
+   events per *output interval*, so ordinary elastic collisions were
+   forced plastic when fewer snapshots were asked for. It now counts a
+   time-local burst, and the coarse run conserves energy to 1.0e-7
+   while resolving 9160 collisions instead of 898.
 2. **Parallel face-on disk–disk crossings are invisible to
    rootfinding** (`|dz|` touches zero without a sign change). Pinned
    deliberately, with a test asserting the documented behaviour; tilt a
@@ -271,7 +274,7 @@ restated here so the move does not quietly bury them.
 git clone https://github.com/once-ere/rustSimulate.git
 cd rustSimulate
 cargo build --workspace          # expect zero warnings
-cargo test --workspace           # expect 104 passed
+cargo test --workspace           # expect 556 passed
 cargo run -p physical_object --release --example kepler_orbit   # expect SUCCESS
 python3 jupyter/test_protocol.py
 git ls-files -ci --exclude-standard    # expect no output

@@ -328,8 +328,14 @@ Unit tests prove the pieces; three examples prove they do the job:
   hard limits rather than performance advice. Where the order happens
   to be whole, the integer-order Miller routines reach much further
   along the real axis.
-- **The band `1 < |z/ν| < 8` away from the real axis, and
-  `1 < |z/ν| < 2` at order past about 8.** This replaces the earlier
+- **The band `1 < |z/ν| < 8` at large `|arg(z/ν)|`.** Stage 2D closed
+  the same band inside `|arg(z/ν)| ≤ 0.8`, taking it from 41 % to
+  **97.5 %** served, by extending DLMF 10.20 past the turning point:
+  the obstacle was `ζ`'s branch under the principal `2/3` power, not
+  the expansion's validity. Outside that sector the branch anchor
+  (`arg F → 1.5 arg w`) is not measured, and the route refuses.
+  *Formerly stated as:* the band `1 < |z/ν| < 8` away from the real
+  axis, and `1 < |z/ν| < 2` at order past about 8. This replaces the earlier
   entry "a sliver at `4 ≲ |ν| ≲ 8`", which Stage 24 closed — that
   sliver was an artefact of guarding the Debye route by *order* when
   its accuracy is governed by `|z|/|ν|` and `arg(z/ν)`. Restating the
