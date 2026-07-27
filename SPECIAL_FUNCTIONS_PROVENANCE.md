@@ -392,11 +392,31 @@ Unit tests prove the pieces; three examples prove they do the job:
   pins both halves — the selector's accuracy and the raw route's
   failure — so neither can change silently.
 
-  No guard has been added to the raw route yet: calibrating one
-  honestly needs a sweep that has not been run, and a hastily-tuned
-  threshold is the failure mode this project exists to avoid. The
-  function's documentation now says plainly that it is one route rather
-  than a selector, and points at the selector.
+  **Stage 2J added the guard**, and it is measured rather than modelled.
+  The ascending series now reports its own cancellation —
+  `max|term| / |sum|`, the largest quantity formed over the answer
+  produced — and the reflection multiplies that by its own. The route
+  refuses when `loss × eps` exceeds **1e-3**:
+
+  | ν, z | actual error | `loss × eps` | |
+  |---|---|---|---|
+  | 36.8, 54.46 | 3.09e4 | 1.02 | refuse |
+  | 36.8, 47.84 | 2.18 | 9.1e-3 | refuse |
+  | 7.15, 61.8 | (near a zero of `Y`) | 8.7e-2 | refuse |
+  | 20.5, 30.34 | 7.8e-8 | 1.9e-6 | allow |
+  | 12.3, 16.60 | 7.5e-12 | 1.2e-11 | allow |
+
+  The threshold separates every measured case with the closest allowed
+  one 500× inside it. The indicator is **not** a proven bound — at
+  `ν = 36.8, z = 47.84` the actual error is 240× larger than
+  `loss × eps` — and the margin exists to carry exactly that, stated
+  rather than implied.
+
+  One existing test moved as a result: a Hankel asymptotic check used
+  `ν = 1/2, z = 30`, which the guard now refuses. The module had
+  already documented `Y` as "unusable past 30", so the guard agreeing
+  with the documentation is the point — **the test moved in rather than
+  the threshold moving out.**
 - **A wider number type.** For `z` well below `ν`, `J` is below the
   smallest double and `Y` above the largest. The expansions determine
   those values; `f64` cannot carry them, and the routines say so and

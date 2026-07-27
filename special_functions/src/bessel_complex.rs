@@ -767,7 +767,13 @@ pub fn bessel_k_c(n: i32, z: C) -> Result<C, String> {
 const NEAR_INTEGER: f64 = 1e-9;
 
 /// The shared ascending series. `alternating` selects `J` (true) or `I`.
-fn nu_series(nu: f64, z: C, alternating: bool) -> Result<C, String> {
+/// The ascending series, and **how much of its own precision it spent**.
+///
+/// The second return is `max|term| / |sum|`: the ratio of the largest
+/// quantity formed to the answer produced. That is the cancellation,
+/// measured from the values rather than modelled from `exp(|z|)`, and
+/// it is what makes an honest guard possible — see [`bessel_y_nu`].
+fn nu_series_loss(nu: f64, z: C, alternating: bool) -> Result<(C, f64), String> {
     if !nu.is_finite() {
         return Err(format!("bessel: the order must be finite, got {nu}"));
     }
@@ -777,9 +783,9 @@ fn nu_series(nu: f64, z: C, alternating: bool) -> Result<C, String> {
     if z.abs() == 0.0 {
         // z^nu is 0 for nu > 0, 1 for nu = 0, singular for nu < 0
         return if nu > 0.0 {
-            Ok(C::ZERO)
+            Ok((C::ZERO, 1.0))
         } else if nu == 0.0 {
-            Ok(C::ONE)
+            Ok((C::ONE, 1.0))
         } else {
             Err("bessel: singular at z = 0 for negative order".to_string())
         };
@@ -792,9 +798,11 @@ fn nu_series(nu: f64, z: C, alternating: bool) -> Result<C, String> {
     let mut sum = C::ZERO;
     let mut term_pow = C::ONE; // (+/- z^2/4)^k
     let mut fact_k = 1.0f64;
+    let mut largest = 0.0f64;
     for k in 0..400 {
         let coeff = rgamma(nu + k as f64 + 1.0) / fact_k;
         let add = term_pow * coeff;
+        largest = largest.max(add.abs());
         sum = sum + add;
         if k > 6 && add.abs() <= 1e-18 * sum.abs().max(1e-300) {
             break;
@@ -802,6 +810,7 @@ fn nu_series(nu: f64, z: C, alternating: bool) -> Result<C, String> {
         term_pow = term_pow * step;
         fact_k *= (k + 1) as f64;
     }
+    let loss = if sum.abs() > 0.0 { (largest / sum.abs()).max(1.0) } else { f64::INFINITY };
     let pref = half.powf(nu);
     let out = pref * sum;
     if !out.is_finite() {
@@ -809,7 +818,12 @@ fn nu_series(nu: f64, z: C, alternating: bool) -> Result<C, String> {
             "bessel: the series overflowed for nu = {nu}, z = {z:?}"
         ));
     }
-    Ok(out)
+    Ok((out, loss))
+}
+
+/// The series without its loss figure.
+fn nu_series(nu: f64, z: C, alternating: bool) -> Result<C, String> {
+    nu_series_loss(nu, z, alternating).map(|(v, _)| v)
 }
 
 /// `J_nu(z)` for **real order** `nu` (integer or not) and complex `z`.
@@ -871,6 +885,26 @@ pub fn bessel_i_nu(nu: f64, z: C) -> Result<C, String> {
 ///
 /// # Errors
 /// As [`bessel_j_nu`]; also `z = 0`, where `Y` is singular.
+/// How much precision the reflection route spends, **measured from the
+/// values**: the largest quantity either series forms, over the answer.
+///
+/// This is what makes the guard in [`bessel_y_nu`] possible without a
+/// modelled `exp(|z|)` law. `nu_series_loss` reports each series'
+/// own cancellation; the reflection then adds its own, and the product
+/// is what `f64` has to survive.
+fn y_nu_loss(nu: f64, z: C) -> Result<f64, String> {
+    let nearest = nu.round();
+    if (nu - nearest).abs() < NEAR_INTEGER { return Ok(1.0); }
+    let (jp, lp) = nu_series_loss(nu, z, true)?;
+    let (jm, lm) = nu_series_loss(-nu, z, true)?;
+    let (s, c) = (nu * std::f64::consts::PI).sin_cos();
+    let out = (jp * c - jm) * (1.0 / s);
+    let combine = if out.abs() > 0.0 {
+        ((jp * c).abs() + jm.abs()) / (out.abs() * s.abs())
+    } else { f64::INFINITY };
+    Ok(lp.max(lm) * combine.max(1.0))
+}
+
 pub fn bessel_y_nu(nu: f64, z: C) -> Result<C, String> {
     let nearest = nu.round();
     if (nu - nearest).abs() < NEAR_INTEGER {
@@ -888,7 +922,33 @@ pub fn bessel_y_nu(nu: f64, z: C) -> Result<C, String> {
     let (s, c) = (nu * std::f64::consts::PI).sin_cos();
     let jp = bessel_j_nu(nu, z)?;
     let jm = bessel_j_nu(-nu, z)?;
-    Ok((jp * c - jm) * (1.0 / s))
+    let out = (jp * c - jm) * (1.0 / s);
+
+    // **The guard Stage 2I deferred, calibrated in 2J.** Measured
+    // `loss * eps` against the actual error at the points 2I recorded:
+    //
+    //   nu = 36.8, z = 54.46   err 3.09e4    loss*eps 1.02   refuse
+    //   nu = 36.8, z = 47.84   err 2.18      loss*eps 9.1e-3 refuse
+    //   nu =  7.15, z = 61.8   near a zero   loss*eps 8.7e-2 refuse
+    //   nu = 20.5, z = 30.34   err 7.8e-8    loss*eps 1.9e-6 allow
+    //   nu = 12.3, z = 16.60   err 7.5e-12   loss*eps 1.2e-11 allow
+    //
+    // 1e-3 separates every measured case, with the closest allowed one
+    // 500x inside it. The loss is NOT a proven bound — at
+    // `nu = 36.8, z = 47.84` the actual error is 240x larger than
+    // `loss * eps` — so the threshold carries that margin explicitly
+    // rather than pretending the indicator is exact.
+    let spent = y_nu_loss(nu, z)? * f64::EPSILON;
+    if spent > 1.0e-3 {
+        return Err(format!(
+            "bessel_y_nu: the reflection [J_nu cos(nu pi) - J_{{-nu}}]/sin(nu pi) has spent \
+             {spent:.1e} of its relative precision at nu = {nu}, z = {z:?} — the ascending \
+             series for J_{{-nu}} forms terms of order exp(|z|) to produce a result of \
+             order 1. Use `bessel_cnu::bessel_y_cnu`, which compares error estimates across \
+             routes and is accurate here."
+        ));
+    }
+    Ok(out)
     // NOTE (Stage 2I): this route is BADLY wrong for non-integer `nu`
     // once `|z|` is large enough that the ascending series for
     // `J_{-nu}` has cancelled away its digits — measured, a relative

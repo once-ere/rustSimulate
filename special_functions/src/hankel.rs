@@ -368,7 +368,13 @@ mod tests {
             // ascending series and loses |z|/ln10 digits (at x = 40 it
             // is wrong in the first digit). That limit was mis-stated
             // until this test found it — see `bessel_complex`.
-            for &x in &[10.0_f64, 20.0, 30.0] {
+            // 30 was here until Stage 2J. `bessel_y_nu`'s reflection
+            // now refuses it — at nu = 1/2, z = 30 the ascending series
+            // has spent 1.1e-3 of its precision, and the module already
+            // documented Y as "unusable past 30". The guard agreeing
+            // with the documentation is the point; the test moves in
+            // rather than the threshold moving out.
+            for &x in &[10.0_f64, 16.0, 22.0] {
                 // `hankel_h1_nu`, not `hankel_h1_c(nu as i32, ..)` —
                 // the first draft wrote the latter and silently tested
                 // H1_0 against the nu = 1/2 asymptotic, which is the

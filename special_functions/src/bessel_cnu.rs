@@ -482,17 +482,20 @@ mod tests {
                 "nu = {nu}, z/nu = {frac}: selector gave {} against Cephes {want} ({rel:.2e})",
                 got.re
             );
-            // ...and the raw route really is the broken one, so this
-            // test cannot quietly stop being about anything.
-            let raw = crate::bessel_complex::bessel_y_nu(nu, C::real(z)).unwrap();
-            let raw_rel = (raw.re - want).abs() / want.abs();
+            // ...and the raw route must not quietly return a wrong
+            // number. Stage 2J gave it a measured guard, so at the two
+            // points 2I recorded it now REFUSES; the test tracks that
+            // rather than the old behaviour.
+            let raw = crate::bessel_complex::bessel_y_nu(nu, C::real(z));
             if nu > 30.0 {
-                assert!(
-                    raw_rel > 1.0,
-                    "the raw reflection route is supposed to be badly wrong at nu = {nu}, \
-                     z/nu = {frac}; it gave {raw_rel:.2e}. If it has been fixed, this test \
-                     and the note on bessel_y_nu both need updating."
+                let e = raw.expect_err(
+                    "the raw reflection route must refuse where it cannot deliver",
                 );
+                assert!(e.contains("precision"), "and say why: {e}");
+                assert!(e.contains("bessel_y_cnu"), "and where to go instead: {e}");
+            } else {
+                let raw_rel = (raw.unwrap().re - want).abs() / want.abs();
+                assert!(raw_rel < 1e-6, "below the guard it should still be usable");
             }
         }
     }
