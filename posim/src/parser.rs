@@ -166,6 +166,11 @@
 //!                bessel_j bessel_j_array bessel_j_z bessel_i_z
 //!                bessel_y_z bessel_k_z bessel_j_nu bessel_i_nu
 //!                bessel_y_nu bessel_k_nu
+//!                hankel_h1_z hankel_h2_z hankel_h1_nu hankel_h2_nu
+//!                hankel_h1_prime_z hankel_h2_prime_z
+//!                hankel_h1_prime_nu hankel_h2_prime_nu
+//!                sph_hankel_h1 sph_hankel_h2
+//!                sph_hankel_h1_prime sph_hankel_h2_prime
 //!                gauss_legendre eigenvalues
 //!                jacobi_eigen solve_tridiag solve_tridiag_c
 //!                solve_cyclic_tridiag_c wigner_3j wigner_6j

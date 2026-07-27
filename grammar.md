@@ -277,6 +277,9 @@ a confident, wrong number, and you would have no way to notice.
 | cylindrical Bessel | `bessel_j(n,x)`, `bessel_j_array(n_max,x)` → list |
 | cylindrical Bessel, **complex argument** | `bessel_j_z(n,z)`, `bessel_i_z(n,z)`, `bessel_y_z(n,z)`, `bessel_k_z(n,z)` |
 | cylindrical Bessel, **any real order** | `bessel_j_nu(nu,z)`, `bessel_i_nu(nu,z)`, `bessel_y_nu(nu,z)`, `bessel_k_nu(nu,z)` |
+| Hankel (travelling waves) | `hankel_h1_z(n,z)`, `hankel_h2_z(n,z)`, `hankel_h1_nu(nu,z)`, `hankel_h2_nu(nu,z)` |
+| Hankel derivatives | `hankel_h1_prime_z(n,z)`, `hankel_h2_prime_z(n,z)`, `hankel_h1_prime_nu(nu,z)`, `hankel_h2_prime_nu(nu,z)` |
+| spherical Hankel | `sph_hankel_h1(n,x)`, `sph_hankel_h2(n,x)`, `sph_hankel_h1_prime(n,x)`, `sph_hankel_h2_prime(n,x)` |
 | quadrature | `gauss_legendre(n)` → `[nodes, weights]` |
 | eigenproblems | `eigenvalues(matrix)` → list, `jacobi_eigen(matrix)` → `[values, vectors]` |
 | angular momentum | `wigner_3j(j1,j2,j3,m1,m2,m3)`, `wigner_6j(j1,j2,j3,j4,j5,j6)`, `wigner_9j(a,b,c,d,e,f,g,h,i)`, `clebsch_gordan(j1,m1,j2,m2,j3,m3)` |
@@ -308,7 +311,7 @@ normalisation `J₀ + 2(J₂+J₄+…) = 1` are both identities in `z`, real or
 not. The second follows from the generating function at `t = 1`, where
 `exp(0) = 1`.
 
-**Accuracy falls with the imaginary part**, and the reason is
+**Accuracy for `J` falls with the imaginary part**, and the reason is
 cancellation rather than anything about the recurrence: the individual
 `J_n(z)` grow like `exp(|Im z|)` while the sum they must reproduce is
 exactly 1, so about `|Im z|/ln 10` decimal digits are lost. Measured
@@ -317,9 +320,48 @@ against the generating-function identity
 
 | `\|Im z\|` | 0 | 5 | 8 | 12 | 18 | 25 |
 |---|---|---|---|---|---|---|
-| relative error | 1e-16 | 1e-14 | 1e-13 | 1e-11 | 1e-9 | 1e-6 |
+| relative error of `J` | 1e-16 | 1e-14 | 1e-13 | 1e-11 | 1e-9 | 1e-6 |
 
-The error barely depends on `Re z`, exactly as that argument predicts.
+For `J` the error barely depends on `Re z`, exactly as that argument
+predicts.
+
+**That law governs `J` alone, and an earlier version of this manual let
+it stand for the whole family. It does not.** `I` is `J` at right
+angles, so it obeys the mirror law. But `Y` comes from an ascending
+series and `K` is assembled from `J` and `Y` at imaginary argument, and
+a series fails where a recurrence does not — on the **real** axis, which
+is exactly where `J` is at its best. There are four laws:
+
+```
+relative error ~ 1e-16 * exp(L)
+
+  bessel_j_z   L = |Im z|                      worst up the imaginary axis
+  bessel_i_z   L = |Re z|                      worst along the real axis
+  bessel_y_z   L = |z| - |Im z|                worst along the real axis
+  bessel_k_z   L = max(2|Re z|, |z|) + Re z    worst along the POSITIVE real axis
+```
+
+Measured against Cephes on the axis where each is at its worst:
+
+| x (real) | 1 | 10 | 20 | 30 | 35 |
+|---|---|---|---|---|---|
+| `bessel_j_z(0,x)` | 1e-16 | 3e-16 | 5e-16 | 2e-15 | 7e-16 |
+| `bessel_j_z(0,ix)` | 2e-16 | 1e-13 | 5e-9 | 5e-5 | 3e-3 |
+| `bessel_i_z(0,x)` | 2e-16 | 1e-13 | 5e-9 | 5e-5 | 3e-3 |
+| `bessel_y_z(0,x)` | 1e-15 | 3e-12 | 3e-8 | 2e-4 | 6e-2 |
+| `bessel_k_z(0,x)` | 7e-16 | 3e-5 | 8e8 | 5e21 | 7e27 |
+
+So `Y_0` on the real axis is wrong in the first digit by `x = 40`, and
+`K_0` is worthless past about `x = 12`. The rule of thumb that is
+actually safe is **`|z| <= 10` for every kind**; past that, check which
+kind you are using and in which direction. `bessel_j_z` and
+`bessel_i_z` columns agree digit for digit because they are the same
+measurement — `I_n(z)` *is* `J_n(iz)`.
+
+The correction came from a Hankel asymptotic test at `x = 40`. The old
+claim was measured, but only through the generating-function identity,
+which involves no `Y` at all. A narrow measurement quoted as a broad one
+is still a wrong claim.
 #### `Y_n` and `K_n`: a different method, because they need one
 
 `Y_n` has a **logarithmic branch point** at the origin, so no recurrence
@@ -445,6 +487,97 @@ forms agreeing to the last digit, computed two entirely different ways.
 `Out[6]` and `Out[7]` are byte-identical, which is the whole-order
 handover doing what it claims. `In[8]` is the contrast: the `_z` form
 still refuses a fractional order rather than truncating it.
+
+#### Hankel functions — the travelling-wave pair
+
+`J` and `Y` are the *standing*-wave basis of the Bessel equation.
+`H^(1) = J + iY` and `H^(2) = J - iY` are the *travelling*-wave basis of
+the same equation, and for wave problems they are the ones you want:
+
+```
+H1_nu(x) ~ sqrt(2/(pi x)) exp(i(x - nu pi/2 - pi/4))     as x grows
+```
+
+which is a pure `exp(+ikr)/sqrt(r)` outgoing cylindrical wave under the
+`exp(-i omega t)` convention. A scattering boundary condition is stated
+in terms of `H1`, not in terms of `J` and `Y`. The spherical pair
+`sph_hankel_h1(n,x) = j_n(x) + i y_n(x)` does the same job in three
+dimensions; it takes a **real** argument and returns a complex value.
+
+The `_z` forms take a whole order, the `_nu` forms any real order, and
+`_prime` gives the derivative — computed from
+`C'_nu(z) = C_{nu-1}(z) - (nu/z) C_nu(z)` (DLMF 10.6.2), which holds for
+every cylinder function and so needs no separate algorithm.
+
+**Why these are entry points at all.** Each is two calls to functions
+the language already had, and an earlier version of this manual said so
+and left it at that. That was wrong, for a reason the accuracy note
+below makes concrete: *the assembly `J + iY` silently destroys most of
+its digits in half the plane*, and a user writing it by hand has no way
+to know. A named function is where that knowledge can live.
+
+```
+In[1]:= hankel_h1_z(0, 3)
+Out[1]= -0.26005195490193356 + 0.37685001001279045i
+In[2]:= hankel_h1_prime_z(0, 3)
+Out[2]= -0.3390589585259365 - 0.3246744247917999i
+In[3]:= hankel_h1_z(1, 3)
+Out[3]= 0.3390589585259365 + 0.3246744247917999i
+In[4]:= abs(sph_hankel_h1(3, 800) * 800)
+Out[4]= 1.0000046875439457
+In[5]:= hankel_h1_z(0, 0 + 10i)
+Out[5]= 0 - 0.00001131945100496523i
+In[6]:= hankel_h2_z(0, 0 + 10i)
+Out[6]= 5631.433256931902 + 0.00001131945100496523i
+In[7]:= hankel_h1_nu(0.5, 2 - 0.5i)
+Out[7]= 0.7802707009570485 + 0.4802074888838277i
+In[8]:= sph_hankel_h1(0, 2.3)
+Out[8]= 0.32421965746813924 + 0.2896852266434018i
+In[9]:= sph_hankel_h2(0, 2.3)
+Out[9]= 0.32421965746813924 - 0.2896852266434018i
+```
+
+`Out[2]` and `Out[3]` are exact negatives, which is `H1_0' = -H1_1`.
+`Out[4]` is the outgoing-wave property `|x h1_n(x)| -> 1`, and the gap
+from 1 is `4.6875e-6`, which is `n(n+1)/(4x^2)` for `n = 3`, `x = 800`
+to every printed digit. `Out[8]` and `Out[9]` are conjugates, as they
+must be for real `x`.
+
+**`Out[5]` and `Out[6]` are the accuracy warning, in one pair of lines.**
+Both are computed from the same `J_0(10i)` and `Y_0(10i)`, each about
+`2800` in magnitude. `H2` comes out as `5631`; `H1` comes out as
+`1.13e-5`, which is what is left after those two large numbers cancel.
+`H1` above the real axis is the small difference of large quantities,
+and it is only as accurate as that subtraction allows:
+
+```
+relative error of H1 ~ 1e-16 * exp(3 Im z)      for Im z > 0
+relative error of H2 ~ 1e-16 * exp(3 |Im z|)    for Im z < 0
+```
+
+so `H1` is good to `Im z ~ 8`, has three digits left at `10`, and is
+gone by `12`. Below the axis it is exact, and `H2` is the mirror image
+of all of this. **Use whichever of the two is on its good side.**
+Switching between the `_z` and `_nu` forms does not help — measured,
+they agree to within a factor of 1.5, because at whole order `_nu` hands
+`Y` to `_z` and the two share the ingredient that dominates. Only a
+scaled formulation (returning `exp(-iz) H1` and letting the caller
+supply the exponential, as AMOS does) would remove the problem, and that
+is **not** implemented.
+
+That `exp(3 Im z)` is the same law `bessel_k_z` obeys on the real axis,
+which is no coincidence: `K_nu(y) = (pi/2) i^{nu+1} H1_nu(iy)`
+(DLMF 10.27.8), so they are literally the same computation.
+
+The spherical pair has none of this trouble — `j_n` and `y_n` are
+recurrences on the real line, and `sph_hankel_h1` is accurate wherever
+they are.
+
+Measured, not asserted:
+
+```
+cargo run -p special_functions --release --example hankel_accuracy
+```
 
 **A wrinkle worth knowing about lists.** The bracket literal is
 overloaded: `[a,b,c]` is a *vector*, `[a,b,c,d]` is a *quaternion*, and

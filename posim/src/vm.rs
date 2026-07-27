@@ -565,6 +565,26 @@ special functions (see grammar.md; orders must be WHOLE numbers):
                             hand those to the _z forms; they use an
                             ascending series, so keep |z| <~ 15 for J
                             and Y, and Re z <~ 12 for I and K)
+  (abs() of a complex value is its modulus; the other scalar builtins
+   are real-only, since complex sqrt and log need a branch-cut choice
+   this language has not made)
+  Hankel (travelling wave)  hankel_h1_z(n,z)   H1 = J + iY, outgoing
+                            hankel_h2_z(n,z)   H2 = J - iY, incoming
+                            hankel_h1_nu(nu,z) any real order
+                            hankel_h2_nu(nu,z)
+                            hankel_h1_prime_z(n,z)   derivatives
+                            hankel_h2_prime_z(n,z)
+                            hankel_h1_prime_nu(nu,z)
+                            hankel_h2_prime_nu(nu,z)
+                            (H1 is accurate for Im z <= 0 and H2 for
+                            Im z >= 0; each loses ~3|Im z| nepers on
+                            its bad side, so use the other one)
+  spherical Hankel          sph_hankel_h1(n,x)  REAL x, complex result
+                            sph_hankel_h2(n,x)
+                            sph_hankel_h1_prime(n,x)
+                            sph_hankel_h2_prime(n,x)
+                            (the outgoing/incoming spherical waves;
+                            |x*h1| -> 1 exactly as it should)
   quadrature                gauss_legendre(n)  -> [nodes, weights]
   eigenproblems             eigenvalues(matrix)          -> list
                             jacobi_eigen(matrix) -> [values, vectors]
@@ -2119,6 +2139,19 @@ fn call_builtin(name: &str, mut args: Vec<Value>) -> Result<Value, String> {
             if args.len() != 1 {
                 return arity_err(1, args.len());
             }
+            // abs() of a complex number is its modulus. Without this,
+            // the single most natural question to ask about a complex
+            // result — how big is it — could not be asked at all, which
+            // is why the outgoing-wave check |x h1(x)| = 1 was
+            // unwritable in the language before the Hankel functions
+            // arrived. The other five stay real-only: complex sqrt and
+            // log carry branch-cut choices this language has not
+            // committed to.
+            if name == "abs" {
+                if let Value::Complex(c) = &args[0] {
+                    return Ok(Value::Num(c.abs()));
+                }
+            }
             let x = num1(&mut args)?;
             let y = match name {
                 "sqrt" => x.sqrt(),
@@ -2668,6 +2701,44 @@ pub fn execute_line(line: &str, state: &mut SimState) -> Result<Value, String> {
 
 #[cfg(test)]
 mod tests {
+    /// `abs()` accepts a complex value and returns its modulus. This
+    /// arrived with the Hankel functions, because until then there was
+    /// no way to ask how big a complex result was — which made the
+    /// outgoing-wave property `|x h1_n(x)| -> 1` unwritable in the
+    /// language even though every ingredient was present.
+    #[test]
+    fn abs_of_a_complex_value_is_its_modulus() {
+        use special_functions::complex::Complex64 as Cx;
+        let call = |v: super::Value| super::call_builtin("abs", vec![v]);
+        // 3 - 4i has modulus exactly 5.
+        match call(super::Value::Complex(Cx::new(3.0, -4.0))) {
+            Ok(super::Value::Num(x)) => assert_eq!(x, 5.0),
+            other => panic!("abs(3-4i) gave {other:?}"),
+        }
+        // The real case is unchanged.
+        match call(super::Value::Num(-2.5)) {
+            Ok(super::Value::Num(x)) => assert_eq!(x, 2.5),
+            other => panic!("abs(-2.5) gave {other:?}"),
+        }
+        // ... and the outgoing-wave check the language can now express.
+        let h = special_functions::hankel::sph_hankel_h1(3, 800.0).unwrap() * 800.0;
+        match call(super::Value::Complex(h)) {
+            Ok(super::Value::Num(x)) => {
+                // n(n+1)/(4x^2) = 12/(4 * 640000)
+                assert!((x - 1.0 - 12.0 / (4.0 * 640_000.0)).abs() < 1e-10, "|x h1_3| = {x}");
+            }
+            other => panic!("abs of a Hankel value gave {other:?}"),
+        }
+        // sqrt/log stay real-only: a complex argument is an error, not
+        // a silent branch-cut choice.
+        assert!(call_is_err("sqrt", Cx::new(-1.0, 0.0)));
+        assert!(call_is_err("log", Cx::new(-1.0, 0.0)));
+    }
+
+    fn call_is_err(name: &str, z: special_functions::complex::Complex64) -> bool {
+        super::call_builtin(name, vec![super::Value::Complex(z)]).is_err()
+    }
+
 
     /// Comparison operators yield 1/0, which is what lets
     /// `(x > a) * (x < b)` act as an indicator function.

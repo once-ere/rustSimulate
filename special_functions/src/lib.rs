@@ -46,6 +46,7 @@
 
 pub mod bessel;
 pub mod bessel_complex;
+pub mod hankel;
 pub mod wigner;
 pub mod complex;
 pub mod tridiag;

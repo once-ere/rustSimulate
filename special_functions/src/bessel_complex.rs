@@ -25,31 +25,58 @@
 //!   evaluated at `t = 1`, where the left side is `exp(0) = 1`. Also an
 //!   identity in `z`.
 //!
-//! # Accuracy, measured rather than claimed
+//! # Accuracy: FOUR laws, not one
 //!
-//! The limit is **cancellation in the normalising sum**. For
-//! `z = x + iy` the individual `J_n(z)` grow like `exp(|y|)` while the
-//! sum they must reproduce is exactly 1, so about `|y| / ln(10)` decimal
-//! digits are lost out of the ~16 an `f64` carries.
+//! **This section was wrong until it was measured properly, and the way
+//! it was wrong is worth stating plainly.** It described a single law —
+//! the one governing `J` — and left the reader to assume it covered the
+//! module. It does not. `J` and `I` come from Miller recurrence; `Y`
+//! comes from an ascending series and `K` is assembled from `J` and `Y`
+//! at imaginary argument. A series and a recurrence fail in different
+//! places, so there are four laws:
 //!
-//! `examples/bessel_complex_accuracy.rs` measures this against the
-//! generating-function identity across the plane, and the measurement is
-//! what the numbers below come from:
+//! ```text
+//!   relative error ~ 1e-16 * exp(L)
 //!
-//! | `|Im z|` | 0 | 5 | 8 | 12 | 18 | 25 |
-//! |---|---|---|---|---|---|---|
-//! | relative error | 1e-16 | 1e-14 | 1e-13 | 1e-11 | 1e-9 | 1e-6 |
+//!   J_n:  L = |Im z|                        worst up the imaginary axis
+//!   I_n:  L = |Re z|                        worst along the real axis
+//!   Y_n:  L = |z| - |Im z|                  worst along the real axis
+//!   K_n:  L = max(2|Re z|, |z|) + Re z      worst along the POSITIVE real axis
+//! ```
 //!
-//! The error depends on `|Im z|` almost independently of `Re z`, exactly
-//! as the cancellation argument predicts, and the digits retained track
-//! `16 - |Im z|/ln(10)` closely.
+//! Measured against Cephes on the axes where each is at its worst
+//! (`examples/bessel_complex_accuracy.rs`), and pinned by
+//! `integer_order_accuracy_laws_hold` with two digits of slack:
 //!
-//! **An earlier version of this note claimed the result was "worthless
-//! past `|Im z| ~ 20`". It is not** — at `|Im z| = 25` five or six good
-//! digits remain. The claim was a plausible guess written before the
-//! measurement existed; the measurement corrected it. Beyond about 30 a
-//! scaled or asymptotic method really is needed, and none is implemented
-//! here.
+//! | x (real) | 1 | 10 | 20 | 30 | 35 |
+//! |---|---|---|---|---|---|
+//! | `J_0(x)`  | 1e-16 | 3e-16 | 5e-16 | 2e-15 | 7e-16 |
+//! | `J_0(ix)` | 2e-16 | 1e-13 | 5e-9  | 5e-5  | 3e-3  |
+//! | `I_0(x)`  | 2e-16 | 1e-13 | 5e-9  | 5e-5  | 3e-3  |
+//! | `Y_0(x)`  | 1e-15 | 3e-12 | 3e-8  | 2e-4  | 6e-2  |
+//! | `K_0(x)`  | 7e-16 | 3e-5  | 8e8   | 5e21  | 7e27  |
+//!
+//! So: **`J` is excellent on the real axis and `Y` is not**, and `K` on
+//! the real axis is unusable past about `x = 12`. `I` and `J` are the
+//! same function at right angles, which is why their columns match to
+//! the last digit. Practically, the whole family is sound for
+//! `|z| <~ 10`; past that, check which kind you are using and in which
+//! direction.
+//!
+//! `K`'s exponent has three terms because `K_n(z)` is built from
+//! `J_n(iz) + i Y_n(iz)`: that `J` is amplified by `exp(|Re z|)`
+//! relative to an answer of size `exp(-Re z)`, on top of the ordinary
+//! series cancellation. The same shape appears at non-integer order,
+//! where the law is the simpler `|z| + Re z` because there is no Miller
+//! step in the path.
+//!
+//! **Two earlier claims in this note were wrong and are corrected here.**
+//! The first said the result was "worthless past `|Im z| ~ 20`" — it is
+//! not; at `|Im z| = 25` five or six digits of `J` remain. The second
+//! said the error "barely depends on `Re z`" — true of `J`, false of
+//! `Y` and badly false of `K`. Both came from measuring `J` alone, via
+//! the generating-function identity, which involves no `Y` at all. A
+//! Hankel asymptotic test at `x = 40` was what finally exposed it.
 //!
 //! # `Y_n` and `K_n` need a different method
 //!
@@ -1199,6 +1226,99 @@ mod tests {
             let want = bessel_k_c(n, z).unwrap();
             assert!(close(bessel_k_nu(-(n as f64), z).unwrap(), want, 1e-11), "K_-{n}");
         }
+    }
+
+    /// The INTEGER-order accuracy laws, pinned against Cephes.
+    ///
+    /// This test exists because the original documentation for this
+    /// module stated one law — `J`'s — and implied it covered all four
+    /// kinds. It does not. `J` and `I` come from Miller recurrence and
+    /// are excellent; `Y` comes from an ascending series and `K` is
+    /// built from `J` and `Y` at imaginary argument, so both carry the
+    /// `exp(|z|)` cancellation of a series. On the real axis `Y` is
+    /// wrong in the first digit by `x = 40` and `K` long before that,
+    /// neither of which the old text admitted. A Hankel asymptotic test
+    /// found it; this pins it.
+    ///
+    /// Each law is checked on the axis where its worst case lies and
+    /// where an independent reference exists, with two decimal digits of
+    /// slack over the model:
+    ///
+    /// ```text
+    ///   J_n:  1e-16 exp(|Im z|)                  worst up the imaginary axis
+    ///   I_n:  1e-16 exp(|Re z|)                  worst along the real axis
+    ///   Y_n:  1e-16 exp(|z| - |Im z|)            worst along the real axis
+    ///   K_n:  1e-16 exp(max(2|Re z|, |z|) + Re z)   worst along the positive real axis
+    /// ```
+    ///
+    /// `K`'s exponent is the ugly one because `K_n(z)` is assembled from
+    /// `J_n(iz) + i Y_n(iz)`: the `J` there is already amplified by
+    /// `exp(|Re z|)` relative to a result of size `exp(-Re z)`, which is
+    /// where the third factor comes from.
+    #[test]
+    fn integer_order_accuracy_laws_hold() {
+        use spec_math::cephes64::{i0, j0, k0};
+        let bound = |l: f64| 1e-14 * l.exp();
+        for &x in &[1.0, 5.0, 10.0, 15.0, 20.0, 25.0, 30.0, 35.0] {
+            // J on the imaginary axis, where it is worst: J_0(ix) = I_0(x).
+            let got = bessel_j_c(0, C::new(0.0, x)).unwrap().re;
+            let want = i0(x);
+            assert!(
+                (got - want).abs() <= bound(x) * want.abs(),
+                "J_0({x}i): {got:e} vs {want:e}"
+            );
+            // ... and on the real axis, where it is best.
+            // Near a zero of J_0 a relative bound is meaningless, so the
+            // scale is floored at 0.1 — comparable to the function's own
+            // amplitude, not to the value at that particular x.
+            let got = bessel_j_c(0, C::real(x)).unwrap().re;
+            assert!(
+                (got - j0(x)).abs() <= bound(0.0) * j0(x).abs().max(0.1),
+                "J_0({x}): {got:e} vs {:e}",
+                j0(x)
+            );
+            // I on the real axis, where it is worst: I is J at iz, so
+            // this is the same measurement seen from the other side.
+            let got = bessel_i_c(0, C::real(x)).unwrap().re;
+            assert!(
+                (got - i0(x)).abs() <= bound(x) * i0(x),
+                "I_0({x}): {got:e} vs {:e}",
+                i0(x)
+            );
+            // Y on the real axis, where L = |z|.
+            let got = bessel_y_c(0, C::real(x)).unwrap().re;
+            let want = yn(0, x);
+            assert!(
+                (got - want).abs() <= bound(x) * want.abs().max(0.1),
+                "Y_0({x}): {got:e} vs {want:e}"
+            );
+            // K on the real axis, where L = 3|z|. Past x ~ 40 the
+            // routine gives up and returns an error, which is the
+            // correct behaviour and is checked separately.
+            if let Ok(got) = bessel_k_c(0, C::real(x)) {
+                let want = k0(x);
+                assert!(
+                    (got.re - want).abs() <= bound(3.0 * x) * want,
+                    "K_0({x}): {:e} vs {want:e}",
+                    got.re
+                );
+            }
+        }
+    }
+
+    /// The other half of the law above: it must be a real constraint,
+    /// not a bound so loose that anything passes. At `x = 25` the
+    /// measured `Y` error is 1.6e-6 and the measured `K` error is 2e15,
+    /// so a routine that were merely "good to 1e-9" would still fail
+    /// these, and one that were perfect would fail the K assertion here.
+    #[test]
+    fn the_integer_order_laws_are_tight_enough_to_bite() {
+        let y = bessel_y_c(0, C::real(25.0)).unwrap().re;
+        let e = (y - yn(0, 25.0)).abs() / yn(0, 25.0).abs();
+        assert!(e > 1e-9, "Y_0(25) is expected to have lost digits, got {e:e}");
+        let k = bessel_k_c(0, C::real(20.0)).unwrap().re;
+        let e = (k - spec_math::cephes64::k0(20.0)).abs() / spec_math::cephes64::k0(20.0);
+        assert!(e > 1.0, "K_0(20) is expected to be worthless, got {e:e}");
     }
 
     /// The accuracy bounds the documentation states are a claim, so they

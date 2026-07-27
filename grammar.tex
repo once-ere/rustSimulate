@@ -333,6 +333,17 @@ cylindrical Bessel, \textbf{complex argument} &
 cylindrical Bessel, \textbf{any real order} &
   \code{bessel\_j\_nu(nu,z)}, \code{bessel\_i\_nu(nu,z)},
   \code{bessel\_y\_nu(nu,z)}, \code{bessel\_k\_nu(nu,z)}\\
+Hankel (travelling waves) &
+  \code{hankel\_h1\_z(n,z)}, \code{hankel\_h2\_z(n,z)},
+  \code{hankel\_h1\_nu(nu,z)}, \code{hankel\_h2\_nu(nu,z)}\\
+Hankel derivatives &
+  \code{hankel\_h1\_prime\_z(n,z)}, \code{hankel\_h2\_prime\_z(n,z)},
+  \code{hankel\_h1\_prime\_nu(nu,z)},
+  \code{hankel\_h2\_prime\_nu(nu,z)}\\
+spherical Hankel &
+  \code{sph\_hankel\_h1(n,x)}, \code{sph\_hankel\_h2(n,x)},
+  \code{sph\_hankel\_h1\_prime(n,x)},
+  \code{sph\_hankel\_h2\_prime(n,x)}\\
 quadrature & \code{gauss\_legendre(n)} $\to$ \code{[nodes, weights]}\\
 eigenproblems & \code{eigenvalues(matrix)} $\to$ list,
   \code{jacobi\_eigen(matrix)} $\to$ \code{[values, vectors]}\\
@@ -373,8 +384,8 @@ routine, deliberately: the three-term recurrence and the normalisation
 $J_0 + 2(J_2+J_4+\cdots) = 1$ are both identities in $z$, real or not,
 the second following from the generating function at $t=1$.
 
-\textbf{Accuracy falls with the imaginary part}, by cancellation rather
-than anything about the recurrence: the terms grow like
+\textbf{Accuracy of $J$ falls with the imaginary part}, by cancellation
+rather than anything about the recurrence: the terms grow like
 $e^{|\mathrm{Im}\,z|}$ while their sum is exactly 1, so about
 $|\mathrm{Im}\,z|/\ln 10$ decimal digits are lost. Measured against the
 generating-function identity:
@@ -383,10 +394,50 @@ generating-function identity:
 \begin{tabular}{lcccccc}
 $|\mathrm{Im}\,z|$ & 0 & 5 & 8 & 12 & 18 & 25\\
 \hline
-relative error & $10^{-16}$ & $10^{-14}$ & $10^{-13}$ & $10^{-11}$ &
-$10^{-9}$ & $10^{-6}$\\
+relative error of $J$ & $10^{-16}$ & $10^{-14}$ & $10^{-13}$ &
+$10^{-11}$ & $10^{-9}$ & $10^{-6}$\\
 \end{tabular}
 \end{center}
+
+\textbf{That law governs $J$ alone, and an earlier version of this
+manual let it stand for the whole family. It does not.} $I$ is $J$ at
+right angles and obeys the mirror law, but $Y$ comes from an ascending
+series and $K$ is assembled from $J$ and $Y$ at imaginary argument. A
+series fails where a recurrence does not --- on the \textbf{real} axis,
+which is precisely where $J$ is at its best. There are four laws:
+\[
+  \text{relative error} \;\sim\; 10^{-16}e^{L},\qquad
+  L = \begin{cases}
+    |\mathrm{Im}\,z| & \code{bessel\_j\_z}\\
+    |\mathrm{Re}\,z| & \code{bessel\_i\_z}\\
+    |z| - |\mathrm{Im}\,z| & \code{bessel\_y\_z}\\
+    \max(2|\mathrm{Re}\,z|,\,|z|) + \mathrm{Re}\,z & \code{bessel\_k\_z}
+  \end{cases}
+\]
+Measured against Cephes on the axis where each is at its worst:
+
+\begin{center}
+\begin{tabular}{lccccc}
+$x$ (real) & 1 & 10 & 20 & 30 & 35\\
+\hline
+\code{bessel\_j\_z(0,x)}  & 1e-16 & 3e-16 & 5e-16 & 2e-15 & 7e-16\\
+\code{bessel\_j\_z(0,ix)} & 2e-16 & 1e-13 & 5e-9  & 5e-5  & 3e-3\\
+\code{bessel\_i\_z(0,x)}  & 2e-16 & 1e-13 & 5e-9  & 5e-5  & 3e-3\\
+\code{bessel\_y\_z(0,x)}  & 1e-15 & 3e-12 & 3e-8  & 2e-4  & 6e-2\\
+\code{bessel\_k\_z(0,x)}  & 7e-16 & 3e-5  & 8e8   & 5e21  & 7e27\\
+\end{tabular}
+\end{center}
+
+So $Y_0$ on the real axis is wrong in the first digit by $x=40$, and
+$K_0$ is worthless past about $x=12$. The rule of thumb that is actually
+safe is $|z|\le 10$ for every kind. The $J$ and $I$ rows agree digit for
+digit because they are the same measurement --- $I_n(z)$ \emph{is}
+$J_n(iz)$.
+
+The correction came from a Hankel asymptotic test at $x=40$. The old
+claim was measured, but only through the generating-function identity,
+which involves no $Y$ at all. A narrow measurement quoted as a broad one
+is still a wrong claim.
 
 \subsubsection*{$Y_n$ and $K_n$: a different method, because they need one}
 
@@ -516,6 +567,99 @@ entirely different ways. \code{Out[6]} and \code{Out[7]} are
 byte-identical, which is the whole-order handover doing what it claims.
 \code{In[8]} is the contrast: the \code{\_z} form still refuses a
 fractional order rather than truncating it.
+
+\subsubsection*{Hankel functions --- the travelling-wave pair}
+
+$J$ and $Y$ are the \emph{standing}-wave basis of the Bessel equation.
+$H^{(1)} = J + iY$ and $H^{(2)} = J - iY$ are the \emph{travelling}-wave
+basis of the same equation, and for wave problems they are the ones you
+want:
+\[
+  H^{(1)}_\nu(x) \sim \sqrt{\frac{2}{\pi x}}\,
+    e^{i(x - \nu\pi/2 - \pi/4)},
+\]
+a pure $e^{+ikr}/\sqrt{r}$ outgoing cylindrical wave under the
+$e^{-i\omega t}$ convention. A scattering boundary condition is stated
+in terms of $H^{(1)}$, not in terms of $J$ and $Y$. The spherical pair
+\code{sph\_hankel\_h1(n,x)} $= j_n(x) + iy_n(x)$ does the same job in
+three dimensions; it takes a \textbf{real} argument and returns a
+complex value.
+
+The \code{\_z} forms take a whole order, the \code{\_nu} forms any real
+order, and \code{\_prime} gives the derivative, from
+$C'_\nu(z) = C_{\nu-1}(z) - (\nu/z)C_\nu(z)$ (DLMF 10.6.2), which holds
+for every cylinder function and so needs no separate algorithm.
+
+\textbf{Why these are entry points at all.} Each is two calls to
+functions the language already had, and an earlier version of this
+manual said so and left it there. That was wrong, for the reason the
+accuracy note below makes concrete: the assembly $J + iY$ silently
+destroys most of its digits in half the plane, and a user writing it by
+hand has no way to know. A named function is where that knowledge lives.
+
+\begin{lstlisting}
+In[1]:= hankel_h1_z(0, 3)
+Out[1]= -0.26005195490193356 + 0.37685001001279045i
+In[2]:= hankel_h1_prime_z(0, 3)
+Out[2]= -0.3390589585259365 - 0.3246744247917999i
+In[3]:= hankel_h1_z(1, 3)
+Out[3]= 0.3390589585259365 + 0.3246744247917999i
+In[4]:= abs(sph_hankel_h1(3, 800) * 800)
+Out[4]= 1.0000046875439457
+In[5]:= hankel_h1_z(0, 0 + 10i)
+Out[5]= 0 - 0.00001131945100496523i
+In[6]:= hankel_h2_z(0, 0 + 10i)
+Out[6]= 5631.433256931902 + 0.00001131945100496523i
+In[7]:= hankel_h1_nu(0.5, 2 - 0.5i)
+Out[7]= 0.7802707009570485 + 0.4802074888838277i
+In[8]:= sph_hankel_h1(0, 2.3)
+Out[8]= 0.32421965746813924 + 0.2896852266434018i
+In[9]:= sph_hankel_h2(0, 2.3)
+Out[9]= 0.32421965746813924 - 0.2896852266434018i
+\end{lstlisting}
+
+\code{Out[2]} and \code{Out[3]} are exact negatives, which is
+$H^{(1)\prime}_0 = -H^{(1)}_1$. \code{Out[4]} is the outgoing-wave
+property $|x\,h^{(1)}_n(x)| \to 1$, and the gap from 1 is
+$4.6875\times10^{-6}$, which is $n(n+1)/(4x^2)$ for $n=3$, $x=800$ to
+every printed digit. \code{Out[8]} and \code{Out[9]} are conjugates, as
+they must be for real $x$.
+
+\textbf{\code{Out[5]} and \code{Out[6]} are the accuracy warning in one
+pair of lines.} Both come from the same $J_0(10i)$ and $Y_0(10i)$, each
+about $2800$ in magnitude. $H^{(2)}$ comes out as $5631$; $H^{(1)}$
+comes out as $1.13\times10^{-5}$, which is what is left after those two
+large numbers cancel. Above the real axis $H^{(1)}$ is the small
+difference of large quantities and is only as accurate as that
+subtraction allows:
+\[
+  \text{rel.\ error of } H^{(1)} \sim 10^{-16}e^{3\,\mathrm{Im}\,z}
+  \quad(\mathrm{Im}\,z > 0),\qquad
+  H^{(2)} \text{ likewise for } \mathrm{Im}\,z < 0 .
+\]
+So $H^{(1)}$ is good to $\mathrm{Im}\,z \approx 8$, has three digits
+left at $10$, and is gone by $12$; below the axis it is exact, and
+$H^{(2)}$ mirrors all of it. \textbf{Use whichever of the two is on its
+good side.} Switching between the \code{\_z} and \code{\_nu} forms does
+not help --- measured, they agree to within a factor of $1.5$, because
+at whole order \code{\_nu} hands $Y$ to \code{\_z} and the two share the
+dominant ingredient. Only a scaled formulation (returning
+$e^{-iz}H^{(1)}$ and letting the caller supply the exponential, as AMOS
+does) removes the problem, and that is \textbf{not} implemented.
+
+That $e^{3\,\mathrm{Im}\,z}$ is the same law \code{bessel\_k\_z} obeys
+on the real axis, which is no coincidence:
+$K_\nu(y) = (\pi/2)i^{\nu+1}H^{(1)}_\nu(iy)$ (DLMF 10.27.8), so they are
+literally the same computation.
+
+The spherical pair has none of this trouble --- $j_n$ and $y_n$ are
+recurrences on the real line, and \code{sph\_hankel\_h1} is accurate
+wherever they are.
+
+Measured, not asserted:
+\begin{lstlisting}
+cargo run -p special_functions --release --example hankel_accuracy
+\end{lstlisting}
 
 \textbf{A wrinkle worth knowing about lists.} The bracket literal is
 overloaded: \code{[a,b,c]} is a \emph{vector}, \code{[a,b,c,d]} is a

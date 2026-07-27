@@ -230,6 +230,11 @@ pub fn call(name: &str, args: &[Value]) -> Option<Result<Value, String>> {
         // exist at all.
         "bessel_j_z" | "bessel_i_z" | "bessel_y_z" | "bessel_k_z" => 2,
         "bessel_j_nu" | "bessel_i_nu" | "bessel_y_nu" | "bessel_k_nu" => 2,
+        "hankel_h1_z" | "hankel_h2_z" | "hankel_h1_nu" | "hankel_h2_nu" => 2,
+        "hankel_h1_prime_z" | "hankel_h2_prime_z" => 2,
+        "hankel_h1_prime_nu" | "hankel_h2_prime_nu" => 2,
+        "sph_hankel_h1" | "sph_hankel_h2" => 2,
+        "sph_hankel_h1_prime" | "sph_hankel_h2_prime" => 2,
         "solve_cyclic_tridiag_c" => 6,
         _ => return None,
     };
@@ -353,6 +358,62 @@ fn dispatch(name: &str, a: &[Value]) -> Result<Value, String> {
             as_cplx(name, 1, &a[1])?,
         )?)),
 
+        // ---- Hankel: the travelling-wave pair ---------------------
+        // H1 = J + iY is outgoing, H2 = J - iY incoming. Named rather
+        // than left to the user to assemble, because the assembly
+        // cancels badly in half the plane and a caller doing it by hand
+        // has no way to know — see grammar.md.
+        "hankel_h1_z" => Ok(Value::Complex(sf::hankel::hankel_h1_c(
+            as_int(name, 0, &a[0])?,
+            as_cplx(name, 1, &a[1])?,
+        )?)),
+        "hankel_h2_z" => Ok(Value::Complex(sf::hankel::hankel_h2_c(
+            as_int(name, 0, &a[0])?,
+            as_cplx(name, 1, &a[1])?,
+        )?)),
+        "hankel_h1_nu" => Ok(Value::Complex(sf::hankel::hankel_h1_nu(
+            as_num(name, 0, &a[0])?,
+            as_cplx(name, 1, &a[1])?,
+        )?)),
+        "hankel_h2_nu" => Ok(Value::Complex(sf::hankel::hankel_h2_nu(
+            as_num(name, 0, &a[0])?,
+            as_cplx(name, 1, &a[1])?,
+        )?)),
+        "hankel_h1_prime_z" => Ok(Value::Complex(sf::hankel::hankel_h1_prime_c(
+            as_int(name, 0, &a[0])?,
+            as_cplx(name, 1, &a[1])?,
+        )?)),
+        "hankel_h2_prime_z" => Ok(Value::Complex(sf::hankel::hankel_h2_prime_c(
+            as_int(name, 0, &a[0])?,
+            as_cplx(name, 1, &a[1])?,
+        )?)),
+        "hankel_h1_prime_nu" => Ok(Value::Complex(sf::hankel::hankel_h1_prime_nu(
+            as_num(name, 0, &a[0])?,
+            as_cplx(name, 1, &a[1])?,
+        )?)),
+        "hankel_h2_prime_nu" => Ok(Value::Complex(sf::hankel::hankel_h2_prime_nu(
+            as_num(name, 0, &a[0])?,
+            as_cplx(name, 1, &a[1])?,
+        )?)),
+
+        // ---- spherical Hankel: REAL argument, complex result ------
+        "sph_hankel_h1" => Ok(Value::Complex(sf::hankel::sph_hankel_h1(
+            as_int(name, 0, &a[0])?,
+            as_num(name, 1, &a[1])?,
+        )?)),
+        "sph_hankel_h2" => Ok(Value::Complex(sf::hankel::sph_hankel_h2(
+            as_int(name, 0, &a[0])?,
+            as_num(name, 1, &a[1])?,
+        )?)),
+        "sph_hankel_h1_prime" => Ok(Value::Complex(sf::hankel::sph_hankel_h1_prime(
+            as_int(name, 0, &a[0])?,
+            as_num(name, 1, &a[1])?,
+        )?)),
+        "sph_hankel_h2_prime" => Ok(Value::Complex(sf::hankel::sph_hankel_h2_prime(
+            as_int(name, 0, &a[0])?,
+            as_num(name, 1, &a[1])?,
+        )?)),
+
         // ---- quadrature nodes -------------------------------------
         // Returns [nodes, weights] — two lists, so a script can zip them.
         "gauss_legendre" => {
@@ -460,6 +521,14 @@ pub const SPECIAL_NAMES: &[&str] = &[
     "clebsch_gordan",
     "eigenvalues",
     "gauss_legendre",
+    "hankel_h1_nu",
+    "hankel_h1_prime_nu",
+    "hankel_h1_prime_z",
+    "hankel_h1_z",
+    "hankel_h2_nu",
+    "hankel_h2_prime_nu",
+    "hankel_h2_prime_z",
+    "hankel_h2_z",
     "gegenbauer_c",
     "hermite_h",
     "hermite_he",
@@ -474,6 +543,10 @@ pub const SPECIAL_NAMES: &[&str] = &[
     "solve_cyclic_tridiag_c",
     "solve_tridiag",
     "solve_tridiag_c",
+    "sph_hankel_h1",
+    "sph_hankel_h1_prime",
+    "sph_hankel_h2",
+    "sph_hankel_h2_prime",
     "sph_harm",
     "sph_harm_real",
     "sph_j",
@@ -612,6 +685,74 @@ mod tests {
         // Singular points still report errors.
         assert!(!call_err("bessel_y_nu", &[n(0.5), z(0.0, 0.0)]).is_empty());
         assert!(!call_err("bessel_k_nu", &[n(0.5), z(0.0, 0.0)]).is_empty());
+    }
+
+    /// The Hankel entry points, checked by the properties that make
+    /// them worth having as entry points at all.
+    #[test]
+    fn hankel_entry_points_are_reachable() {
+        use sf::complex::Complex64 as Cx;
+        let z = |re: f64, im: f64| Value::Complex(Cx::new(re, im));
+        let get = |v: Value| match v {
+            Value::Complex(c) => c,
+            Value::Num(r) => Cx::real(r),
+            other => panic!("expected complex, got {other:?}"),
+        };
+
+        // H1 = J + iY and H2 = J - iY, checked against the pieces.
+        let zz = Cx::new(2.0, -0.6);
+        let j = get(call_ok("bessel_j_z", &[n(1.0), z(zz.re, zz.im)]));
+        let y = get(call_ok("bessel_y_z", &[n(1.0), z(zz.re, zz.im)]));
+        let h1 = get(call_ok("hankel_h1_z", &[n(1.0), z(zz.re, zz.im)]));
+        let h2 = get(call_ok("hankel_h2_z", &[n(1.0), z(zz.re, zz.im)]));
+        assert!((h1 - (j + Cx::I * y)).abs() < 1e-14, "H1 != J + iY");
+        assert!((h2 - (j - Cx::I * y)).abs() < 1e-14, "H2 != J - iY");
+
+        // H1_{1/2}(z) = -i sqrt(2/(pi z)) exp(iz), exactly, and the _nu
+        // form is the only one that can be asked for it.
+        let got = get(call_ok("hankel_h1_nu", &[n(0.5), z(zz.re, zz.im)]));
+        let want = Cx::I * -1.0
+            * (Cx::real(2.0 / std::f64::consts::PI) * zz.inv()).powf(0.5)
+            * (Cx::I * zz).exp();
+        assert!((got - want).abs() < 1e-12, "H1_1/2: {got:?} vs {want:?}");
+
+        // The Hankel Wronskian H1 H2' - H1' H2 = -4i/(pi z).
+        let h1p = get(call_ok("hankel_h1_prime_nu", &[n(0.5), z(zz.re, zz.im)]));
+        let h2v = get(call_ok("hankel_h2_nu", &[n(0.5), z(zz.re, zz.im)]));
+        let h2p = get(call_ok("hankel_h2_prime_nu", &[n(0.5), z(zz.re, zz.im)]));
+        let w = got * h2p - h1p * h2v;
+        let want = Cx::I * -4.0 * zz.inv() * (1.0 / std::f64::consts::PI);
+        assert!((w - want).abs() < 1e-11, "Wronskian: {w:?} vs {want:?}");
+
+        // H1'_0 = -H1_1, which the derivative routine special-cases.
+        let a = get(call_ok("hankel_h1_prime_z", &[n(0.0), n(3.0)]));
+        let b = get(call_ok("hankel_h1_z", &[n(1.0), n(3.0)]));
+        assert!((a + b).abs() < 1e-14, "H1'_0 != -H1_1");
+        let a = get(call_ok("hankel_h2_prime_z", &[n(0.0), n(3.0)]));
+        let b = get(call_ok("hankel_h2_z", &[n(1.0), n(3.0)]));
+        assert!((a + b).abs() < 1e-14, "H2'_0 != -H2_1");
+
+        // Spherical: h1_0(x) = -i exp(ix)/x exactly, and h2 = conj(h1).
+        let x = 2.3;
+        let got = get(call_ok("sph_hankel_h1", &[n(0.0), n(x)]));
+        let want = Cx::I * -1.0 * Cx::from_polar(1.0 / x, x);
+        assert!((got - want).abs() < 1e-14, "h1_0: {got:?} vs {want:?}");
+        let h2v = get(call_ok("sph_hankel_h2", &[n(0.0), n(x)]));
+        assert!((h2v - got.conj()).abs() < 1e-15, "h2_0 != conj(h1_0)");
+        // The spherical Wronskian h1 h2' - h1' h2 = -2i/x^2.
+        let h1p = get(call_ok("sph_hankel_h1_prime", &[n(2.0), n(x)]));
+        let h2p = get(call_ok("sph_hankel_h2_prime", &[n(2.0), n(x)]));
+        let h1v = get(call_ok("sph_hankel_h1", &[n(2.0), n(x)]));
+        let h2v = get(call_ok("sph_hankel_h2", &[n(2.0), n(x)]));
+        let w = h1v * h2p - h1p * h2v;
+        assert!((w - Cx::I * (-2.0 / (x * x))).abs() < 1e-12, "spherical Wronskian");
+
+        // The _z forms refuse a fractional order; the _nu forms take one.
+        assert!(call_err("hankel_h1_z", &[n(0.5), n(3.0)]).contains("whole number"));
+        let _ = call_ok("hankel_h1_nu", &[n(0.5), n(3.0)]);
+        // Singular points report errors rather than infinities.
+        assert!(!call_err("hankel_h1_z", &[n(0.0), z(0.0, 0.0)]).is_empty());
+        assert!(!call_err("sph_hankel_h1", &[n(0.0), n(0.0)]).is_empty());
     }
 
     #[test]
