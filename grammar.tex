@@ -332,6 +332,7 @@ eigenproblems & \code{eigenvalues(matrix)} $\to$ list,
   \code{jacobi\_eigen(matrix)} $\to$ \code{[values, vectors]}\\
 angular momentum & \code{wigner\_3j(j1,j2,j3,m1,m2,m3)},
   \code{wigner\_6j(j1,j2,j3,j4,j5,j6)},
+  \code{wigner\_9j(a,b,c,d,e,f,g,h,i)},
   \code{clebsch\_gordan(j1,m1,j2,m2,j3,m3)}\\
 linear algebra & \code{solve\_tridiag(sub, diag, sup, rhs)} $\to$ list,
   \code{solve\_tridiag\_c(\ldots)} $\to$ list,
@@ -339,6 +340,12 @@ linear algebra & \code{solve\_tridiag(sub, diag, sup, rhs)} $\to$ list,
 utility & \code{rel\_err(a, b)}\\
 \end{tabular}
 \end{center}
+
+\code{wigner\_9j} takes its nine arguments \textbf{row by row} --- it
+recouples four angular momenta, and is the overlap between coupling
+(1,2) and (3,4) first versus (1,3) and (2,4) first. It is evaluated as a
+single sum over 6-j symbols and vanishes when any of the six triads
+fails to close.
 
 \textbf{Angular momenta may be half-integers}, so \code{wigner\_3j},
 \code{wigner\_6j} and \code{clebsch\_gordan} take plain numbers rather
@@ -1023,6 +1030,8 @@ up command by command.
 \code{QM NORM ENERGY POSITION MOMENTUM} & observables\\
 \code{QM PROB <a> <b>} & probability of being found in $[a,b]$\\
 \code{QM DENSITY} & $|\psi|^2$ as a list\\
+\code{QM DRIVE <shape> <modulation>} & time-dependent $V(x,t) \mathrel{+}= f(t)g(x)$\\
+\code{QM DRIVE OFF} & back to a static potential\\
 \code{QM ABSORB <width> <strength> [<power>]} & absorbing edges; \code{power} defaults to 2\\
 \code{QM ABSORB OFF} & back to reflecting walls\\
 \code{QM ANIMATE "<file>" <t> [FRAMES <n>]} & write a self-contained HTML animation\\
@@ -1058,6 +1067,45 @@ as a \kw{def} at all --- and a square barrier is \emph{the} canonical
 1-D problem. They are a deliberate workaround for a language limitation,
 not a preference for built-ins. Any smooth potential should be a
 \kw{def}.
+
+\subsubsection*{Time-dependent potentials}
+
+\code{QM DRIVE} makes the potential depend on time, as
+$V(x,t) = V_0(x) + f(t)\,g(x)$, built from two \kw{def}ined functions.
+
+\textbf{Why it is factorised rather than a general $V(x,t)$.} A general
+form would need re-sampling at every grid point on every step --- for a
+user-supplied function, thousands of VM calls per step, costing more
+than the solve they feed. Factorising costs one evaluation per step and
+covers the physically important cases exactly: a dipole drive $f(t)x$, a
+shaken trap, a pulse envelope, an adiabatic ramp. A drive whose spatial
+\emph{profile} changes shape with time is not expressible this way, and
+that is a real limit rather than an oversight.
+
+The modulation is sampled at the \textbf{midpoint} of each step, keeping
+the scheme second order; sampling at the start would quietly halve it.
+
+Two consequences:
+
+\begin{itemize}
+\item \textbf{Energy is no longer conserved.} A driven system exchanges
+      energy with whatever drives it --- physics, not error. \code{QM RUN}
+      says so, and the $\langle E\rangle$ it reports is that of the
+      \emph{static} potential.
+\item \textbf{Propagation is still unitary.} $H(t)$ is Hermitian at every
+      instant, so each step remains an exact Cayley transform.
+\end{itemize}
+
+For a quadratic potential with a linear drive Ehrenfest's theorem is
+\textbf{exact}: $\langle x\rangle$ obeys the classical equation of motion
+with no approximation. Driving the oscillator ground state with
+$f(t)=F_0\cos\omega t$ and $g(x)=x$ gives
+\[
+  x(t) = -\frac{F_0}{1-\omega^2}\bigl[\cos\omega t - \cos t\bigr],
+\]
+and the simulation reproduces it --- at $F_0=0.3$, $\omega=0.7$, $t=5$
+the notebook gives $\langle x\rangle = 0.716918$ against an analytic
+$0.717840$, with the norm at $1.000000000000146$.
 
 \subsubsection*{Absorbing edges}
 

@@ -445,6 +445,15 @@ one-dimensional quantum mechanics (see grammar.md):
                             Crank-Nicolson propagation (unitary)
   QM NORM | QM ENERGY | QM POSITION | QM MOMENTUM
   QM PROB <a> <b>           probability in [a, b]
+  QM DRIVE <shape> <modulation>
+                            time-dependent potential
+                            V(x,t) += modulation(t) * shape(x), from two
+                            DEF'd functions. The shape is sampled once,
+                            the modulation once per step at the midpoint.
+                            Energy is then NOT conserved — a driven
+                            system trades energy with its drive — but
+                            propagation stays unitary
+  QM DRIVE OFF              back to a static potential
   QM ABSORB <width> <strength> [<power>]
                             absorbing edges (complex absorbing
                             potential): the walls stop reflecting, so a
@@ -506,6 +515,7 @@ special functions (see grammar.md; orders must be WHOLE numbers):
                             jacobi_eigen(matrix) -> [values, vectors]
   angular momentum          wigner_3j(j1,j2,j3,m1,m2,m3)
                             wigner_6j(j1,j2,j3,j4,j5,j6)
+                            wigner_9j(a,b,c,d,e,f,g,h,i)  row by row
                             clebsch_gordan(j1,m1,j2,m2,j3,m3)
                             (spins may be HALF-integers; a forbidden
                             coupling is 0, not an error)

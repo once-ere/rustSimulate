@@ -562,6 +562,135 @@ impl Propagator {
     }
 }
 
+/// A propagator for a **time-dependent** Hamiltonian
+/// `H(t) = H_0 + f(t) g(x)`.
+///
+/// # Why the potential is factorised
+///
+/// A fully general `V(x, t)` would have to be re-sampled at every grid
+/// point on every step. When the potential comes from a user-supplied
+/// function that is thousands of evaluations per step, and it dominates
+/// the cost of the solve it is feeding.
+///
+/// Factorising into a fixed spatial *shape* `g(x)` and a scalar
+/// *modulation* `f(t)` costs one evaluation per step instead, and covers
+/// the physically important cases exactly: a dipole drive `f(t) x`, a
+/// shaken trap, a pulse envelope, an adiabatic ramp. A drive whose
+/// spatial profile genuinely changes shape with time is not expressible
+/// this way, and that limit is stated rather than hidden.
+///
+/// # Accuracy and unitarity
+///
+/// The modulation is evaluated at the **midpoint** `t + dt/2`, which
+/// keeps the scheme second order in `dt`; sampling at the start of the
+/// step would silently drop it to first order.
+///
+/// `H(t)` is Hermitian at every instant, so each step is still an exact
+/// Cayley transform and the propagator remains **unitary** — the norm is
+/// conserved to machine precision even though the energy is not
+/// conserved at all. That is the physics: a driven system exchanges
+/// energy with whatever drives it.
+pub struct DrivenPropagator {
+    ham: Hamiltonian,
+    shape: Vec<f64>,
+    dt: f64,
+    time: f64,
+}
+
+impl DrivenPropagator {
+    /// `shape` is `g(x)` sampled on the grid.
+    ///
+    /// # Errors
+    /// A length mismatch, a non-finite shape value, or a zero `dt`.
+    pub fn new(ham: Hamiltonian, shape: Vec<f64>, dt: f64) -> Result<Self, String> {
+        if shape.len() != ham.grid.n {
+            return Err(format!(
+                "DrivenPropagator: the drive shape has {} values but the grid has {}",
+                shape.len(),
+                ham.grid.n
+            ));
+        }
+        if shape.iter().any(|v| !v.is_finite()) {
+            return Err("DrivenPropagator: the drive shape has a non-finite value".to_string());
+        }
+        if !dt.is_finite() || dt == 0.0 {
+            return Err(format!("DrivenPropagator: dt must be finite and non-zero, got {dt}"));
+        }
+        Ok(Self { ham, shape, dt, time: 0.0 })
+    }
+
+    pub fn time(&self) -> f64 {
+        self.time
+    }
+    pub fn dt(&self) -> f64 {
+        self.dt
+    }
+    /// The instantaneous Hamiltonian at the current time, for observables.
+    ///
+    /// # Errors
+    /// As [`Hamiltonian::new`].
+    pub fn hamiltonian_now<F: Fn(f64) -> f64>(&self, modulation: F) -> Result<Hamiltonian, String> {
+        self.hamiltonian_at(modulation(self.time))
+    }
+
+    fn hamiltonian_at(&self, amp: f64) -> Result<Hamiltonian, String> {
+        if !amp.is_finite() {
+            return Err(format!("DrivenPropagator: the modulation returned {amp}"));
+        }
+        let v: Vec<f64> = self
+            .ham
+            .potential
+            .iter()
+            .zip(&self.shape)
+            .map(|(v0, g)| v0 + amp * g)
+            .collect();
+        let mut h = Hamiltonian::new(
+            self.ham.grid.clone(),
+            v,
+            self.ham.mass,
+            self.ham.hbar,
+        )?;
+        h.absorber = self.ham.absorber.clone();
+        Ok(h)
+    }
+
+    /// One step, with `modulation` giving `f(t)`.
+    ///
+    /// # Errors
+    /// A grid mismatch, a non-finite modulation, or a solve failure.
+    pub fn step<F: Fn(f64) -> f64>(
+        &mut self,
+        w: &mut Wavefunction,
+        modulation: F,
+    ) -> Result<(), String> {
+        if w.grid != self.ham.grid {
+            return Err("step: the wavefunction and propagator use different grids".to_string());
+        }
+        // MIDPOINT: sampling at t would drop the scheme to first order.
+        let amp = modulation(self.time + 0.5 * self.dt);
+        let h = self.hamiltonian_at(amp)?;
+        Propagator::new(h, self.dt)?.step(w)?;
+        self.time += self.dt;
+        Ok(())
+    }
+
+    /// `steps` steps.
+    ///
+    /// # Errors
+    /// As [`DrivenPropagator::step`].
+    pub fn run<F: Fn(f64) -> f64 + Copy>(
+        &mut self,
+        w: &mut Wavefunction,
+        steps: usize,
+        modulation: F,
+    ) -> Result<(), String> {
+        for _ in 0..steps {
+            self.step(w, modulation)?;
+        }
+        Ok(())
+    }
+}
+
 /// Analytic transmission through a rectangular barrier of height `v0`
 /// and width `a`, for a particle of energy `e`.
 ///
@@ -923,6 +1052,163 @@ mod tests {
             "absorbing domain gave T = {t_cap}, reference {t_ref} ({:.2}% off)",
             100.0 * rel
         );
+    }
+
+    /// **The driven harmonic oscillator.** For a quadratic potential
+    /// with a linear drive, Ehrenfest's theorem is EXACT: `<x>` obeys
+    /// the classical equation of motion with no approximation at all.
+    /// So the quantum centroid must trace the classical solution
+    ///
+    /// ```text
+    ///   x''(t) = -x - F0 cos(w t),  x(0) = x'(0) = 0
+    ///   =>  x(t) = -F0/(1 - w^2) [cos(w t) - cos t]
+    /// ```
+    ///
+    /// which is an analytic prediction with no fitted constants.
+    #[test]
+    fn a_driven_oscillator_follows_the_classical_trajectory() {
+        let g = Grid::new(-12.0, 12.0, 480).unwrap();
+        let ham = Hamiltonian::from_fn(g.clone(), |x| 0.5 * x * x, 1.0, 1.0).unwrap();
+        // start in the ground state: centroid 0, momentum 0
+        let (_, states) = ham.bound_states(1).unwrap();
+        let mut w = Wavefunction::from_real(g.clone(), &states[0]).unwrap();
+        w.normalise().unwrap();
+
+        let (f0, om) = (0.3_f64, 0.7_f64);
+        let shape: Vec<f64> = (0..g.n).map(|i| g.x(i)).collect(); // g(x) = x
+        let dt = 0.005;
+        let mut prop = DrivenPropagator::new(ham.clone(), shape, dt).unwrap();
+        let drive = move |t: f64| f0 * (om * t).cos();
+
+        let exact = |t: f64| -f0 / (1.0 - om * om) * ((om * t).cos() - t.cos());
+
+        let mut worst = 0.0_f64;
+        for _ in 0..20 {
+            prop.run(&mut w, 100, drive).unwrap();
+            let t = prop.time();
+            let err = (w.position() - exact(t)).abs();
+            worst = worst.max(err);
+        }
+        assert!(worst < 0.01, "worst |<x> - classical| = {worst}");
+        // ...and the drive really did something: the excursion is large
+        // compared with the error above.
+        assert!(exact(10.0).abs() > 0.3, "the drive was too weak to be a test");
+        // unitary throughout, even though H depends on time
+        assert!((w.norm() - 1.0).abs() < 1e-10, "norm = {}", w.norm());
+    }
+
+    /// The energy of a driven system is NOT conserved — it exchanges
+    /// energy with the drive. Asserting that it changes is as important
+    /// as asserting that an undriven one does not.
+    #[test]
+    fn a_driven_system_exchanges_energy_while_staying_unitary() {
+        let g = Grid::new(-12.0, 12.0, 300).unwrap();
+        let ham = Hamiltonian::from_fn(g.clone(), |x| 0.5 * x * x, 1.0, 1.0).unwrap();
+        let (e0, states) = ham.bound_states(1).unwrap();
+        let mut w = Wavefunction::from_real(g.clone(), &states[0]).unwrap();
+        w.normalise().unwrap();
+        assert!((w.energy(&ham) - e0[0]).abs() < 1e-9);
+
+        let shape: Vec<f64> = (0..g.n).map(|i| g.x(i)).collect();
+        let mut prop = DrivenPropagator::new(ham.clone(), shape, 0.005).unwrap();
+        // resonant drive: energy should climb steadily
+        prop.run(&mut w, 2000, |t| 0.3 * t.cos()).unwrap();
+
+        let e_now = w.energy(&ham); // energy of the STATIC hamiltonian
+        assert!(
+            e_now > e0[0] + 0.2,
+            "a resonant drive should pump energy in: {} -> {e_now}",
+            e0[0]
+        );
+        assert!((w.norm() - 1.0).abs() < 1e-10, "but the norm must be conserved");
+    }
+
+    /// A constant modulation is just a static shifted potential, so the
+    /// driven propagator must agree with the plain one exactly.
+    #[test]
+    fn a_constant_drive_matches_the_static_propagator() {
+        let g = Grid::new(-10.0, 10.0, 200).unwrap();
+        let base = Hamiltonian::from_fn(g.clone(), |x| 0.5 * x * x, 1.0, 1.0).unwrap();
+        let shape: Vec<f64> = (0..g.n).map(|i| g.x(i)).collect();
+        let amp = 0.4_f64;
+
+        let mut w1 = Wavefunction::gaussian(g.clone(), -1.0, 1.0, 0.5).unwrap();
+        let mut prop = DrivenPropagator::new(base.clone(), shape, 0.01).unwrap();
+        prop.run(&mut w1, 300, move |_| amp).unwrap();
+
+        // the same thing built statically
+        let shifted =
+            Hamiltonian::from_fn(g.clone(), move |x| 0.5 * x * x + amp * x, 1.0, 1.0).unwrap();
+        let mut w2 = Wavefunction::gaussian(g, -1.0, 1.0, 0.5).unwrap();
+        Propagator::new(shifted, 0.01).unwrap().run(&mut w2, 300).unwrap();
+
+        let worst = w1
+            .psi
+            .iter()
+            .zip(&w2.psi)
+            .map(|(a, b)| (*a - *b).abs())
+            .fold(0.0_f64, f64::max);
+        assert!(worst < 1e-12, "driven and static differ by {worst}");
+    }
+
+    /// Midpoint sampling keeps the scheme second order. Halving dt must
+    /// cut the error against the analytic trajectory by about four —
+    /// sampling at the start of the step instead would give only two.
+    #[test]
+    fn midpoint_sampling_is_second_order() {
+        let g = Grid::new(-12.0, 12.0, 300).unwrap();
+        let ham = Hamiltonian::from_fn(g.clone(), |x| 0.5 * x * x, 1.0, 1.0).unwrap();
+        let (_, states) = ham.bound_states(1).unwrap();
+        let shape: Vec<f64> = (0..g.n).map(|i| g.x(i)).collect();
+        let (f0, om) = (0.5_f64, 0.6_f64);
+        let drive = move |t: f64| f0 * (om * t).cos();
+        let exact = |t: f64| -f0 / (1.0 - om * om) * ((om * t).cos() - t.cos());
+        let total = 4.0_f64;
+
+        let pos_at = |dt: f64| -> f64 {
+            let mut w = Wavefunction::from_real(g.clone(), &states[0]).unwrap();
+            w.normalise().unwrap();
+            let mut p = DrivenPropagator::new(ham.clone(), shape.clone(), dt).unwrap();
+            p.run(&mut w, (total / dt).round() as usize, drive).unwrap();
+            w.position()
+        };
+        // Compare against a fine-dt run on the SAME GRID, not against the
+        // analytic trajectory. The analytic comparison carries a
+        // dt-independent spatial-discretisation floor: measured against
+        // it the ratio came out 2.26, and solving err = c + a dt^2 from
+        // the two points gives c = 2.3e-3 with the dt-dependent part
+        // scaling by exactly 4. The scheme was second order all along;
+        // the measurement was contaminated.
+        let reference = pos_at(0.0025);
+        let coarse = (pos_at(0.08) - reference).abs();
+        let fine = (pos_at(0.04) - reference).abs();
+        let ratio = coarse / fine;
+        // sanity: the analytic solution is still what this converges TO
+        assert!(
+            (reference - exact(total)).abs() < 5e-3,
+            "reference {reference} vs analytic {}",
+            exact(total)
+        );
+        assert!(
+            (3.0..5.5).contains(&ratio),
+            "error fell {ratio}x when dt halved, expected ~4 (coarse {coarse:.3e}, fine {fine:.3e})"
+        );
+    }
+
+    #[test]
+    fn driven_propagator_validates_its_input() {
+        let g = Grid::new(-5.0, 5.0, 50).unwrap();
+        let h = Hamiltonian::from_fn(g.clone(), |_| 0.0, 1.0, 1.0).unwrap();
+        assert!(DrivenPropagator::new(h.clone(), vec![0.0; 3], 0.01).is_err(), "shape length");
+        assert!(
+            DrivenPropagator::new(h.clone(), vec![f64::NAN; 50], 0.01).is_err(),
+            "non-finite shape"
+        );
+        assert!(DrivenPropagator::new(h.clone(), vec![0.0; 50], 0.0).is_err(), "dt = 0");
+        // a modulation that returns NaN must be reported, not propagated
+        let mut p = DrivenPropagator::new(h, vec![1.0; 50], 0.01).unwrap();
+        let mut w = Wavefunction::gaussian(g, 0.0, 1.0, 0.0).unwrap();
+        assert!(p.step(&mut w, |_| f64::NAN).is_err(), "NaN modulation");
     }
 
     /// `<E>` must be the true expectation value, so an absorber that

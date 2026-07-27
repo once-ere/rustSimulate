@@ -222,6 +222,7 @@ pub fn call(name: &str, args: &[Value]) -> Option<Result<Value, String>> {
         // Angular momenta may be HALF-integers, so these take plain
         // numbers and validate in the library rather than here.
         "wigner_3j" | "wigner_6j" | "clebsch_gordan" => 6,
+        "wigner_9j" => 9,
         "eigenvalues" | "jacobi_eigen" => 1,
         "solve_tridiag" | "solve_tridiag_c" => 4,
         "solve_cyclic_tridiag_c" => 6,
@@ -367,6 +368,17 @@ fn dispatch(name: &str, a: &[Value]) -> Result<Value, String> {
             as_num(name, 4, &a[4])?,
             as_num(name, 5, &a[5])?,
         )?)),
+        "wigner_9j" => Ok(Value::Num(sf::wigner::wigner_9j(
+            as_num(name, 0, &a[0])?,
+            as_num(name, 1, &a[1])?,
+            as_num(name, 2, &a[2])?,
+            as_num(name, 3, &a[3])?,
+            as_num(name, 4, &a[4])?,
+            as_num(name, 5, &a[5])?,
+            as_num(name, 6, &a[6])?,
+            as_num(name, 7, &a[7])?,
+            as_num(name, 8, &a[8])?,
+        )?)),
         "clebsch_gordan" => Ok(Value::Num(sf::wigner::clebsch_gordan(
             as_num(name, 0, &a[0])?,
             as_num(name, 1, &a[1])?,
@@ -419,6 +431,7 @@ pub const SPECIAL_NAMES: &[&str] = &[
     "sph_y_prime",
     "wigner_3j",
     "wigner_6j",
+    "wigner_9j",
 ];
 
 #[cfg(test)]
@@ -673,6 +686,19 @@ mod tests {
         // {1 1 1; 1 1 1} = 1/6
         let v = as_f(call_ok("wigner_6j", &[n(1.0), n(1.0), n(1.0), n(1.0), n(1.0), n(1.0)]));
         assert!((v - 1.0 / 6.0).abs() < 1e-13);
+        // 9-j: {1 1 1; 1 1 1; 1 1 0} reduces to (1/3) * {1 1 1; 1 1 1}
+        // = (1/3)(1/6) = 1/18 by the zero-argument closed form
+        let v = as_f(call_ok(
+            "wigner_9j",
+            &[n(1.0), n(1.0), n(1.0), n(1.0), n(1.0), n(1.0), n(1.0), n(1.0), n(0.0)],
+        ));
+        assert!((v - 1.0 / 18.0).abs() < 1e-12, "9j = {v}, want 1/18");
+        // a broken triangle is 0, not an error
+        let v = as_f(call_ok(
+            "wigner_9j",
+            &[n(1.0), n(1.0), n(9.0), n(1.0), n(1.0), n(1.0), n(1.0), n(1.0), n(1.0)],
+        ));
+        assert_eq!(v, 0.0);
         // a genuinely invalid spin is still an error
         assert!(!call_err("wigner_3j", &[n(0.3), n(1.0), n(1.0), n(0.0), n(0.0), n(0.0)]).is_empty());
     }

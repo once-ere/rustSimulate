@@ -277,9 +277,14 @@ a confident, wrong number, and you would have no way to notice.
 | cylindrical Bessel | `bessel_j(n,x)`, `bessel_j_array(n_max,x)` → list |
 | quadrature | `gauss_legendre(n)` → `[nodes, weights]` |
 | eigenproblems | `eigenvalues(matrix)` → list, `jacobi_eigen(matrix)` → `[values, vectors]` |
-| angular momentum | `wigner_3j(j1,j2,j3,m1,m2,m3)`, `wigner_6j(j1,j2,j3,j4,j5,j6)`, `clebsch_gordan(j1,m1,j2,m2,j3,m3)` |
+| angular momentum | `wigner_3j(j1,j2,j3,m1,m2,m3)`, `wigner_6j(j1,j2,j3,j4,j5,j6)`, `wigner_9j(a,b,c,d,e,f,g,h,i)`, `clebsch_gordan(j1,m1,j2,m2,j3,m3)` |
 | linear algebra | `solve_tridiag(sub, diag, sup, rhs)` → list, `solve_tridiag_c(...)` → list, `solve_cyclic_tridiag_c(sub, diag, sup, rhs, bl, tr)` → list |
 | utility | `rel_err(a, b)` |
+
+`wigner_9j` takes its nine arguments **row by row** — it recouples four
+angular momenta, and is the overlap between coupling (1,2) and (3,4)
+first versus (1,3) and (2,4) first. It is evaluated as a single sum over
+6-j symbols and vanishes when any of the six triads fails to close.
 
 **Angular momenta may be half-integers**, so `wigner_3j`, `wigner_6j`
 and `clebsch_gordan` take plain numbers rather than demanding whole
@@ -938,6 +943,8 @@ command.
 | `QM NORM`, `QM ENERGY`, `QM POSITION`, `QM MOMENTUM` | observables |
 | `QM PROB <a> <b>` | probability of being found in `[a, b]` |
 | `QM DENSITY` | `\|psi\|²` as a list |
+| `QM DRIVE <shape> <modulation>` | time-dependent `V(x,t) += modulation(t)·shape(x)` |
+| `QM DRIVE OFF` | back to a static potential |
 | `QM ABSORB <width> <strength> [<power>]` | absorbing edges; `power` defaults to 2 |
 | `QM ABSORB OFF` | back to reflecting walls |
 | `QM ANIMATE "<file>" <t> [FRAMES <n>]` | write a self-contained HTML animation |
@@ -968,6 +975,45 @@ comparison operators, so a piecewise potential cannot be written as a
 `DEF` at all — and a square barrier is *the* canonical 1-D problem. They
 are a deliberate workaround for a language limitation, not a preference
 for built-ins. Any smooth potential should be a `DEF`.
+
+#### Time-dependent potentials
+
+`QM DRIVE` makes the potential depend on time, as
+`V(x, t) = V₀(x) + f(t)·g(x)` built from two `DEF`ined functions.
+
+**Why it is factorised rather than a general `V(x, t)`.** A general
+form would need re-sampling at every grid point on every step — for a
+user-supplied function, thousands of VM calls per step, costing more
+than the solve they feed. Factorising costs one evaluation per step and
+covers the physically important cases exactly: a dipole drive `f(t)·x`,
+a shaken trap, a pulse envelope, an adiabatic ramp. A drive whose
+spatial *profile* changes shape with time is not expressible this way,
+and that is a real limit rather than an oversight.
+
+The modulation is sampled at the **midpoint** of each step, which keeps
+the scheme second order; sampling at the start would quietly halve it.
+
+Two consequences:
+
+* **Energy is no longer conserved.** A driven system exchanges energy
+  with whatever drives it — that is the physics, not an error. `QM RUN`
+  says so, and the `<E>` it reports is that of the *static* potential.
+* **Propagation is still unitary.** `H(t)` is Hermitian at every
+  instant, so each step remains an exact Cayley transform and the norm
+  holds to machine precision.
+
+For a quadratic potential with a linear drive, Ehrenfest's theorem is
+**exact**: `<x>` obeys the classical equation of motion with no
+approximation. Driving the oscillator ground state with
+`f(t) = F₀cos(ωt)` and `g(x) = x` gives
+
+```
+x(t) = -F₀/(1 - ω²) [cos(ωt) - cos t]
+```
+
+and the simulation reproduces it — at `F₀ = 0.3`, `ω = 0.7`, `t = 5` the
+notebook gives `<x> = 0.716918` against an analytic `0.717840`, with the
+norm at `1.000000000000146`.
 
 #### Absorbing edges
 

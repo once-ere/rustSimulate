@@ -73,7 +73,7 @@ and the matrix below states plainly what is absent.
 | 31 | Heun Functions | **none** | — |
 | 32 | Painlevé Transcendents | **none** | no general implementation exists anywhere |
 | 33 | Coulomb Functions | **none** | — |
-| 34 | 3j, 6j, 9j Symbols | partial | **native**: 3-j, 6-j, Clebsch–Gordan. **9-j is absent** |
+| 34 | 3j, 6j, 9j Symbols | partial | **native**: 3-j, 6-j, **9-j**, Clebsch–Gordan. The chapter's asymptotics and generating functions are absent |
 | 35 | Functions of Matrix Argument | **none** | no general implementation exists anywhere |
 | 36 | Integrals with Coalescing Saddles | **none** | no general implementation exists anywhere |
 
@@ -136,7 +136,7 @@ record is separate and detailed:
 | `sph_bessel` | native | Miller downward recurrence below `n > x`, upward above | DLMF 10.51, A&S 10.1 |
 | `legendre` | native | ascending recurrence in ℓ seeded by Pₘᵐ; normalised form computed *directly* in the normalised basis so it never overflows | DLMF 14.10, A&S 8.5 |
 | `orthopoly` | native | three-term recurrences; Clenshaw for series | DLMF 18.9, A&S 22.7 |
-| `wigner` | native | Racah single-sum, all factorials in logarithms | DLMF 34.2.4, 34.4.1; Edmonds 1957 §3.6 |
+| `wigner` | native | Racah single-sum for 3-j and 6-j, all factorials in logarithms; 9-j as a single sum over 6-j | DLMF 34.2.4, 34.4.1, 34.6.1; Edmonds 1957 §3.6 |
 | `bessel` | native, **clean-room** | Miller downward recurrence, scale fixed by `J₀+2(J₂+J₄+…)=1` | DLMF 10.6.1, 10.12.4; A&S 9.1.27, 9.1.46 |
 | `tridiag` | native, **clean-room** | Thomas algorithm; Sherman–Morrison for the cyclic case | textbook |
 | `eigen` | native | cyclic Jacobi, ≤100 sweeps | textbook |

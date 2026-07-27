@@ -27,7 +27,7 @@
 //! re-issue `QM POTENTIAL v` — which is stated in the status output
 //! rather than left to be discovered.
 
-use quantum::qm1d::{Grid, Hamiltonian, Propagator, Wavefunction};
+use quantum::qm1d::{DrivenPropagator, Grid, Hamiltonian, Propagator, Wavefunction};
 
 use crate::vm::{SimState, Value};
 
@@ -63,6 +63,11 @@ pub enum QmCmd {
     Prob,
     /// The probability density, as a list.
     Density,
+    /// A time-dependent drive `f(t) g(x)`: two DEF'd function names,
+    /// the spatial shape and the time modulation.
+    Drive(String, String),
+    /// Remove the drive.
+    DriveOff,
     /// Attach absorbing edges. Pops power, strength, width.
     Absorb,
     /// Remove them.
@@ -102,6 +107,8 @@ pub struct QmState {
     pub potential: Option<Vec<f64>>,
     /// Absorbing edges: (width, strength, power), if enabled.
     pub absorber: Option<(f64, f64, f64)>,
+    /// A drive: the sampled spatial shape and the modulation's name.
+    pub drive: Option<(Vec<f64>, String, String)>,
     /// The function name the potential came from, for the status line.
     pub potential_name: Option<String>,
     pub mass: f64,
@@ -121,6 +128,7 @@ impl Default for QmState {
             grid: None,
             potential: None,
             absorber: None,
+            drive: None,
             potential_name: None,
             mass: 1.0,
             hbar: 1.0,
@@ -421,14 +429,49 @@ pub fn exec_qm(
             let ham = state.qm.hamiltonian()?;
             let mut w = state.qm.wavefunction()?.clone();
             let n0 = w.norm();
-            let prop = Propagator::new(ham.clone(), dt)?;
-            prop.run(&mut w, steps)?;
+
+            match state.qm.drive.clone() {
+                None => {
+                    Propagator::new(ham.clone(), dt)?.run(&mut w, steps)?;
+                }
+                Some((shape, _, time_name)) => {
+                    // The modulation is a user function, so it must be
+                    // evaluated through the VM — once per step, at the
+                    // midpoint. Stepping manually rather than using
+                    // `DrivenPropagator::run` because that takes a plain
+                    // closure and this one needs `&mut SimState`.
+                    let mut prop = DrivenPropagator::new(ham.clone(), shape, dt)?;
+                    // continue the clock where the session left off
+                    let t0 = state.qm.time;
+                    for k in 0..steps {
+                        let mid = t0 + dt * (k as f64 + 0.5);
+                        let v = crate::vm::call_user_function_public(
+                            &time_name,
+                            vec![Value::Num(mid)],
+                            state,
+                        )?;
+                        let amp = match v {
+                            Value::Num(y) => y,
+                            other => {
+                                return Err(format!(
+                                    "QM RUN: `{time_name}(t)` must return a number, got {other}"
+                                ))
+                            }
+                        };
+                        // `step` samples its closure at ITS own midpoint;
+                        // a constant closure hands it the value already
+                        // computed at the correct absolute time.
+                        prop.step(&mut w, |_| amp)?;
+                    }
+                }
+            }
             let n1 = w.norm();
             let drift = (n1 / n0 - 1.0).abs();
             let edge = w.edge_probability(0.05);
             state.qm.time += dt * steps as f64;
             let t = state.qm.time;
             let e = w.energy(&ham);
+            let driven = state.qm.drive.is_some();
             state.qm.psi = Some(w);
             let warn = if edge > 1e-4 {
                 format!(
@@ -438,10 +481,17 @@ pub fn exec_qm(
             } else {
                 String::new()
             };
+            let note = if driven {
+                "  (<E> is of the STATIC potential; a driven system does not conserve it)\n"
+            } else {
+                ""
+            };
             Ok(format!(
                 "t = {t} ({steps} step(s) of dt = {dt}), <E> = {e:.12}, \
-                 norm drift = {drift:.3e}{warn}"
-            ))
+                 norm drift = {drift:.3e}\n{note}{warn}"
+            )
+            .trim_end()
+            .to_string())
         }
 
         QmCmd::Norm => Ok(format!("{:.15}", state.qm.wavefunction()?.norm())),
@@ -548,6 +598,57 @@ pub fn exec_qm(
                  Open it in a browser.",
                 xs.len()
             ))
+        }
+
+        QmCmd::Drive(shape_name, time_name) => {
+            let grid = state
+                .qm
+                .grid
+                .clone()
+                .ok_or("QM DRIVE: set a grid first (QM GRID <x_min> <x_max> <n>)")?;
+            for nm in [shape_name, time_name] {
+                if !state.functions.contains_key(nm) {
+                    return Err(format!(
+                        "QM DRIVE: no function `{nm}` — define the spatial shape as \
+                         `DEF {nm}(x) {{ ... }}` and the modulation as `DEF f(t) {{ ... }}`"
+                    ));
+                }
+            }
+            // The SHAPE is sampled once; the MODULATION is evaluated per
+            // step. A general V(x,t) would need n user-function calls
+            // every step, which would cost more than the solve it feeds.
+            let mut shape = Vec::with_capacity(grid.n);
+            for i in 0..grid.n {
+                let v = crate::vm::call_user_function_public(
+                    shape_name,
+                    vec![Value::Num(grid.x(i))],
+                    state,
+                )?;
+                match v {
+                    Value::Num(y) => shape.push(y),
+                    other => {
+                        return Err(format!(
+                            "QM DRIVE: `{shape_name}(x)` must return a number, got {other}"
+                        ))
+                    }
+                }
+            }
+            let lo = shape.iter().cloned().fold(f64::INFINITY, f64::min);
+            let hi = shape.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+            state.qm.drive = Some((shape, shape_name.clone(), time_name.clone()));
+            state.qm.invalidate();
+            Ok(format!(
+                "drive V(x,t) += {time_name}(t) * {shape_name}(x), shape in [{lo}, {hi}]. \
+                 The energy is NO LONGER conserved — a driven system exchanges energy with \
+                 its drive — but propagation stays unitary. QM STATES uses the STATIC \
+                 potential only."
+            ))
+        }
+
+        QmCmd::DriveOff => {
+            state.qm.drive = None;
+            state.qm.invalidate();
+            Ok("drive removed".to_string())
         }
 
         QmCmd::Absorb => {
@@ -1003,6 +1104,71 @@ mod tests {
         assert!(e.contains("Hermitian"), "got: {e}");
         execute_line("qm absorb off", &mut st).unwrap();
         assert!(execute_line("qm states 2", &mut st).is_ok());
+    }
+
+    /// A driven oscillator through the language must trace the
+    /// classical trajectory, which for a quadratic potential with a
+    /// linear drive is exact by Ehrenfest.
+    #[test]
+    fn a_drive_reproduces_the_classical_trajectory() {
+        let (_, out) = run(&[
+            "def v(x) { 0.5 * x * x }",
+            "def dipole(x) { x }",
+            "def f(t) { 0.3 * cos(0.7 * t) }",
+            "qm grid -12 12 400",
+            "qm potential v",
+            "qm state 0",
+            "qm drive dipole, f",
+            "qm run 5 steps 500",
+            "qm position",
+            "qm norm",
+        ]);
+        let x: f64 = out[8].trim().parse().unwrap();
+        let norm: f64 = out[9].trim().parse().unwrap();
+        // x(t) = -F0/(1-w^2) [cos(w t) - cos t]
+        let (f0, om, t) = (0.3_f64, 0.7_f64, 5.0_f64);
+        let want = -f0 / (1.0 - om * om) * ((om * t).cos() - t.cos());
+        assert!((x - want).abs() < 0.01, "<x> = {x}, classical {want}");
+        // driven but still unitary
+        assert!((norm - 1.0).abs() < 1e-10, "norm = {norm}");
+        // and the run reports that <E> is of the static potential
+        assert!(out[7].contains("STATIC"), "expected a note about <E>: {}", out[7]);
+    }
+
+    /// Turning the drive off restores the undriven behaviour: a bound
+    /// state stops moving.
+    #[test]
+    fn drive_off_restores_a_stationary_state() {
+        let mut st = SimState::default();
+        for l in [
+            "def v(x) { 0.5 * x * x }",
+            "def dipole(x) { x }",
+            "def f(t) { 0.3 }",
+            "qm grid -10 10 200",
+            "qm potential v",
+            "qm state 0",
+            "qm drive dipole, f",
+        ] {
+            execute_line(l, &mut st).unwrap();
+        }
+        execute_line("qm run 2 steps 200", &mut st).unwrap();
+        let moved: f64 = execute_line("qm position", &mut st).unwrap().to_string().trim().parse().unwrap();
+        assert!(moved.abs() > 0.05, "a constant drive should displace it, got {moved}");
+
+        execute_line("qm drive off", &mut st).unwrap();
+        execute_line("qm state 0", &mut st).unwrap();
+        execute_line("qm run 2 steps 200", &mut st).unwrap();
+        let still: f64 = execute_line("qm position", &mut st).unwrap().to_string().trim().parse().unwrap();
+        assert!(still.abs() < 1e-9, "undriven ground state should not move, got {still}");
+    }
+
+    #[test]
+    fn drive_reports_missing_functions() {
+        let mut st = SimState::default();
+        execute_line("qm grid -5 5 50", &mut st).unwrap();
+        assert!(execute_line("qm drive nosuch, alsonot", &mut st).unwrap_err().contains("DEF"));
+        execute_line("def g(x) { x }", &mut st).unwrap();
+        assert!(execute_line("qm drive g, nosuch", &mut st).unwrap_err().contains("nosuch"));
     }
 
     /// Every ordering mistake gets a message naming the fix.

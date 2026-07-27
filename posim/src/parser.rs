@@ -90,6 +90,7 @@
 //!           | "STEP" expr | "RUN" expr [ "STEPS" expr ]
 //!           | "NORM" | "ENERGY" | "POSITION" | "MOMENTUM"
 //!           | "PROB" expr expr
+//!           | "DRIVE" ( "OFF" | IDENT [ "," ] IDENT )
 //!           | "ABSORB" ( "OFF" | expr expr [ expr ] )
 //!           | "DENSITY" | "RESET"
 //!           | "ANIMATE" STRING expr [ "FRAMES" expr ] ;
@@ -150,7 +151,7 @@
 //!                bessel_j bessel_j_array gauss_legendre eigenvalues
 //!                jacobi_eigen solve_tridiag solve_tridiag_c
 //!                solve_cyclic_tridiag_c wigner_3j wigner_6j
-//!                clebsch_gordan rel_err
+//!                clebsch_gordan wigner_9j rel_err
 //!
 //!    The genuine parse-time obligation the special functions add is
 //!    ARGUMENT DOMAIN checking, not syntax: an integer order must be a
@@ -920,6 +921,23 @@ impl Parser {
                 }
                 QmCmd::Animate(path)
             }
+            "drive" => {
+                let off = matches!(
+                    self.peek(),
+                    Some(Token { kind: TokKind::Keyword(Keyword::Off), .. })
+                );
+                if off {
+                    self.pos += 1;
+                    QmCmd::DriveOff
+                } else {
+                    let shape = self.expect_field()?;
+                    if let Some(Token { kind: TokKind::Comma, .. }) = self.peek() {
+                        self.pos += 1;
+                    }
+                    let modulation = self.expect_field()?;
+                    QmCmd::Drive(shape, modulation)
+                }
+            }
             "absorb" => {
                 // `QM ABSORB OFF` removes it; otherwise width, strength
                 // and an optional ramp exponent (2 is the measured
@@ -950,9 +968,9 @@ impl Parser {
             "reset" => QmCmd::Reset,
             other => {
                 return Err(format!(
-                    "QM: unknown subcommand `{other}` (grid, potential, mass, hbar, states, \
-                     state, packet, step, run, norm, energy, position, momentum, prob, \
-                     density, status, reset)"
+                    "QM: unknown subcommand `{other}` (grid, potential, drive, mass, hbar, \
+                     states, state, packet, step, run, norm, energy, position, momentum, \
+                     prob, density, absorb, animate, status, reset)"
                 ))
             }
         };

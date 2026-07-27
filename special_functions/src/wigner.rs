@@ -361,6 +361,99 @@ pub fn wigner_6j(
     Ok(sum)
 }
 
+/// The Wigner 9-j symbol
+/// `{ j1 j2 j12 ; j3 j4 j34 ; j13 j24 j }`, written row by row.
+///
+/// Governs the recoupling of **four** angular momenta: it is the
+/// overlap between coupling (1,2) and (3,4) first, versus coupling
+/// (1,3) and (2,4) first.
+///
+/// Evaluated as a single sum over 6-j symbols
+/// (DLMF 34.6.1, <https://dlmf.nist.gov/34.6.E1>; Varshalovich §10.2):
+///
+/// ```text
+/// {a b c}
+/// {d e f} = sum_x (-1)^(2x) (2x+1) {a b c}{d e f}{g h i}
+/// {g h i}                          {f i x}{b x h}{x a d}
+/// ```
+///
+/// Returns `0.0` when any of the six triangle conditions fails — the
+/// correct value, not an error.
+///
+/// # Errors
+/// An argument that is neither integer nor half-integer, or negative.
+///
+/// # Examples
+/// ```
+/// use special_functions::wigner::wigner_9j;
+/// // With a zero in the corner the 9-j collapses to a 6-j:
+/// //   {a b c; d e f; g h 0} = delta_cf delta_gh (-1)^(b+c+d+g)
+/// //                            / sqrt((2c+1)(2g+1)) * {a b c; e d g}
+/// let v = wigner_9j(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.0).unwrap();
+/// assert!(v.is_finite());
+/// // a broken triangle vanishes
+/// assert_eq!(wigner_9j(1.0, 1.0, 9.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0).unwrap(), 0.0);
+/// ```
+#[allow(clippy::too_many_arguments)]
+pub fn wigner_9j(
+    a: f64,
+    b: f64,
+    c: f64,
+    d: f64,
+    e: f64,
+    f: f64,
+    g: f64,
+    h: f64,
+    i: f64,
+) -> Result<f64, String> {
+    const NAME: &str = "wigner_9j";
+    for (label, j) in [
+        ("j1", a), ("j2", b), ("j12", c),
+        ("j3", d), ("j4", e), ("j34", f),
+        ("j13", g), ("j24", h), ("j", i),
+    ] {
+        check_j(NAME, label, j)?;
+    }
+
+    // All six triads of the array must close, or the symbol is zero.
+    for (p, q, r) in [
+        (a, b, c), (d, e, f), (g, h, i), // rows
+        (a, d, g), (b, e, h), (c, f, i), // columns
+    ] {
+        if !is_integral(p + q + r) || r < (p - q).abs() - 1e-9 || r > p + q + 1e-9 {
+            return Ok(0.0);
+        }
+    }
+
+    // x runs over the values allowed by all three 6-j symbols at once.
+    let lo = (a - i).abs().max((d - h).abs()).max((b - f).abs());
+    let hi = (a + i).min(d + h).min(b + f);
+    if hi < lo - 1e-9 {
+        return Ok(0.0);
+    }
+
+    let mut sum = 0.0_f64;
+    let mut x = lo;
+    while x <= hi + 1e-9 {
+        let t1 = wigner_6j(a, b, c, f, i, x)?;
+        if t1 != 0.0 {
+            let t2 = wigner_6j(d, e, f, b, x, h)?;
+            if t2 != 0.0 {
+                let t3 = wigner_6j(g, h, i, x, a, d)?;
+                if t3 != 0.0 {
+                    // (-1)^(2x) is +1 for integer x and -1 for
+                    // half-integer x; 2x is always an integer here.
+                    let ph = (2.0 * x).round() as i64;
+                    let sign = if ph.rem_euclid(2) == 0 { 1.0 } else { -1.0 };
+                    sum += sign * (2.0 * x + 1.0) * t1 * t2 * t3;
+                }
+            }
+        }
+        x += 1.0;
+    }
+    Ok(sum)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -598,6 +691,143 @@ mod tests {
         }
     }
 
+    /// With a zero in the corner the 9-j collapses to a 6-j:
+    ///
+    /// ```text
+    ///   {a b c; d e f; g h 0} = delta_cf delta_gh (-1)^(b+c+d+g)
+    ///                            / sqrt((2c+1)(2g+1)) * {a b c; e d g}
+    /// ```
+    ///
+    /// Swept over a range rather than spot-checked, and it fixes the
+    /// overall normalisation and phase absolutely — no table needed.
+    #[test]
+    fn nine_j_with_a_zero_reduces_to_a_six_j() {
+        let mut checked = 0;
+        for aa in 0..=4u32 {
+            for bb in 0..=4u32 {
+                for cc in 0..=4u32 {
+                    let (a, b, c) = (aa as f64 / 2.0, bb as f64 / 2.0, cc as f64 / 2.0);
+                    // the reduction needs f = c and h = g
+                    for dd in 0..=4u32 {
+                        for gg in 0..=4u32 {
+                            let (d, g) = (dd as f64 / 2.0, gg as f64 / 2.0);
+                            let (e, f, h) = (d, c, g);
+                            let got = wigner_9j(a, b, c, d, e, f, g, h, 0.0).unwrap();
+                            let six = wigner_6j(a, b, c, e, d, g).unwrap();
+                            let ph = (b + c + d + g).round() as i64;
+                            let sign = if ph.rem_euclid(2) == 0 { 1.0 } else { -1.0 };
+                            let want = if is_integral(b + c + d + g) {
+                                sign * six
+                                    / ((2.0 * c + 1.0) * (2.0 * g + 1.0)).sqrt()
+                            } else {
+                                // the phase is not defined unless the
+                                // exponent is an integer; those cases
+                                // have a vanishing 6-j anyway
+                                assert!(six.abs() < 1e-12);
+                                0.0
+                            };
+                            assert!(
+                                (got - want).abs() < 1e-11,
+                                "9j({a},{b},{c};{d},{e},{f};{g},{h},0) = {got}, want {want}"
+                            );
+                            checked += 1;
+                        }
+                    }
+                }
+            }
+        }
+        assert!(checked > 500, "only {checked} cases exercised");
+    }
+
+    /// Orthogonality of the 9-j symbols:
+    ///
+    /// ```text
+    ///  sum_{c,f} (2c+1)(2f+1) {a b c; d e f; g h i} {a b c; d e f; g' h' i}
+    ///     = delta_gg' delta_hh' / ((2g+1)(2h+1))
+    /// ```
+    ///
+    /// when (g,h,i) and (g',h',i) both close. The right-hand side is an
+    /// ABSOLUTE value, so this pins the normalisation without reference
+    /// to any table — which matters, because a table value recalled
+    /// from memory has already been wrong twice in this module.
+    #[test]
+    fn nine_j_orthogonality() {
+        let (a, b, d, e, i) = (1.0_f64, 1.0_f64, 1.0_f64, 1.0_f64, 1.0_f64);
+        let tri = |p: f64, q: f64, r: f64| {
+            is_integral(p + q + r) && r >= (p - q).abs() - 1e-9 && r <= p + q + 1e-9
+        };
+        let mut tested = 0;
+        for gg in 0..=4u32 {
+            for hh in 0..=4u32 {
+                for gg2 in 0..=4u32 {
+                    for hh2 in 0..=4u32 {
+                        let (g, h) = (gg as f64 / 2.0, hh as f64 / 2.0);
+                        let (g2, h2) = (gg2 as f64 / 2.0, hh2 as f64 / 2.0);
+                        if !tri(g, h, i) || !tri(g2, h2, i) {
+                            continue;
+                        }
+                        if !tri(a, d, g) || !tri(b, e, h) || !tri(a, d, g2) || !tri(b, e, h2) {
+                            continue;
+                        }
+                        let mut sum = 0.0;
+                        let mut c = (a - b).abs();
+                        while c <= a + b + 1e-9 {
+                            let mut f = (d - e).abs();
+                            while f <= d + e + 1e-9 {
+                                sum += (2.0 * c + 1.0)
+                                    * (2.0 * f + 1.0)
+                                    * wigner_9j(a, b, c, d, e, f, g, h, i).unwrap()
+                                    * wigner_9j(a, b, c, d, e, f, g2, h2, i).unwrap();
+                                f += 1.0;
+                            }
+                            c += 1.0;
+                        }
+                        let want = if (g - g2).abs() < 1e-9 && (h - h2).abs() < 1e-9 {
+                            1.0 / ((2.0 * g + 1.0) * (2.0 * h + 1.0))
+                        } else {
+                            0.0
+                        };
+                        assert!(
+                            (sum - want).abs() < 1e-10,
+                            "g={g} h={h} g'={g2} h'={h2}: sum {sum}, want {want}"
+                        );
+                        tested += 1;
+                    }
+                }
+            }
+        }
+        assert!(tested > 10, "only {tested} combinations were reachable");
+    }
+
+    /// The 9-j is invariant under transposition, and under an ODD
+    /// permutation of rows or columns it picks up `(-1)^S` where `S` is
+    /// the sum of all nine arguments.
+    #[test]
+    fn nine_j_symmetries() {
+        let cases = [
+            (1.0, 1.0, 2.0, 1.0, 1.0, 1.0, 2.0, 1.0, 1.0),
+            (0.5, 0.5, 1.0, 0.5, 0.5, 1.0, 1.0, 1.0, 2.0),
+            (1.5, 1.0, 1.5, 1.0, 1.0, 1.0, 0.5, 1.0, 1.5),
+        ];
+        for (a, b, c, d, e, f, g, h, i) in cases {
+            let base = wigner_9j(a, b, c, d, e, f, g, h, i).unwrap();
+            // transpose: rows <-> columns
+            let tr = wigner_9j(a, d, g, b, e, h, c, f, i).unwrap();
+            assert!((tr - base).abs() < 1e-12, "transpose changed it");
+            let s = (a + b + c + d + e + f + g + h + i).round() as i64;
+            let sign = if s.rem_euclid(2) == 0 { 1.0 } else { -1.0 };
+            // swap rows 1 and 2 (odd permutation)
+            let rs = wigner_9j(d, e, f, a, b, c, g, h, i).unwrap();
+            assert!((rs - sign * base).abs() < 1e-12, "row swap phase wrong");
+            // swap columns 1 and 2 (odd permutation)
+            let cs = wigner_9j(b, a, c, e, d, f, h, g, i).unwrap();
+            assert!((cs - sign * base).abs() < 1e-12, "column swap phase wrong");
+            // cyclic row permutation is even: unchanged
+            let cyc = wigner_9j(d, e, f, g, h, i, a, b, c).unwrap();
+            assert!((cyc - base).abs() < 1e-12, "cyclic row permutation changed it");
+        }
+    }
+
     /// Selection-rule violations are ZERO, not errors — that is the
     /// mathematically correct answer and callers rely on it.
     #[test]
@@ -610,6 +840,9 @@ mod tests {
         assert_eq!(wigner_3j(1.0, 1.0, 5.0, 0.0, 0.0, 0.0).unwrap(), 0.0);
         // 6j triangle broken
         assert_eq!(wigner_6j(1.0, 1.0, 9.0, 1.0, 1.0, 1.0).unwrap(), 0.0);
+        // 9j: any of the six triads failing gives zero
+        assert_eq!(wigner_9j(1.0, 1.0, 9.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0).unwrap(), 0.0);
+        assert_eq!(wigner_9j(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 9.0, 1.0, 1.0).unwrap(), 0.0);
     }
 
     /// Arguments that are not angular momenta at all ARE errors.
@@ -620,6 +853,8 @@ mod tests {
         // integer j with half-integer m is incoherent
         assert!(wigner_3j(1.0, 1.0, 1.0, 0.5, -0.5, 0.0).is_err(), "j/m mismatch");
         assert!(wigner_6j(0.3, 1.0, 1.0, 1.0, 1.0, 1.0).is_err());
+        assert!(wigner_9j(0.3, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0).is_err());
+        assert!(wigner_9j(-1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0).is_err());
     }
 
     /// Large-j sanity: the closed form must still hold where the
