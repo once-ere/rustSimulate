@@ -793,11 +793,29 @@ relative error ~ 1e-16 exp(|z| - |Im z| + Im nu * arg z)
 so complex order is free on the positive real axis and costs
 `Im nu * arg z` elsewhere.
 
-**The large-order machinery is not extended.** The Debye, Airy-type and
-`1/z` expansions are expansions *in* the order, and their uniformity is
-stated for real order; reusing them would be assuming something nobody
-proved. Complex order therefore reaches as far as the ascending series
-does, and says so rather than guessing.
+**Beyond the series.** The `1/z` asymptotics (DLMF 10.17, 10.40) are
+expansions at *fixed* order in which the order enters only as
+`mu = 4 nu^2` — polynomially — so nothing in them assumes a real order,
+and they extend unchanged. The uniform expansions of DLMF 10.41 for `I`
+and `K` extend in the sector `|arg nu| < pi/2` (DLMF 10.41.5). Both are
+offered alongside the series and chosen by comparing error estimates, so
+the reach runs from `|z| ~ 25` out past `|z| = 600`.
+
+Two things the estimates could not see had to be measured. The `1/z`
+expansion needs `|4 nu^2|` small compared with `|z|`, not merely `|z|`
+large — at `nu = 0.5 + 5i` and `|z| = 22` the actual error was **2163
+times** the truncation estimate — so that is checked as a validity
+condition rather than folded into a tolerance. And the term DLMF 10.40.1
+drops from `I` is not of relative size `exp(-2 Re z)` but
+`exp(pi |Im nu| - 2 Re z)`: **complex order makes it bigger**, by a
+factor this crate had no reason to carry until now.
+
+**Still missing: the Airy-type expansion of DLMF 10.20 at complex
+order.** The obstacle is concrete rather than theoretical — it needs
+`Ai` at a *complex* argument, and this crate has only the real-argument
+Airy functions from the vendored Cephes. So the turning point
+`|z| ~ |nu|` at complex order is reached by the ascending series or not
+at all, and the error says which.
 
 **A wrinkle worth knowing about lists.** The bracket literal is
 overloaded: `[a,b,c]` is a *vector*, `[a,b,c,d]` is a *quaternion*, and

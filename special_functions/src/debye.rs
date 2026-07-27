@@ -145,13 +145,17 @@ pub(crate) fn u_poly(k: usize, p: C) -> C {
 /// shrinking, with the first omitted term as the error estimate.
 ///
 /// `sign` is `+1` for `I` and `J`, `-1` for `K` and `Y`.
-fn u_series(nu: f64, p: C, sign: f64) -> (C, f64) {
+fn u_series(nu: C, p: C, sign: f64) -> (C, f64) {
     let t = table();
     let mut sum = C::ONE;
     let mut smallest = 1.0_f64;
-    let mut scale = 1.0;
+    // Complex, so that a complex ORDER works here unchanged. The
+    // polynomials do not care what kind of number `nu` is; only this
+    // accumulator did.
+    let mut scale = C::ONE;
+    let inv = nu.inv() * sign;
     for coeffs in t.iter().skip(1) {
-        scale *= sign / nu;
+        scale = scale * inv;
         // Horner in p.
         let mut v = C::ZERO;
         for &c in coeffs.iter().rev() {
@@ -190,11 +194,11 @@ fn finite(value: C, err: f64) -> Option<Uniform> {
 /// Valid for `|arg z| < pi/2`; the caller checks that, since the two
 /// families have different sectors and only the caller knows which it
 /// wants.
-pub fn ik_uniform(nu: f64, z: C) -> (Option<Uniform>, Option<Uniform>) {
-    if nu <= 0.0 || !nu.is_finite() || z.abs() == 0.0 {
+pub fn ik_uniform(nu: C, z: C) -> (Option<Uniform>, Option<Uniform>) {
+    if !nu.is_finite() || nu.abs() == 0.0 || z.abs() == 0.0 {
         return (None, None);
     }
-    let x = z * (1.0 / nu);
+    let x = z * nu.inv();
     let s = (C::ONE + x * x).powf(0.5);
     let p = s.inv();
     let eta = s + (x * (C::ONE + s).inv()).ln();
@@ -208,9 +212,13 @@ pub fn ik_uniform(nu: f64, z: C) -> (Option<Uniform>, Option<Uniform>) {
     let nk = z - eta * nu;
     let root = s.powf(0.5);
 
-    let i_val = ni.exp() * (root * (2.0 * std::f64::consts::PI * nu).sqrt()).inv() * si;
-    let k_val =
-        nk.exp() * root.inv() * sk * (std::f64::consts::PI / (2.0 * nu)).sqrt();
+    let i_val = ni.exp()
+        * (root * (nu * (2.0 * std::f64::consts::PI)).powf(0.5)).inv()
+        * si;
+    let k_val = nk.exp()
+        * root.inv()
+        * sk
+        * (nu.inv() * (std::f64::consts::PI / 2.0)).powf(0.5);
 
     (finite(i_val, ei), finite(k_val, ek))
 }
@@ -240,8 +248,8 @@ pub fn jy_debye(nu: f64, x: f64) -> (Option<Uniform>, Option<Uniform>) {
     let alpha = ((1.0 + t) / r).ln();
     let e = nu * (t - alpha); // negative
 
-    let (sj, ej) = u_series(nu, q, 1.0);
-    let (sy, ey) = u_series(nu, q, -1.0);
+    let (sj, ej) = u_series(C::real(nu), q, 1.0);
+    let (sy, ey) = u_series(C::real(nu), q, -1.0);
 
     let j = sj * (e.exp() / (2.0 * std::f64::consts::PI * nu * t).sqrt());
     let y = sy * (-(-e).exp() / (std::f64::consts::PI * nu * t / 2.0).sqrt());
@@ -387,8 +395,8 @@ mod tests {
             for &frac in &[0.2, 1.0, 3.0, 20.0] {
                 let x = frac * nu;
                 let z = C::real(x);
-                let (i0u, k1u) = (ik_uniform(nu, z).0, ik_uniform(nu + 1.0, z).1);
-                let (i1u, k0u) = (ik_uniform(nu + 1.0, z).0, ik_uniform(nu, z).1);
+                let (i0u, k1u) = (ik_uniform(C::real(nu), z).0, ik_uniform(C::real(nu + 1.0), z).1);
+                let (i1u, k0u) = (ik_uniform(C::real(nu + 1.0), z).0, ik_uniform(C::real(nu), z).1);
                 let (Some(i0u), Some(i1u), Some(k0u), Some(k1u)) = (i0u, i1u, k0u, k1u)
                 else {
                     continue; // out of f64 range, which the caller reports
@@ -415,7 +423,7 @@ mod tests {
                 if nu < 1.0 {
                     continue;
                 }
-                let got = ik_uniform(nu, C::real(x)).0.unwrap().value.re;
+                let got = ik_uniform(C::real(nu), C::real(x)).0.unwrap().value.re;
                 assert!(
                     (got - want).abs() <= 1e-6 * want,
                     "exp(-x)I_1({x}): {got} vs {want} (a 1/nu expansion at nu = 1)"
@@ -512,7 +520,7 @@ mod tests {
         assert!(jy_debye(0.0, 1.0).0.is_none(), "nu = 0");
         assert!(jy_debye(10.0, 0.0).0.is_none(), "x = 0");
         assert!(jy_debye(10.0, 20.0).0.is_none(), "x > nu is not this expansion");
-        assert!(ik_uniform(0.0, C::ONE).0.is_none(), "nu = 0");
-        assert!(ik_uniform(10.0, C::ZERO).0.is_none(), "z = 0");
+        assert!(ik_uniform(C::ZERO, C::ONE).0.is_none(), "nu = 0");
+        assert!(ik_uniform(C::real(10.0), C::ZERO).0.is_none(), "z = 0");
     }
 }

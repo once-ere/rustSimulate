@@ -45,14 +45,21 @@
 //! all; well off it, a large `|Im nu|` is expensive in one direction and
 //! free in the other.
 //!
-//! # What is not extended
+//! # Beyond the series
 //!
-//! The large-order machinery — [`crate::debye`],
-//! [`crate::airy_uniform`], and the `1/z` asymptotics behind
-//! [`crate::bessel_scaled`] — is expansions **in** `nu`, and their
-//! uniformity arguments are stated for real order. They are not reused
-//! here, so complex order is limited to where the ascending series
-//! reaches, and says so rather than guessing.
+//! [`crate::bessel_cnu_large`] carries the `1/z` asymptotics and the
+//! DLMF 10.41 uniform expansions to complex order, and they are offered
+//! here as further candidates, chosen by comparing error estimates as
+//! everywhere else in this crate. Between them the reach extends from
+//! `|z| ~ 25` to `|z| ~ 600` and beyond, and to orders the series
+//! cannot represent.
+//!
+//! What is still missing is the **Airy-type** expansion of DLMF 10.20
+//! at complex order, and the obstacle is concrete: it needs
+//! `Ai(nu^(2/3) zeta)` at a complex argument, and this crate has only
+//! the real-argument Airy functions from the vendored Cephes. So the
+//! turning point `|z| ~ |nu|` at complex order is reached by the
+//! ascending series or not at all, and the error message says which.
 
 use crate::bessel_complex::{bessel_i_nu, bessel_j_nu, bessel_k_nu, bessel_y_nu};
 use crate::complex::Complex64 as C;
@@ -67,6 +74,99 @@ const REAL_TOL: f64 = 1e-13;
 
 fn is_real(nu: C) -> bool {
     nu.im.abs() <= REAL_TOL * nu.re.abs().max(1.0)
+}
+
+/// How wrong an answer may be estimated to be before the routine
+/// refuses instead. Six digits, matching [`crate::bessel_scaled`].
+const TOL: f64 = 1e-6;
+
+/// The ascending series' estimated relative error.
+///
+/// The law from the module note, one term per function. The extra
+/// `Im nu * arg z` is what complex order adds, and it is why complex
+/// order is free on the positive real axis.
+fn series_error(loss: f64) -> f64 {
+    if loss > 700.0 {
+        f64::INFINITY
+    } else {
+        // 1e-14, not 1e-16. The law is a MODEL of the cancellation, and
+        // measured against the J-Y Wronskian over a 16798-point sweep it
+        // runs about two decades optimistic in the corner where
+        // |Im nu| is large — at nu = 0.5 + 5i, |z| = 30 it claimed
+        // 6.6e-7 and the Wronskian said 4.7e-5. Two decades of slack
+        // makes the gate at TOL mean what it says.
+        (1e-14 * loss.exp()).max(1e-16)
+    }
+}
+
+/// The series route as a candidate: the value, and what it is worth.
+fn series_candidate(v: Result<C, String>, loss: f64) -> Cand {
+    match v {
+        Ok(x) if x.is_finite() => Some((x, series_error(loss))),
+        _ => None,
+    }
+}
+
+type Cand = Option<(C, f64)>;
+
+fn better(a: Cand, b: Cand) -> Cand {
+    match (a, b) {
+        (Some(x), Some(y)) => Some(if x.1 <= y.1 { x } else { y }),
+        (x, None) => x,
+        (None, y) => y,
+    }
+}
+
+/// Turn the best candidate into a result, or say why there is none.
+fn accept(c: Cand, what: &str, nu: C, z: C) -> Result<C, String> {
+    match c {
+        Some((v, e)) if e <= TOL => Ok(v),
+        Some((_, e)) => Err(format!(
+            "{what}: no method is accurate at nu = {nu:?}, z = {z:?} — the best \
+             available estimates {e:.1e}. The ascending series has cancelled away \
+             its digits at this |z|, and the 1/z expansions need |4 nu^2| small \
+             compared with |z|. The remedy for |z| comparable to |nu| is the \
+             uniform Airy-type expansion of DLMF 10.20, which needs Ai at COMPLEX \
+             argument; complex Airy is not implemented."
+        )),
+        None => Err(format!(
+            "{what}: no method produced a finite value at nu = {nu:?}, z = {z:?}. \
+             The value may simply be outside f64 range."
+        )),
+    }
+}
+
+/// `|Im nu * arg z|`, the term complex order adds to every loss law.
+fn order_term(nu: C, z: C) -> f64 {
+    (nu.im * z.arg()).abs()
+}
+
+/// Extra loss carried by the **integer-order** `Y` route near the
+/// imaginary axis.
+///
+/// `bessel_y_c` builds `Y_n` by upward recurrence in `n` from `Y_0` and
+/// `Y_1`. That direction is stable for real argument, where `Y` is the
+/// dominant solution in order — but at nearly-imaginary argument `Y_n`
+/// is a combination whose recessive part the recurrence amplifies, and
+/// the accuracy law recorded in Stage 13 does not describe it.
+///
+/// This stage found it by accident and the Wronskian adjudicated: at
+/// `nu = 2, z = 29.4 e^{1.6i}` the `1/z` expansion closes the J-Y
+/// Wronskian to **7e-26** while the integer series closes it to
+/// **4.5e-6**. Without this term the selector believed the series'
+/// claim of 1e-16 and returned the worse number.
+///
+/// The bound is `exp(|Im z|)` relative — empirical, and deliberately
+/// generous, because it is guarding a defect in another module rather
+/// than modelling one here. Fixing `bessel_y_c` itself is a separate
+/// job; this makes the selector stop trusting it.
+fn integer_y_recurrence_loss(nu: C, z: C) -> f64 {
+    let near_whole = nu.im == 0.0 && (nu.re - nu.re.round()).abs() < 1e-9;
+    if near_whole {
+        z.im.abs()
+    } else {
+        0.0
+    }
 }
 
 fn check(nu: C, z: C, what: &str) -> Result<(), String> {
@@ -148,10 +248,13 @@ fn cnu_series(nu: C, z: C, alternating: bool) -> Result<C, String> {
 /// ```
 pub fn bessel_j_cnu(nu: C, z: C) -> Result<C, String> {
     check(nu, z, "bessel_j_cnu")?;
-    if is_real(nu) {
-        return bessel_j_nu(nu.re, z);
+    if z.abs() == 0.0 {
+        return if is_real(nu) { bessel_j_nu(nu.re, z) } else { cnu_series(nu, z, true) };
     }
-    cnu_series(nu, z, true)
+    let ser = if is_real(nu) { bessel_j_nu(nu.re, z) } else { cnu_series(nu, z, true) };
+    let s = series_candidate(ser, z.abs() - z.im.abs() + order_term(nu, z));
+    let a = crate::bessel_cnu_large::j_asym(nu, z);
+    accept(better(s, a), "bessel_j_cnu", nu, z)
 }
 
 /// `I_nu(z)` for complex order.
@@ -160,10 +263,14 @@ pub fn bessel_j_cnu(nu: C, z: C) -> Result<C, String> {
 /// As [`bessel_j_cnu`].
 pub fn bessel_i_cnu(nu: C, z: C) -> Result<C, String> {
     check(nu, z, "bessel_i_cnu")?;
-    if is_real(nu) {
-        return bessel_i_nu(nu.re, z);
+    if z.abs() == 0.0 {
+        return if is_real(nu) { bessel_i_nu(nu.re, z) } else { cnu_series(nu, z, false) };
     }
-    cnu_series(nu, z, false)
+    let ser = if is_real(nu) { bessel_i_nu(nu.re, z) } else { cnu_series(nu, z, false) };
+    let s = series_candidate(ser, z.abs() - z.re + order_term(nu, z));
+    let a = crate::bessel_cnu_large::i_asym(nu, z);
+    let u = crate::bessel_cnu_large::ik_uniform_unscaled(nu, z).0;
+    accept(better(better(s, a), u), "bessel_i_cnu", nu, z)
 }
 
 /// `Y_nu(z)` for complex order, by the reflection
@@ -178,17 +285,28 @@ pub fn bessel_i_cnu(nu: C, z: C) -> Result<C, String> {
 /// As [`bessel_j_cnu`]; also `z = 0`, where `Y` is singular.
 pub fn bessel_y_cnu(nu: C, z: C) -> Result<C, String> {
     check(nu, z, "bessel_y_cnu")?;
+    if is_real(nu) && z.abs() != 0.0 {
+        let s = series_candidate(
+            bessel_y_nu(nu.re, z),
+            (z.abs() - z.im.abs() + order_term(nu, z))
+                .max(integer_y_recurrence_loss(nu, z)),
+        );
+        let a = crate::bessel_cnu_large::y_asym(nu, z);
+        return accept(better(s, a), "bessel_y_cnu", nu, z);
+    }
     if is_real(nu) {
         return bessel_y_nu(nu.re, z);
     }
     if z.abs() == 0.0 {
         return Err("bessel_y_cnu: Y is singular at z = 0".to_string());
     }
-    let s = (nu * std::f64::consts::PI).sin();
-    let c = (nu * std::f64::consts::PI).cos();
-    let jp = cnu_series(nu, z, true)?;
-    let jm = cnu_series(nu * -1.0, z, true)?;
-    Ok((jp * c - jm) * s.inv())
+    let sn = (nu * std::f64::consts::PI).sin();
+    let cs = (nu * std::f64::consts::PI).cos();
+    let ser = cnu_series(nu, z, true)
+        .and_then(|jp| cnu_series(nu * -1.0, z, true).map(|jm| (jp * cs - jm) * sn.inv()));
+    let s = series_candidate(ser, z.abs() - z.im.abs() + order_term(nu, z));
+    let a = crate::bessel_cnu_large::y_asym(nu, z);
+    accept(better(s, a), "bessel_y_cnu", nu, z)
 }
 
 /// `K_nu(z)` for complex order, by
@@ -201,16 +319,27 @@ pub fn bessel_y_cnu(nu: C, z: C) -> Result<C, String> {
 /// As [`bessel_y_cnu`].
 pub fn bessel_k_cnu(nu: C, z: C) -> Result<C, String> {
     check(nu, z, "bessel_k_cnu")?;
+    if is_real(nu) && z.abs() != 0.0 {
+        let s = series_candidate(bessel_k_nu(nu.re, z), z.abs() + z.re + order_term(nu, z));
+        let a = crate::bessel_cnu_large::k_asym(nu, z);
+        let u = crate::bessel_cnu_large::ik_uniform_unscaled(nu, z).1;
+        return accept(better(better(s, a), u), "bessel_k_cnu", nu, z);
+    }
     if is_real(nu) {
         return bessel_k_nu(nu.re, z);
     }
     if z.abs() == 0.0 {
         return Err("bessel_k_cnu: K is singular at z = 0".to_string());
     }
-    let s = (nu * std::f64::consts::PI).sin();
-    let ip = cnu_series(nu, z, false)?;
-    let im = cnu_series(nu * -1.0, z, false)?;
-    Ok((im - ip) * s.inv() * (std::f64::consts::PI / 2.0))
+    let sn = (nu * std::f64::consts::PI).sin();
+    let ser = cnu_series(nu, z, false).and_then(|ip| {
+        cnu_series(nu * -1.0, z, false)
+            .map(|im| (im - ip) * sn.inv() * (std::f64::consts::PI / 2.0))
+    });
+    let s = series_candidate(ser, z.abs() + z.re + order_term(nu, z));
+    let a = crate::bessel_cnu_large::k_asym(nu, z);
+    let u = crate::bessel_cnu_large::ik_uniform_unscaled(nu, z).1;
+    accept(better(better(s, a), u), "bessel_k_cnu", nu, z)
 }
 
 #[cfg(test)]
@@ -426,6 +555,85 @@ mod tests {
                 // the other half of the same statement.
                 let c = bessel_k_cnu(C::new(0.0, -y), C::real(x)).unwrap();
                 assert!(close(c, v, 1e-12), "K_(-{y}i) != K_({y}i)");
+            }
+        }
+    }
+
+    /// The whole thing, judged by the J-Y Wronskian across a grid of
+    /// order and argument that no method here covers alone.
+    ///
+    /// This is the test that matters, because for complex order there is
+    /// no reference implementation to compare against — and it judges
+    /// the value the routine actually **chose**, not the one a
+    /// particular route would have produced. Both of the estimate
+    /// defects this stage found showed up here first: the selector
+    /// preferring a series whose claim was two decades optimistic, and
+    /// preferring an integer-order `Y` whose upward recurrence is
+    /// unstable near the imaginary axis.
+    #[test]
+    fn the_chosen_values_satisfy_the_wronskian_across_the_plane() {
+        let mut judged = 0;
+        let mut refused = 0;
+        let mut worst = 0.0_f64;
+        for &(a, b) in &[
+            (1.3_f64, 0.0_f64),
+            (2.0, 0.0),
+            (0.5, 0.0),
+            (1.3, 2.0),
+            (0.5, 5.0),
+            (-0.7, 1.0),
+            (3.0, -2.0),
+            (0.0, 3.0),
+        ] {
+            for i in 0..14 {
+                let r = 6.0 + i as f64 * 4.0;
+                for k in 0..21 {
+                    let arg = -3.0 + k as f64 * 0.3;
+                    let (nu, z) = (C::new(a, b), C::from_polar(r, arg));
+                    let (Ok(j0), Ok(j1), Ok(y0), Ok(y1)) = (
+                        bessel_j_cnu(nu, z),
+                        bessel_j_cnu(nu + C::ONE, z),
+                        bessel_y_cnu(nu, z),
+                        bessel_y_cnu(nu + C::ONE, z),
+                    ) else {
+                        refused += 1;
+                        continue;
+                    };
+                    let w = j1 * y0 - j0 * y1;
+                    let want = z.inv() * (2.0 / std::f64::consts::PI);
+                    let scale = (j1 * y0).abs() + (j0 * y1).abs();
+                    // The values can be finite while their products are
+                    // not; that is the metric's limit, not the routine's.
+                    if !scale.is_finite() || scale == 0.0 {
+                        continue;
+                    }
+                    judged += 1;
+                    let e = (w - want).abs() / scale;
+                    worst = worst.max(e);
+                    assert!(
+                        e <= TOL,
+                        "nu={nu:?}, |z|={r}, arg={arg:.2}: residual {e:.2e} exceeds the \
+                         {TOL:.0e} these routines promise"
+                    );
+                }
+            }
+        }
+        assert!(judged > 800, "only {judged} points were judged");
+        assert!(refused > 0, "the refusal path should be exercised too");
+        assert!(worst > 1e-12, "worst was {worst:.1e} — is the grid reaching anything hard?");
+    }
+
+    /// The large-|z| routes must be reached and used: `|z| = 150` is far
+    /// past where the ascending series survives at any order, and Stage
+    /// 17 refused it outright.
+    #[test]
+    fn the_large_argument_routes_extend_the_reach() {
+        for &(a, b) in &[(1.3_f64, 0.0_f64), (1.3, 2.0), (0.0, 3.0)] {
+            for &r in &[60.0_f64, 150.0, 600.0] {
+                let (nu, z) = (C::new(a, b), C::from_polar(r, 0.4));
+                let j = bessel_j_cnu(nu, z);
+                assert!(j.is_ok(), "J at nu={nu:?}, |z|={r} should now work: {j:?}");
+                assert!(bessel_k_cnu(nu, z).is_ok(), "K at nu={nu:?}, |z|={r}");
             }
         }
     }

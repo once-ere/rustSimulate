@@ -118,15 +118,19 @@ fn series_error(loss: f64) -> f64 {
 /// the first omitted term, which is the classical bound for an optimally
 /// truncated asymptotic series. The sum's leading term is 1, so an
 /// absolute term size is already a relative error.
-fn asym_sum(nu: f64, z: C, c: C) -> (C, f64) {
-    let mu = 4.0 * nu * nu;
+fn asym_sum(nu: C, z: C, c: C) -> (C, f64) {
+    // `mu = 4 nu^2` is the only place the order enters, and it enters
+    // polynomially — so this works for a COMPLEX order with no change
+    // beyond the type. DLMF 10.17.5/10.17.6 are stated for fixed `nu`,
+    // which may be complex.
+    let mu = nu * nu * 4.0;
     let step = c * z.inv();
     let mut term = C::ONE;
     let mut sum = C::ONE;
     let mut smallest = 1.0_f64;
 
     for k in 1..=MAX_TERMS {
-        let f = (mu - ((2 * k - 1) as f64).powi(2)) / (8.0 * k as f64);
+        let f = (mu - C::real(((2 * k - 1) as f64).powi(2))) * (1.0 / (8.0 * k as f64));
         let next = term * step * f;
         let m = next.abs();
         // Optimal truncation: stop BEFORE the first term that does not
@@ -150,7 +154,7 @@ fn asym_sum(nu: f64, z: C, c: C) -> (C, f64) {
 /// The truncation estimate alone, for measurement and diagnostics.
 #[doc(hidden)]
 pub fn asym_error_estimate(nu: f64, z: C) -> f64 {
-    asym_sum(nu, z, C::ONE).1
+    asym_sum(C::real(nu), z, C::ONE).1
 }
 
 /// `sqrt(2/(pi z))`, the common Hankel prefactor.
@@ -403,8 +407,8 @@ fn h2_sector_ok(z: C) -> bool {
 /// Both scaled Hankel values by the asymptotic expansion alone, with the
 /// worse of the two truncation estimates.
 fn hankel_pair_asym(nu: f64, z: C) -> (C, C, f64) {
-    let (s1, e1) = asym_sum(nu, z, C::I);
-    let (s2, e2) = asym_sum(nu, z, C::I * -1.0);
+    let (s1, e1) = asym_sum(C::real(nu), z, C::I);
+    let (s2, e2) = asym_sum(C::real(nu), z, C::I * -1.0);
     let pref = hankel_prefactor(z);
     let ph = nu * std::f64::consts::FRAC_PI_2 + std::f64::consts::FRAC_PI_4;
     (
@@ -509,7 +513,7 @@ pub fn hankel_h2_scaled_nu(nu: f64, z: C) -> Result<C, String> {
 // ---------------------------------------------------------------------
 
 fn k_asym(nu: f64, z: C) -> (C, f64) {
-    let (s, e) = asym_sum(nu, z, C::ONE);
+    let (s, e) = asym_sum(C::real(nu), z, C::ONE);
     let pref = (C::real(std::f64::consts::PI * 0.5) * z.inv()).powf(0.5);
     (pref * s, e)
 }
@@ -678,7 +682,7 @@ pub fn bessel_i_scaled_nu(nu: f64, z: C) -> Result<C, String> {
     let mut asym_err = f64::INFINITY;
     let mut a: Candidate = None;
     if z.re > 0.0 && z.re >= z.im.abs() {
-        let (sum, e) = asym_sum(nu, z, C::ONE * -1.0);
+        let (sum, e) = asym_sum(C::real(nu), z, C::ONE * -1.0);
         let pref = (C::real(1.0 / (2.0 * std::f64::consts::PI)) * z.inv()).powf(0.5);
         // exp(z - |Re z|) has modulus 1 here, so nothing large is formed.
         let v = pref * (z - C::real(z.re.abs())).exp() * sum;
@@ -821,7 +825,7 @@ fn ik_uniform_candidates(nu: f64, z: C) -> (Candidate, Candidate) {
     if nu <= 0.0 || z.re <= 0.0 || z.arg().abs() >= std::f64::consts::FRAC_PI_2 {
         return (None, None);
     }
-    let (i, k) = crate::debye::ik_uniform(nu, z);
+    let (i, k) = crate::debye::ik_uniform(C::real(nu), z);
     // An exact zero here is underflow, not an answer: I and K have no
     // zeros. Returning it with a small claimed error is the same lie
     // these routines exist to stop telling.
@@ -1207,7 +1211,7 @@ mod tests {
     fn the_truncation_estimate_tracks_reality() {
         let mut prev = 0.0;
         for &x in &[8.0, 12.0, 20.0, 40.0, 100.0] {
-            let (_, err) = asym_sum(0.0, C::real(x), C::ONE);
+            let (_, err) = asym_sum(C::real(0.0), C::real(x), C::ONE);
             assert!(err.is_finite(), "estimate must be a number at x={x}");
             if prev > 0.0 {
                 assert!(err < prev, "estimate should improve with |z|: {err:e} at x={x}");
@@ -1216,14 +1220,14 @@ mod tests {
         }
         // At small |z| the series diverges immediately and the estimate
         // must say so rather than quietly returning the first term.
-        let (_, err) = asym_sum(0.0, C::real(1.0), C::ONE);
+        let (_, err) = asym_sum(C::real(0.0), C::real(1.0), C::ONE);
         assert!(err > 1e-3, "the estimate at x = 1 should be large, got {err:e}");
         // A half-odd-integer order terminates exactly: nu = 1/2 makes
         // a_1 = (1 - 1)/8 = 0 and every later coefficient with it. This
         // is also why the `I` expansion needs its own dropped-term
         // estimate — here the truncation estimate is 0 and yet the
         // omitted second term of DLMF 10.40.1 is not.
-        let (s, err) = asym_sum(0.5, C::real(3.0), C::ONE);
+        let (s, err) = asym_sum(C::real(0.5), C::real(3.0), C::ONE);
         assert_eq!(err, 0.0, "nu = 1/2 should terminate exactly");
         assert_eq!(s, C::ONE, "and its sum is 1");
     }
