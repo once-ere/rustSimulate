@@ -66,6 +66,10 @@ tm-guard@@quantum@@quantum/src/transfer.rs@@if e <= v_left.re {@@if false {@@the
 nash-phase@@quantum@@quantum/src/nash.rs@@coeff.push(power * jm);@@coeff.push(C::real(jm));@@the i^M phase in the Jacobi-Anger stencil coefficients
 nash-order@@quantum@@quantum/src/nash.rs@@None => order_for(lambda, f64::EPSILON)?,@@None => 2,@@the automatic Jacobi-Anger truncation order
 cap-cells@@quantum@@quantum/src/absorber.rs@@const CELLS_PER_LENGTH: f64 = 200.0;@@const CELLS_PER_LENGTH: f64 = 8.0;@@the absorber's cell resolution
+gamma-shift@@special_functions@@special_functions/src/gamma_complex.rs@@const SHIFT_TO: f64 = 14.0;@@const SHIFT_TO: f64 = 2.0;@@the Stirling argument shift (small |w| is where the series is worst)
+airy-series@@special_functions@@special_functions/src/airy_complex.rs@@const SERIES_LIMIT: f64 = 6.0;@@const SERIES_LIMIT: f64 = 60.0;@@where complex Airy switches from series to asymptotics
+airy-c1@@special_functions@@special_functions/src/airy_complex.rs@@const C1: f64 = 0.355_028_053_887_817_2;@@const C1: f64 = 0.355_028_053_887_8;@@Ai(0), truncated: 4 digits dropped from a defining constant
+restitution@@physical_object@@physical_object/src/collide.rs@@rel_vel_n.abs() < system.restitution_threshold@@rel_vel_n.abs() < 1.0e30@@the restitution threshold (every impact becomes plastic)
 zeno-window@@physical_object@@physical_object/src/collide.rs@@pub const ZENO_GAP_RELATIVE: f64 = 1e-9;@@pub const ZENO_GAP_RELATIVE: f64 = 1e9;@@the Stage 2C burst window (everything becomes one burst again)
 zeno-plastic@@physical_object@@physical_object/src/collide.rs@@pub const MAX_EVENTS_IN_BURST: usize = 64;@@pub const MAX_EVENTS_IN_BURST: usize = 0;@@the Zeno guard's EFFECT: every impact becomes inelastic
 zeno-never@@physical_object@@physical_object/src/collide.rs@@pub const MAX_EVENTS_IN_BURST: usize = 64;@@pub const MAX_EVENTS_IN_BURST: usize = usize::MAX;@@the Zeno guard firing at all (a settling ball must still terminate)
