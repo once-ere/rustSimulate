@@ -224,15 +224,19 @@ recorded here because it shaped the suite:
   sampling offsets — and requires the suite to catch each one. A passing
   suite is evidence only if a broken program would fail it.
 
-  First full run: **10 of 14 caught**; after Stage 2G, **12 of 14**.
-  The survivors, worked through rather than filed:
+  Progression: **10/14** on the first run, **12/14** after Stage 2G,
+  **18/19** after Stage 2H widened the table (complex gamma's Stirling
+  shift, complex Airy's series/asymptotic switch and its `Ai(0)`
+  constant, the restitution threshold, and the Zeno guard's *effect* as
+  distinct from its threshold). The survivors, worked through rather
+  than filed:
 
   | mutation | verdict |
   |---|---|
   | `zeta-anchor` (1.5 → 1.0 in the Stage 2D branch anchor) | **equivalent mutant.** Inside the guarded sector `\|arg(z/ν)\| ≤ 0.8` both coefficients unwrap to the same branch, so no input distinguishes them. It only bites where the route already refuses. |
   | `asym-floor` (5e-14 → 1e-300) | **closed in 2G.** The floor binds where optimal truncation reports *zero*, which happens exactly at `ν = 1/2` where the `1/z` series terminates — Stage 15's defect. Pinned against the closed form `J_{1/2}(z) = √(2/πz) sin z`. |
   | `cap-cells` (200 → 8) | **closed in 2G.** The convergence test rolled its own geometry, so the shipped constant was unasserted; `leak` is now compared against a 16× finer computation. |
-  | `zeno-count` (64 → 1) | **still open, and now understood.** `resolve_impulses` handles every flagged pair in ONE event, so simultaneous contacts produce one event with two contacts rather than two events — a corner impact written to exercise the threshold does not raise the burst count at all. The threshold therefore governs only how quickly a *true* Zeno sequence is truncated, and the settling-ball test is satisfied by any value. Distinguishing 1 from 64 needs a case where a legitimate chain of *sequential* near-simultaneous impacts must stay elastic; none is written. |
+  | `zeno-count` (64 → 1) | **resolved in 2H, by asking a better question.** The threshold's exact value is unconstrained because `resolve_impulses` batches every flagged pair into ONE event, so bursts above 1 arise only in true Zeno — where any value in [1, 64] gives the same intended plastic behaviour. What matters is the guard's *behaviour*, and two replacement mutations pin it: forcing it always on (`= 0`) and never on (`= usize::MAX`) are **both caught**. The number 64 is a tuning choice inside a range where nothing observable changes, which is a different thing from an untested guard. |
 
   Investigating `zeta-anchor` produced the more useful finding: the
   Stage 2D verification compared the closed form with the series **in
