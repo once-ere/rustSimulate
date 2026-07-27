@@ -27,6 +27,14 @@ dependencies.**
 
 ---
 
+- **`quantum::nash`** — the Bessel-expanded split-operator propagator
+  ported faithfully from the original C++ `EVOLVE_NASH`, on a periodic
+  grid. Explicit and matrix-free where `qm1d`'s Crank–Nicolson solves a
+  tridiagonal system; unitary at any step size; first order in `dt`.
+  Verified against a transliteration of the original, against a closed
+  form on plane waves, and against diagonalisation. See
+  `CLEANROOM_PROVENANCE.md` §8.
+
 ## 2. Pros
 
 **The dependency posture is genuinely unusual and valuable.** Nothing

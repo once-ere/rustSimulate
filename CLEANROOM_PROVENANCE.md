@@ -370,3 +370,65 @@ indistinguishable from a correct one until the moment it costs you.
 And the corollary for verification scripts: a check whose failure path
 is an `||` after a command that can partially succeed is not a check.
 Assert on the count, and make the failing case print loudly.
+
+---
+
+## 8. The converse case: a faithful port of the author's *own* work
+
+Everything above is about code that could **not** be copied. The rule
+has a mirror image that matters just as much, because applying the
+clean-room procedure where it does not belong destroys value rather than
+protecting it.
+
+`CQMEvolve1D::EVOLVE_NASH` (`QM/QMEvolve1D.cpp`, ~20 lines) is the one
+piece of original numerical work in the SolveIt C++. It is not derived
+from Numerical Recipes, GSL, or GIAC; it is the author's own scheme.
+There is therefore **no reason to reimplement it from a description** —
+the right thing is a faithful port, checked against the original
+algorithm rather than merely against the physics.
+
+That is `quantum::nash`, and the check is
+`the_port_reproduces_the_original_algorithm_to_rounding`: a
+statement-for-statement transliteration of the C++ loop lives in the
+test module and the port is required to match it, at the original's own
+constants (`Lambda = 0.92`, `NumOrder = 16`), to **1e-12 after a
+thousand steps**. Measured, the drift is 3.5e-16 after one step and
+1.9e-13 after a thousand — floating-point summation order, nothing else.
+
+One dependency of that kernel *was* encumbered and is not transliterated:
+`bessj`, the Numerical Recipes Bessel routine that supplied `J_M(Lambda)`.
+The clean-room `special_functions::bessel::bessel_j_array` (§3.1)
+supplies the same values. So the port is faithful to the original
+*scheme* while none of the encumbered *code* comes across — which is
+exactly the line this document exists to draw.
+
+### What the port makes explicit
+
+The C++ ran on two baked-in dimensionless constants. The port takes
+physical quantities and derives them, which turns a convention into a
+testable identity:
+
+```text
+   lambda = hbar dt / (m h^2)          v_j = V_j m h^2 / hbar^2
+```
+
+`lambda_follows_its_definition_in_every_unit` pins the first over three
+unit systems; the faithfulness test drives the port *through* that
+mapping, so the mapping is exercised rather than asserted.
+
+### Two things the port fixes, and one it deliberately does not
+
+* **The index wrap.** `mu()` added or subtracted `N` exactly once, so a
+  stencil wider than the grid read outside the array — latent in
+  SolveIt, where `NumOrder` was 16 and `NDATA` was in the hundreds. The
+  port uses a real modulo, and
+  `a_stencil_wider_than_the_grid_still_wraps_correctly` pins the case.
+* **The truncation order.** It was the constant 16. `order_for` now
+  derives it from `lambda` and a tolerance, by summing the Bessel tail
+  rather than estimating it. At `lambda = 0.92` the needed order is 14,
+  so the shipped 16 carried a small margin.
+* **The splitting is left alone.** It is Lie–Trotter and therefore first
+  order in `dt`, and a Strang arrangement would be second order for one
+  extra pointwise multiply. The request was a faithful port; the
+  observation is recorded here and in the module documentation instead
+  of being acted on silently.

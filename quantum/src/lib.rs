@@ -10,6 +10,13 @@
 //!   step, which is unitary for any time step, and read off observables
 //!   including transmission and reflection.
 //!
+//! [`nash`] adds a second propagator: the **Bessel-expanded
+//! split-operator** scheme from the original C++, which is explicit and
+//! matrix-free where Crank–Nicolson solves a tridiagonal system, and
+//! periodic where [`qm1d`] has walls. It is the one piece of original
+//! numerical work in SolveIt and is ported faithfully, Lie splitting and
+//! all.
+//!
 //! Everything is built on `special_functions`: the complex tridiagonal
 //! solver for the propagator, and the Jacobi eigensolver for the bound
 //! states. Both of those are clean-room replacements for the
@@ -25,7 +32,8 @@
 //!
 //! # Boundary conditions
 //!
-//! Dirichlet: the wavefunction is pinned to zero just outside the grid,
+//! Dirichlet for [`qm1d`]: the wavefunction is pinned to zero just
+//! outside the grid,
 //! so the box is an infinite well. For bound states that is physical
 //! whenever the domain is wide enough that the state has decayed. For
 //! scattering it means the walls **reflect** — the domain must be long
@@ -40,6 +48,7 @@
 #![allow(non_upper_case_globals)]
 
 pub mod isosurface;
+pub mod nash;
 pub mod qm1d;
 pub mod qm2d;
 pub mod qm3d;
