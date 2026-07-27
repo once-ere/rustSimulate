@@ -813,6 +813,54 @@ mod tests {
         assert!(worst < 1e-9, "worst relative disagreement {worst:.2e} over {n} points");
     }
 
+    /// The branch anchor, tested **where it actually matters**.
+    ///
+    /// `the_closed_form_zeta_agrees_with_the_series` compares the two
+    /// routes in their *overlap*, and Stage 2F's mutation probe showed
+    /// that is not enough: changing the anchor coefficient from 1.5 to
+    /// 1.0 survived the whole suite. Inside `|w| <= 0.25` the argument
+    /// is small, both coefficients select the same branch, and the test
+    /// cannot tell them apart — it was verifying the region where the
+    /// answer was already known rather than the region the new code
+    /// serves.
+    ///
+    /// This exercises the extended route far from the turning point,
+    /// against the `1/z` Hankel pair, which shares no code with it.
+    #[test]
+    fn the_branch_anchor_is_constrained_away_from_the_turning_point() {
+        let mut checked = 0;
+        // The 1/z reference needs |4 nu^2| <= 2|z|, i.e. |z/nu| >= 2|nu|,
+        // so the orders are modest and the arguments large. That is
+        // still far outside the |w| <= 0.25 series neighbourhood, which
+        // is the whole point.
+        for &(a, b) in &[(6.0_f64, 1.5_f64), (8.0, 2.0), (10.0, -2.5)] {
+            for &frac in &[22.0_f64, 40.0, 70.0] {
+                let nu = C::new(a, b);
+                let z = nu * frac;
+                let Some((j, y)) = jy_airy_c(nu, z) else { continue };
+                let Some((h1, h2, e)) = crate::bessel_cnu_large::hankel_pair_any(nu, z)
+                else {
+                    continue;
+                };
+                if e >= 1e-13 {
+                    continue;
+                }
+                let (wj, wy) = ((h1 + h2) * 0.5, (h1 - h2) * C::new(0.0, -0.5));
+                let rj = (j.value - wj).abs() / wj.abs();
+                let ry = (y.value - wy).abs() / wy.abs();
+                checked += 1;
+                assert!(
+                    rj <= (3.0 * j.err).max(1e-9) && ry <= (3.0 * y.err).max(1e-9),
+                    "nu={nu:?}, z/nu={frac}: J off by {rj:.2e} (est {:.1e}), \
+                     Y off by {ry:.2e} (est {:.1e})",
+                    j.err,
+                    y.err
+                );
+            }
+        }
+        assert!(checked >= 6, "only {checked} far-field points were reached");
+    }
+
     /// On the real axis the closed form must reproduce the real-order
     /// routine exactly — including **past the turning point**, where a
     /// principal branch gives `arg = pi/3` instead of `pi` and the sign
