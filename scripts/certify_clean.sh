@@ -252,6 +252,39 @@ EOF
     bad "target/release/posim missing — cannot check the stage notebooks"
   fi
 
+  # ---- 8. no stage notebook may refer to another stage notebook -------
+  #
+  # The folder's whole premise is that each notebook is stand-alone: a
+  # reader who opens one file must never be sent to a second one. That is
+  # a rule prose cannot keep on its own, and it was already broken once —
+  # a fix for a display bug ended eight notebooks with "see Stage_2C.posim
+  # for a working window", which is exactly the cross-reference the folder
+  # forbids. It shipped, and a reader caught it, not a gate.
+  #
+  # A notebook naming ITSELF is normal and expected: every one prints its
+  # own path in its run instructions. So self-references are stripped
+  # before matching, and only mentions of a DIFFERENT notebook fail.
+  #
+  # README.md is deliberately not checked: it is an index, so naming every
+  # notebook is its job. What it must not do is send the reader into one
+  # to learn how to run it, and that is a judgement no grep can make.
+  xref=""
+  for nb in StageNbks/*.posim; do
+    [ -e "$nb" ] || continue
+    self=$(basename "$nb" .posim)
+    hits=$(grep -oE 'Stage_(24|2[A-K])' "$nb" | grep -v "^$self$" | sort -u | tr '\n' ' ')
+    if [ -n "$hits" ]; then
+      xref="$xref$nb -> $hits
+"
+    fi
+  done
+  if [ -z "$xref" ]; then
+    pass "no stage notebook refers to another stage notebook"
+  else
+    bad "a stage notebook sends the reader to another notebook:"
+    printf '%s' "$xref" | sed 's/^/        /'
+  fi
+
   # Claims retired by a later stage must not come back. These are real
   # sentences that shipped and became false; the pattern is the record.
   #

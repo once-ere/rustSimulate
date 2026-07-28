@@ -1621,6 +1621,15 @@ fn exec_scene(cmd: &SceneCmd, state: &mut SimState, stack: &mut Vec<Value>) -> R
         let handle = SceneHandle::start(state.system.clone(), *port, state.machine_mode, true)?;
         handle.set_box(state.box_size, &state.wall_indices, &state.names)?;
         let url = handle.url.clone();
+        // Say which of the two things actually happened. Announcing "opened in
+        // your browser" unconditionally is false on macOS and Windows (no
+        // xdg-open) and whenever POSIM_NO_BROWSER is set, and it sends the
+        // reader off to wait for a window that is not coming.
+        let opened = if handle.browser_launched {
+            "(asked your desktop to open it; if no window appeared, open that address yourself)"
+        } else {
+            "(no browser was launched — open that address yourself)"
+        };
         state.scene = Some(handle);
         let n = state.system.objects.len();
         let tail = if n == 0 {
@@ -1634,11 +1643,7 @@ fn exec_scene(cmd: &SceneCmd, state: &mut SimState, stack: &mut Vec<Value>) -> R
                 if n == 1 { "y" } else { "ies" },
             )
         };
-        return Ok(format!(
-            "scene window created: {url}\n\
-             (opened in your browser; if no window appeared, open that address yourself)\n\
-             {tail}",
-        ));
+        return Ok(format!("scene window created: {url}\n{opened}\n{tail}"));
     }
     if matches!(cmd, SceneCmd::Close) {
         return match state.scene.take() {

@@ -61,135 +61,281 @@
 # HOW TO RUN THIS NOTEBOOK
 # ---------------------------------------------------------------------------
 #
-# Everything below is posim notebook source. Lines beginning with '#' are
-# comments and are ignored by the interpreter; every other line is a command
-# that will be executed in order.
+# This notebook is COMPLETE IN ITSELF. It never refers you to another
+# notebook, another README or another document: everything needed to build,
+# run, display and understand this stage is written out below.
 #
-# From the repository root (the directory holding Cargo.toml), run ONE of:
+# Lines beginning with '#' are comments and are ignored by the interpreter.
+# Every other line is a command, executed in the order written.
 #
+# STEP 1 - GET THE CODE AND A RUST TOOLCHAIN.
+#
+#     git clone https://github.com/once-ere/rustSimulate.git
+#     cd rustSimulate
+#
+#   There are no submodules and no external crates to fetch: every
+#   dependency is vendored in the tree. If 'cargo' is not found, install
+#   Rust from https://rustup.rs and re-open the terminal.
+#
+# STEP 2 - BUILD ONCE. From the repository root (the directory holding
+# Cargo.toml):
+#
+#     cargo build -p posim --release
+#
+#   The first build compiles the workspace and takes a few minutes. Every
+#   later run is immediate. This produces ./target/release/posim .
+#
+# STEP 3 - RUN THIS NOTEBOOK. Any ONE of these three forms works:
+#
+#     ./target/release/posim --notebook StageNbks/Stage_2C.posim
+#     ./target/release/posim --script   StageNbks/Stage_2C.posim
 #     cargo run -p posim --release -- --notebook StageNbks/Stage_2C.posim
-#     cargo run -p posim --release -- --script   StageNbks/Stage_2C.posim
 #
-#   --notebook  prints an In[n]:= / Out[n]= transcript, like a Mathematica
-#               notebook. This is the mode to use when reading along.
-#   --script    prints the same transcript; the two differ only in how the
-#               prompt lines are laid out. Either is reproducible.
+#   --notebook  executes the file, prints an In[n]:= / Out[n]= transcript,
+#               and then LEAVES YOU AT THE PROMPT with all state intact.
+#               This is the mode to use: it is what makes the session
+#               interactive, and it is required for the live window.
+#   --script    executes the file and EXITS. Use it for a plain
+#               reproducible transcript; you cannot interact afterwards.
+#   cargo run   identical to the first form, but re-checks the build
+#               first. Use it if you are editing the source.
 #
-# To work through it by hand instead, start the interactive interpreter:
+# STEP 4 - WORK BY HAND (optional). Start the bare interpreter:
 #
-#     cargo run -p posim --release
+#     ./target/release/posim
 #
-# and paste the command lines one at a time. Type HELP for the full command
-# language, and %quit to leave.
+#   and paste the command lines from this file one at a time. Type HELP
+#   for the complete command language, and %quit to leave. Other useful
+#   magics: %history, %rerun <n>, %edit <n> <text>, %save <file>, %reset.
 #
-# First run will compile the workspace (a few minutes). Later runs are
-# immediate. If 'cargo' is not found, install Rust from https://rustup.rs .
+# WHICH FORM YOU NEED FOR A LIVE WINDOW: --notebook or the bare
+# interpreter. NOT --script, which exits as soon as the file ends and
+# takes the window with it.
+#
 # ---------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------
-# THE BROWSER GUI - THIS NOTEBOOK OPENS IT FOR YOU
+# RUNNING THIS STAGE AS AN INTERACTIVE SIMULATION
 # ---------------------------------------------------------------------------
 #
-# The command lines at the end of this notebook build the bodies, open the
-# scene window and START it, so running the notebook gives you a moving
-# picture with no further action.
+# This stage animates fully. It is a rigid-body scene (a heavy point ricocheting inside a rigid box among five other bodies),
+# which is exactly what the 3-D scene window draws.
 #
-# WHAT HAPPENS WHEN YOU RUN IT:
+# METHOD 1 - ONE COMMAND. THE WINDOW OPENS AND IS ALREADY MOVING.
 #
-#   'scene create' prints an address such as
+#     cargo build -p posim --release
+#     ./target/release/posim --notebook StageNbks/Stage_2C.posim
 #
-#       scene window created: http://127.0.0.1:41234/
+#   The last command lines of this notebook are 'scene create',
+#   'scene set_time_step 0.0002', 'scene zoom 2', 'scene start' and
+#   'scene status'. They run automatically, so by the time you see the
+#   In[n]:= prompt the window already exists and the bodies are already
+#   in motion. Among the last lines of the transcript you will see,
+#   in this order:
 #
-#   and normally opens it in your default browser. The port is chosen
-#   freely each run. IF NO WINDOW APPEARED, copy that printed address into
-#   any browser - it is plain HTML/CSS/JavaScript over a websocket and needs
-#   nothing installed. To pin the port instead, edit the line to read
-#   'scene create 8080' and the address is always http://127.0.0.1:8080/ .
+#       scene window created: http://127.0.0.1:<port>/
+#       (asked your desktop to open it; ...)   <- or 'no browser was
+#                                                 launched' - see below
+#       showing 12 entities; SCENE START begins the evolution — HELP lists all scene commands
+#       scene time step dt = 0.0002
+#       camera distance = <d>
+#       scene playback: running
+#       scene: http://127.0.0.1:<port>/  (<k> window(s) connected)
+#       mode = running, ... entities = 12 (hidden: none)
 #
-#   'scene start' then begins the evolution, so the picture is already
-#   moving when you look at it.
+#   '<k> window(s) connected' counts browsers actually attached: it reads
+#   0 until a browser loads the page, then 1. A running scene with 0
+#   connected windows is normal and correct - the physics does not wait
+#   for an audience.
 #
-# EVERY BUTTON IN THE WINDOW, AND ITS TYPED EQUIVALENT:
+#   You are then left at an INTERACTIVE prompt with the window live.
+#   Type any scene command and the picture responds at once. '%quit'
+#   ends the session and closes the window with it.
 #
-#   Start    -> scene start          begin / resume evolving
-#   Pause    -> scene pause          freeze in place, keep the window live
-#   Stop     -> scene stop           halt the evolution
-#   Reverse  -> scene reverse        play backwards through the snapshot ring.
-#                                     NOTE: this needs forward history to
-#                                     exist first. Immediately after loading
-#                                     it answers "nothing to reverse — no
-#                                     forward history recorded yet"; let the
-#                                     scene RUN for a few seconds and it
-#                                     works. That is not a fault: there is
-#                                     nothing recorded to play backwards.
-#   step     -> the arrow keys advance or retreat one frame
-#   zoom     -> scene zoom in | out | <factor>, or the mouse wheel, or +/-
-#   orbit    -> drag with the left mouse button
-#   pan      -> shift-drag, or the arrow keys
+# METHOD 2 - BUILD IT BY HAND, one line at a time.
 #
-#   Typed anywhere at the In[n]:= prompt while the window is open:
-#     scene set_time_step <dt>   simulated seconds per frame (see below)
-#     scene refresh              re-read the body list after adding bodies
-#     scene status               report what the window is doing
-#     scene close                shut the window and free the port
+#     cargo build -p posim --release
+#     ./target/release/posim
 #
-#   HELP lists every scene command with its arguments.
+#   Then type the scenario lines from the 'RECREATING THE STAGE SCENARIO'
+#   section below - every 'set', 'box' and 'new ...' line, in order, down
+#   to the last one. Skip the 'run' lines: 'run' advances the physics in
+#   batch, and you want the window to do the advancing. Then:
 #
-# THE TIME STEP MATTERS. 'scene set_time_step' controls how much simulated
-# time each frame advances. Too large and fast bodies jump past each other
-# between frames; the value used below was chosen for this scenario.
+#       scene create
+#       scene set_time_step 0.0002
+#       scene zoom 2
+#       scene start
+#
+#   'scene create' reports 'showing 12 entities'. If it reports 0, the
+#   'new ...' lines did not run - re-enter them and type 'scene refresh'.
+#
+#   THE TIME STEP IS NOT COSMETIC. It sets how much simulated time each
+#   frame advances. The value 0.0002 was chosen for this scenario: too
+#   large and fast bodies pass through each other between frames; too
+#   small and the motion crawls. Change it live with the dt box and Set,
+#   or 'scene set_time_step <dt>'.
+#
+# METHOD 3 - WATCH THE INVARIANT WHILE IT RUNS. With the window playing,
+# type 'energy' at the prompt as often as you like. The number is read
+# from the same state the window is drawing, so it is the invariant of the
+# motion you are watching, not a separate calculation.
+#
+# WHEN FINISHED:  scene close   (frees the port), then  %quit .
+#
+# ---------------------------------------------------------------------------
+# OPENING THE WINDOW IN A BROWSER - EXACTLY WHAT HAPPENS, ON EVERY OS
+# ---------------------------------------------------------------------------
+#
+# 'scene create' prints THREE lines, for example:
+#
+#     scene window created: http://127.0.0.1:41234/
+#     (asked your desktop to open it; if no window appeared, open that address yourself)
+#     showing 12 entities; SCENE START begins the evolution — HELP lists all scene commands
+#
+# The MIDDLE line tells you what was actually attempted, and it has two
+# forms. Read it: it is the difference between waiting for a window that
+# is coming and waiting for one that is not.
+#
+#     (asked your desktop to open it; ...)     a browser launch was made
+#     (no browser was launched — open that address yourself)
+#
+# The port is chosen by the operating system afresh on every run. To pin
+# it, give the port:  'scene create 8080'  always serves
+# http://127.0.0.1:8080/ . If that port is busy, 'scene create' reports
+# the bind error; pick another.
+#
+# posim makes ONE best-effort attempt to open your browser, by running
+# exactly:
+#
+#     xdg-open <url>
+#
+# xdg-open is a Linux/BSD utility. That has consequences worth stating
+# plainly, because a window that does not appear is otherwise alarming:
+#
+#   * Linux/BSD with xdg-utils installed - the browser opens by itself,
+#     and the middle line reads 'asked your desktop to open it'.
+#   * macOS - NOTHING OPENS, and nothing is broken: xdg-open does not
+#     exist there, so the middle line reads 'no browser was launched'.
+#     Copy the printed URL into any browser, or in a second terminal:
+#         open http://127.0.0.1:41234/
+#   * Windows - NOTHING OPENS, same reason, same middle line. Copy the
+#     printed URL into any browser, or in a second terminal:
+#         start http://127.0.0.1:41234/
+#   * Headless server or SSH session - nothing opens. Forward the port and
+#     browse from your own machine:
+#         ssh -L 41234:127.0.0.1:41234 <user>@<host>
+#     then open http://127.0.0.1:41234/ locally.
+#
+# Setting the environment variable POSIM_NO_BROWSER to any value suppresses
+# the attempt entirely. The URL is still printed and still works; this is
+# what the automated tests use:
+#
+#     POSIM_NO_BROWSER=1 ./target/release/posim
+#
+# The page is plain HTML, CSS and JavaScript served by posim itself over a
+# websocket. Nothing is installed, nothing is fetched from the network, and
+# the listener is bound to 127.0.0.1, so it is not reachable from another
+# machine by design.
+#
+# ---------------------------------------------------------------------------
+# THE SCENE WINDOW: EVERY CONTROL, AND ITS TYPED EQUIVALENT
+# ---------------------------------------------------------------------------
+#
+# TOOLBAR, in the order it appears left to right:
+#
+#   [>]  Start      scene start        begin / resume forward evolution
+#   [||] Pause      scene pause        freeze, keep the window live
+#   [#]  Stop       scene stop         stop evolution AND clear history
+#   [<]  Reverse    scene reverse      play backward through the history
+#   [o]  Reset      scene reset        every value and the time return to
+#                                      their initial values; Start then
+#                                      runs the simulation again
+#   [|<]            (button only)      one step backward
+#   [>|]            (button only)      one step forward
+#   dt [___] Set    scene set_time_step <dt>
+#                                      simulated seconds per frame; type a
+#                                      number in the box and press Set
+#   [magnifier +]   scene zoom in      zoom in
+#   [magnifier -]   scene zoom out     zoom out
+#   [^]  View       (button only)      reset the camera to its home pose
+#   Grid            (button only)      toggle the ground grid
+#   Trails          (button only)      toggle motion trails
+#   Labels          (button only)      toggle object labels
+#   Contacts        (button only)      toggle contact-normal arrows drawn
+#                                      at collision points
+#   ?               (button only)      toggle the controls cheat-sheet
+#
+# MOUSE AND KEYBOARD, with the pointer over the window:
+#
+#   left-drag                rotate (orbit) around the scene
+#   shift-drag or right-drag translate (pan) with the mouse
+#   mouse wheel              zoom in / out
+#   +  or  =                 zoom in
+#   -  or  _                 zoom out
+#   Left / Right arrow       translate the view left / right
+#   Up / Down arrow          translate the view up / down
+#   Space                    start / pause playback
+#   R                        reset the view
+#   G                        toggle the ground grid
+#   T                        toggle motion trails
+#   L                        toggle object labels
+#   C                        toggle contact-normal arrows
+#   H  or  ?                 toggle the controls cheat-sheet
+#
+#   READ THIS ONE TWICE, because the natural assumption is wrong: the
+#   ARROW KEYS MOVE THE CAMERA, not the simulation. To advance the
+#   physics one frame at a time use the [|<] and [>|] toolbar buttons.
+#
+# THE STATUS BAR along the bottom reports, live: body count, contact count,
+# hidden count, simulated time, dt, energy, frames per second, camera yaw /
+# pitch / distance, playback mode, recorded-history depth, and the websocket
+# connection state.
+#
+# TYPED COMMANDS, available at the In[n]:= prompt while the window is open.
+# The window and the prompt drive the SAME state, so a typed command and
+# the button that mirrors it cannot disagree:
+#
+#   scene status                 connection / camera / playback report
+#   scene refresh                re-sync the window after adding, removing
+#                                or editing bodies
+#   scene redraw                 force a full redraw of every window
+#   scene hide <n> | all         hide entities
+#   scene show <n> | all         show them again
+#   scene translate dx dy [dz]   move the view
+#   scene rotate dyaw dpitch     rotate the view
+#   scene zoom in | out | <f>    zoom (f > 1 zooms in)
+#   scene set_time_step <dt>     simulated seconds per frame
+#   scene start | stop | pause | reverse | reset
+#   scene events                 read asynchronous events from the window
+#   scene close                  shut the window and free the port
+#                                (alias: scene destroy)
+#   energy                       print the total energy, live, while it runs
+#   HELP                         the complete command language
+#
+# ONE BEHAVIOUR THAT LOOKS LIKE A FAULT AND IS NOT. 'scene reverse'
+# immediately after opening answers:
+#
+#     nothing to reverse - no forward history recorded yet
+#
+# Reverse replays RECORDED history. Until the scene has actually run
+# forward there is nothing recorded to play back. Let it run a few seconds,
+# then Reverse works. 'scene stop' clears that history deliberately, so
+# Reverse is empty again after a Stop.
 #
 # TROUBLESHOOTING, precisely:
-#   * 'no scene window - run SCENE CREATE first' means the window was closed
-#     (or never opened): type 'scene create' again.
-#   * A window showing '0 entities' means the bodies were not built - re-run
-#     the 'new ...' lines, then 'scene refresh'.
-#   * If the port is in use: 'scene close', then 'scene create <other port>'.
-#   * The window is bound to 127.0.0.1 and is not reachable from another
-#     machine, by design.
-# ---------------------------------------------------------------------------
-# ANIMATING THIS STAGE - FULLY POSSIBLE, AND THE BEST WAY TO SEE IT
-# ---------------------------------------------------------------------------
 #
-# This stage animates properly: it is a rigid-body scene with six bodies in
-# a box, which is exactly what the 3-D scene window draws.
+#   'no scene window - run SCENE CREATE first'
+#       The window was closed, or never opened. Type 'scene create'.
+#   The window opens but says 'showing 0 entities'
+#       The world genuinely holds no bodies. Build them first, then
+#       'scene refresh'. An empty window is an honest report, not a bug.
+#   The port is already in use
+#       'scene close', then 'scene create <another port>'.
+#   The page loads but never moves
+#       Playback is not running: press Start, or type 'scene start'.
+#   Bodies jump through each other
+#       The time step is too large for their speed. Lower it with
+#       'scene set_time_step <smaller dt>' or the dt box and Set.
 #
-# COMPLETE PROCEDURE, from nothing to a moving picture:
-#
-#   1. cargo run -p posim --release
-#
-#   2. Paste the scenario lines from the section above, down to and
-#      including the last 'new cylinder { ... }' line. Do NOT run the
-#      'run' commands yet.
-#
-#   3. Open the window:
-#          scene create
-#      posim replies with an address such as
-#          scene window created: http://127.0.0.1:41234/
-#      and normally opens it for you. If it did not, paste that address
-#      into any browser. To pin the port instead, use  scene create 8080
-#      and the address is always http://127.0.0.1:8080/ .
-#
-#   4. Set the playback step. THIS MATTERS FOR THIS STAGE. The point
-#      crosses the 4-unit box in about 0.016 time units, so:
-#          scene set_time_step 0.0002
-#      gives smooth, correct-looking motion.
-#
-#   5. scene zoom 2
-#      scene start
-#
-#   6. Drag to orbit, scroll to zoom, shift-drag or arrow keys to pan.
-#      scene pause / scene stop / scene reverse all work while watching.
-#
-# THE EXPERIMENT TO WATCH: set  scene set_time_step 0.1  instead - 500x
-# larger, about 24 units of travel per frame inside a 4-unit box. Before
-# the repair this ran happily at 37 fps and destroyed the physics silently.
-# After the repair the energy holds. Use 'energy' at the prompt while the
-# window runs to read the invariant as it plays.
-#
-#   7. scene close   when finished, to shut the window and free the port.
-# ---------------------------------------------------------------------------
-
 # ---------------------------------------------------------------------------
 # RECREATING THE STAGE SCENARIO
 # ---------------------------------------------------------------------------

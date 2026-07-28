@@ -76,9 +76,24 @@ You get back something like:
 
 \begin{lstlisting}
 scene window created: http://127.0.0.1:41234/
-(opened in your browser; if no window appeared, open that address yourself)
+(asked your desktop to open it; if no window appeared, open that address yourself)
 showing 4 entities; SCENE START begins the evolution - HELP lists all scene commands
 \end{lstlisting}
+
+The middle line reports what was actually attempted rather than assuming
+it worked. posim tries exactly one command, \kw{xdg-open} \textit{url},
+which is a Linux/BSD utility. When that launch does not happen --- on
+macOS and Windows, where \kw{xdg-open} does not exist, or whenever
+\verb|$POSIM_NO_BROWSER| is set --- the line reads instead:
+
+\begin{lstlisting}
+(no browser was launched - open that address yourself)
+\end{lstlisting}
+
+In both cases the URL is printed and the window works; paste it into any
+browser (\kw{open} \textit{url} on macOS, \kw{start} \textit{url} on
+Windows). The listener is bound to \texttt{127.0.0.1}, so it is not
+reachable from another machine.
 
 If \textbf{no} bodies exist yet, the reply says so instead --- the
 window would be an empty grid --- and reminds you that the scene draws

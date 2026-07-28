@@ -81,102 +81,290 @@
 # HOW TO RUN THIS NOTEBOOK
 # ---------------------------------------------------------------------------
 #
-# Everything below is posim notebook source. Lines beginning with '#' are
-# comments and are ignored by the interpreter; every other line is a command
-# that will be executed in order.
+# This notebook is COMPLETE IN ITSELF. It never refers you to another
+# notebook, another README or another document: everything needed to build,
+# run, display and understand this stage is written out below.
 #
-# From the repository root (the directory holding Cargo.toml), run ONE of:
+# Lines beginning with '#' are comments and are ignored by the interpreter.
+# Every other line is a command, executed in the order written.
 #
+# STEP 1 - GET THE CODE AND A RUST TOOLCHAIN.
+#
+#     git clone https://github.com/once-ere/rustSimulate.git
+#     cd rustSimulate
+#
+#   There are no submodules and no external crates to fetch: every
+#   dependency is vendored in the tree. If 'cargo' is not found, install
+#   Rust from https://rustup.rs and re-open the terminal.
+#
+# STEP 2 - BUILD ONCE. From the repository root (the directory holding
+# Cargo.toml):
+#
+#     cargo build -p posim --release
+#
+#   The first build compiles the workspace and takes a few minutes. Every
+#   later run is immediate. This produces ./target/release/posim .
+#
+# STEP 3 - RUN THIS NOTEBOOK. Any ONE of these three forms works:
+#
+#     ./target/release/posim --notebook StageNbks/Stage_2A.posim
+#     ./target/release/posim --script   StageNbks/Stage_2A.posim
 #     cargo run -p posim --release -- --notebook StageNbks/Stage_2A.posim
-#     cargo run -p posim --release -- --script   StageNbks/Stage_2A.posim
 #
-#   --notebook  prints an In[n]:= / Out[n]= transcript, like a Mathematica
-#               notebook. This is the mode to use when reading along.
-#   --script    prints the same transcript; the two differ only in how the
-#               prompt lines are laid out. Either is reproducible.
+#   --notebook  executes the file, prints an In[n]:= / Out[n]= transcript,
+#               and then LEAVES YOU AT THE PROMPT with all state intact.
+#               This is the mode to use: it is what makes the session
+#               interactive, and it is required for the live window.
+#   --script    executes the file and EXITS. Use it for a plain
+#               reproducible transcript; you cannot interact afterwards.
+#   cargo run   identical to the first form, but re-checks the build
+#               first. Use it if you are editing the source.
 #
-# To work through it by hand instead, start the interactive interpreter:
+# STEP 4 - WORK BY HAND (optional). Start the bare interpreter:
 #
-#     cargo run -p posim --release
+#     ./target/release/posim
 #
-# and paste the command lines one at a time. Type HELP for the full command
-# language, and %quit to leave.
+#   and paste the command lines from this file one at a time. Type HELP
+#   for the complete command language, and %quit to leave. Other useful
+#   magics: %history, %rerun <n>, %edit <n> <text>, %save <file>, %reset.
 #
-# First run will compile the workspace (a few minutes). Later runs are
-# immediate. If 'cargo' is not found, install Rust from https://rustup.rs .
 # ---------------------------------------------------------------------------
-
-# ---------------------------------------------------------------------------
-# THE BROWSER GUI FOR THIS NOTEBOOK - AN HTML FILM, NOT THE SCENE WINDOW
-# ---------------------------------------------------------------------------
-#
-# This notebook evolves a WAVEFUNCTION, not rigid bodies. The 3-D scene
-# window draws simulator bodies and would show '0 entities' here, with the
-# Start / Pause / Stop / Reverse buttons all responding over an empty world.
-# Do not use it for this notebook.
-#
-# The correct viewer is the self-contained HTML animation that the command
-# lines below WRITE FOR YOU as the notebook runs:
-#
-#     qm animate "<file>.html" <total time> frames <n>
-#
-# One file, no server, no dependencies. posim prints the path it wrote.
-#
-# HOW TO OPEN IT:
-#     Linux    xdg-open <file>.html
-#     macOS    open <file>.html
-#     Windows  start <file>.html
-#   or use File > Open in any browser, or drag the file onto a browser
-#   window.
-#
-# CONTROLS IN THE PAGE: it plays automatically on load and loops. The
-# on-page controls are Play/Pause and a frame slider; dragging the slider
-# scrubs through the run. There is no server behind it, so it keeps working
-# after posim exits and can be copied elsewhere.
-#
-# IF YOU WANT A WORKING 3-D SCENE WINDOW instead, use a notebook that builds
-# bodies - StageNbks/Stage_2C.posim or StageNbks/Stage_2H.posim - each opens
-# one automatically and starts it running.
-# ---------------------------------------------------------------------------
-# ANIMATING THIS STAGE
+# RUNNING THIS STAGE AS AN INTERACTIVE SIMULATION
 # ---------------------------------------------------------------------------
 #
-# This stage CAN be animated, and the animation is the clearest way to see
-# the periodic boundary.
+# THIS STAGE IS A QUANTUM PROBLEM: a wavefunction on a grid, not a set of
+# rigid bodies. Be clear about what that means for the display, because
+# the wrong expectation here wastes real time:
 #
-# posim writes a SELF-CONTAINED HTML animation of |psi(x,t)|^2 - one file,
-# no server, no dependencies, openable directly in any browser:
+#   The 3-D scene window draws RIGID BODIES ONLY. This notebook creates no
+#   rigid bodies at all, so 'scene create' here opens a window that
+#   correctly reports 'showing 0 entities'. That is not a failure and not
+#   a bug - there is genuinely no rigid body in this stage to draw.
 #
-#     qm animate "nash_wrap.html" 1.5 frames 200
+# THE INTERACTIVE VIEWER FOR A WAVEFUNCTION IS THE HTML FILM written by
+# 'qm animate', and it is interactive in the real sense: it has playback
+# controls and a frame scrubber, and it recomputes nothing when you use
+# them, so scrubbing is instant.
 #
-# The arguments are: the output path (quoted), the total simulated time,
-# and optionally the number of frames. Run it after setting up the grid,
-# potential, packet and method, exactly as in the section above.
+# METHOD 1 - ONE COMMAND, THEN OPEN THE FILM.
 #
-# COMPLETE PROCEDURE:
+#     cargo build -p posim --release
+#     ./target/release/posim --notebook StageNbks/Stage_2A.posim
 #
-#   1. cargo run -p posim --release
-#   2. Paste the setup lines from the section above (grid, potential,
-#      packet, method).
-#   3. qm animate "nash_wrap.html" 1.5 frames 200
-#   4. posim prints the path it wrote.
-#   5. Open that file in a browser. On Linux:
-#          xdg-open nash_wrap.html
-#      on macOS:
-#          open nash_wrap.html
-#      or use File > Open in the browser, or drag the file onto a window.
+#   This writes two films into the StageNbks folder:
 #
-# WHAT TO LOOK FOR: the packet drifts right, reaches the right-hand edge,
-# and REAPPEARS AT THE LEFT without any reflection. Repeat with
-# 'qm method cayley' before the animate line and the same packet BOUNCES
-# instead. The two films are the boundary condition made visible.
+#       StageNbks/out_2A_nash_periodic.html
+#       StageNbks/out_2A_cayley_reflecting.html
 #
-# NOTE ON THE 3-D SCENE WINDOW: 'scene create' is for rigid-body scenes and
-# will show an empty grid here, because a wavefunction is not one of the
-# body types the renderer draws. The HTML animation above is the correct
-# viewer for quantum stages.
+#   'qm animate' prints the path and the frame count as it writes each
+#   one. The files are regenerated every run, so they are deliberately
+#   not tracked by git.
+#
+# METHOD 2 - OPEN THE FILM. It is a self-contained HTML file: no server,
+# no network, no install. Use whichever line matches your system:
+#
+#     Linux:    xdg-open StageNbks/out_2A_nash_periodic.html
+#     macOS:    open StageNbks/out_2A_nash_periodic.html
+#     Windows:  start StageNbks\out_2A_nash_periodic.html
+#
+#   Or open your browser and use File > Open, or drag the file onto a
+#   browser window. Any modern browser works; nothing else is required.
+#
+# THE FILM'S CONTROLS, exactly:
+#
+#   It STARTS PLAYING BY ITSELF and LOOPS forever, about 22 frames per
+#   second regardless of how many frames you asked for.
+#
+#   [Pause]     toggles playback. The label changes to 'Play' when paused
+#               and back to 'Pause' when running - the label always names
+#               what the NEXT click will do.
+#   [Restart]   jumps to frame 0. It does NOT pause: if it was playing it
+#               keeps playing, from the beginning.
+#   slider      drag to any frame. Dragging PAUSES playback automatically
+#               (the button flips to 'Play'), so you can step through a
+#               reflection or a tunnelling event frame by frame.
+#
+#   The readout to the right of the slider shows, for the frame on screen:
+#
+#       t = <time>   frame <i>/<n>   norm = <total>   transmitted = <part>
+#
+#   'norm' is the conserved quantity: watch it while you scrub. 'transmitted'
+#   is the probability in the region marked in green.
+#
+#   The colour key under the canvas: blue is |psi|^2, orange is V(x) drawn
+#   to a scale that fits the axes, green marks the transmitted region.
+#
+# METHOD 3 - DRIVE IT YOURSELF, INTERACTIVELY. Start the bare interpreter:
+#
+#     cargo build -p posim --release
+#     ./target/release/posim
+#
+#   Type the setup lines from the 'RECREATING THE STAGE SCENARIO' section
+#   below, then write your own film with any end time and frame count:
+#
+#       qm animate "my_run.html" 2.0 frames 300
+#
+#   More frames means a smoother film and a bigger file; the end time is
+#   in the same units as the rest of the stage. Between films you can
+#   change the method, the potential or the boundary and animate again -
+#   'qm' on its own prints the current configuration, so you can always
+#   see what you are about to propagate.
+#
 # ---------------------------------------------------------------------------
-
+# OPENING THE WINDOW IN A BROWSER - EXACTLY WHAT HAPPENS, ON EVERY OS
+# ---------------------------------------------------------------------------
+#
+# 'scene create' prints THREE lines, for example:
+#
+#     scene window created: http://127.0.0.1:41234/
+#     (asked your desktop to open it; if no window appeared, open that address yourself)
+#     showing 12 entities; SCENE START begins the evolution — HELP lists all scene commands
+#
+# The MIDDLE line tells you what was actually attempted, and it has two
+# forms. Read it: it is the difference between waiting for a window that
+# is coming and waiting for one that is not.
+#
+#     (asked your desktop to open it; ...)     a browser launch was made
+#     (no browser was launched — open that address yourself)
+#
+# The port is chosen by the operating system afresh on every run. To pin
+# it, give the port:  'scene create 8080'  always serves
+# http://127.0.0.1:8080/ . If that port is busy, 'scene create' reports
+# the bind error; pick another.
+#
+# posim makes ONE best-effort attempt to open your browser, by running
+# exactly:
+#
+#     xdg-open <url>
+#
+# xdg-open is a Linux/BSD utility. That has consequences worth stating
+# plainly, because a window that does not appear is otherwise alarming:
+#
+#   * Linux/BSD with xdg-utils installed - the browser opens by itself,
+#     and the middle line reads 'asked your desktop to open it'.
+#   * macOS - NOTHING OPENS, and nothing is broken: xdg-open does not
+#     exist there, so the middle line reads 'no browser was launched'.
+#     Copy the printed URL into any browser, or in a second terminal:
+#         open http://127.0.0.1:41234/
+#   * Windows - NOTHING OPENS, same reason, same middle line. Copy the
+#     printed URL into any browser, or in a second terminal:
+#         start http://127.0.0.1:41234/
+#   * Headless server or SSH session - nothing opens. Forward the port and
+#     browse from your own machine:
+#         ssh -L 41234:127.0.0.1:41234 <user>@<host>
+#     then open http://127.0.0.1:41234/ locally.
+#
+# Setting the environment variable POSIM_NO_BROWSER to any value suppresses
+# the attempt entirely. The URL is still printed and still works; this is
+# what the automated tests use:
+#
+#     POSIM_NO_BROWSER=1 ./target/release/posim
+#
+# The page is plain HTML, CSS and JavaScript served by posim itself over a
+# websocket. Nothing is installed, nothing is fetched from the network, and
+# the listener is bound to 127.0.0.1, so it is not reachable from another
+# machine by design.
+#
+# ---------------------------------------------------------------------------
+# THE SCENE WINDOW: EVERY CONTROL, AND ITS TYPED EQUIVALENT
+# ---------------------------------------------------------------------------
+#
+# TOOLBAR, in the order it appears left to right:
+#
+#   [>]  Start      scene start        begin / resume forward evolution
+#   [||] Pause      scene pause        freeze, keep the window live
+#   [#]  Stop       scene stop         stop evolution AND clear history
+#   [<]  Reverse    scene reverse      play backward through the history
+#   [o]  Reset      scene reset        every value and the time return to
+#                                      their initial values; Start then
+#                                      runs the simulation again
+#   [|<]            (button only)      one step backward
+#   [>|]            (button only)      one step forward
+#   dt [___] Set    scene set_time_step <dt>
+#                                      simulated seconds per frame; type a
+#                                      number in the box and press Set
+#   [magnifier +]   scene zoom in      zoom in
+#   [magnifier -]   scene zoom out     zoom out
+#   [^]  View       (button only)      reset the camera to its home pose
+#   Grid            (button only)      toggle the ground grid
+#   Trails          (button only)      toggle motion trails
+#   Labels          (button only)      toggle object labels
+#   Contacts        (button only)      toggle contact-normal arrows drawn
+#                                      at collision points
+#   ?               (button only)      toggle the controls cheat-sheet
+#
+# MOUSE AND KEYBOARD, with the pointer over the window:
+#
+#   left-drag                rotate (orbit) around the scene
+#   shift-drag or right-drag translate (pan) with the mouse
+#   mouse wheel              zoom in / out
+#   +  or  =                 zoom in
+#   -  or  _                 zoom out
+#   Left / Right arrow       translate the view left / right
+#   Up / Down arrow          translate the view up / down
+#   Space                    start / pause playback
+#   R                        reset the view
+#   G                        toggle the ground grid
+#   T                        toggle motion trails
+#   L                        toggle object labels
+#   C                        toggle contact-normal arrows
+#   H  or  ?                 toggle the controls cheat-sheet
+#
+#   READ THIS ONE TWICE, because the natural assumption is wrong: the
+#   ARROW KEYS MOVE THE CAMERA, not the simulation. To advance the
+#   physics one frame at a time use the [|<] and [>|] toolbar buttons.
+#
+# THE STATUS BAR along the bottom reports, live: body count, contact count,
+# hidden count, simulated time, dt, energy, frames per second, camera yaw /
+# pitch / distance, playback mode, recorded-history depth, and the websocket
+# connection state.
+#
+# TYPED COMMANDS, available at the In[n]:= prompt while the window is open.
+# The window and the prompt drive the SAME state, so a typed command and
+# the button that mirrors it cannot disagree:
+#
+#   scene status                 connection / camera / playback report
+#   scene refresh                re-sync the window after adding, removing
+#                                or editing bodies
+#   scene redraw                 force a full redraw of every window
+#   scene hide <n> | all         hide entities
+#   scene show <n> | all         show them again
+#   scene translate dx dy [dz]   move the view
+#   scene rotate dyaw dpitch     rotate the view
+#   scene zoom in | out | <f>    zoom (f > 1 zooms in)
+#   scene set_time_step <dt>     simulated seconds per frame
+#   scene start | stop | pause | reverse | reset
+#   scene events                 read asynchronous events from the window
+#   scene close                  shut the window and free the port
+#                                (alias: scene destroy)
+#   energy                       print the total energy, live, while it runs
+#   HELP                         the complete command language
+#
+# ONE BEHAVIOUR THAT LOOKS LIKE A FAULT AND IS NOT. 'scene reverse'
+# immediately after opening answers:
+#
+#     nothing to reverse - no forward history recorded yet
+#
+# Reverse replays RECORDED history. Until the scene has actually run
+# forward there is nothing recorded to play back. Let it run a few seconds,
+# then Reverse works. 'scene stop' clears that history deliberately, so
+# Reverse is empty again after a Stop.
+#
+# TROUBLESHOOTING, precisely:
+#
+#   'no scene window - run SCENE CREATE first'
+#       The window was closed, or never opened. Type 'scene create'.
+#   The window opens but says 'showing 0 entities'
+#       The world genuinely holds no bodies. Build them first, then
+#       'scene refresh'. An empty window is an honest report, not a bug.
+#   The port is already in use
+#       'scene close', then 'scene create <another port>'.
+#   The page loads but never moves
+#       Playback is not running: press Start, or type 'scene start'.
+#   Bodies jump through each other
+#       The time step is too large for their speed. Lower it with
+#       'scene set_time_step <smaller dt>' or the dt box and Set.
+#
 # ---------------------------------------------------------------------------
 # RECREATING THE STAGE SCENARIO
 # ---------------------------------------------------------------------------

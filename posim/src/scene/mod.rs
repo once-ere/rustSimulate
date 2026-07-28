@@ -353,6 +353,12 @@ pub struct SceneHandle {
     shared: Arc<Mutex<Shared>>,
     /// The scene window URL, e.g. `http://127.0.0.1:41234/`.
     pub url: String,
+    /// Whether a browser-opening command was actually launched for this
+    /// window. False when suppressed by `$POSIM_NO_BROWSER`, and false on
+    /// any system without `xdg-open` (macOS, Windows), where the spawn
+    /// fails. Callers use it to avoid claiming a window was opened when
+    /// none was.
+    pub browser_launched: bool,
 }
 
 impl Drop for SceneHandle {
@@ -460,17 +466,31 @@ impl SceneHandle {
             }
         });
 
-        /* best-effort: open the user's browser on the scene page
-         * (suppressed when $POSIM_NO_BROWSER is set, e.g. in tests) */
-        if open_browser && std::env::var_os("POSIM_NO_BROWSER").is_none() {
-            let _ = std::process::Command::new("xdg-open")
+        /* Best-effort: open the user's browser on the scene page
+         * (suppressed when $POSIM_NO_BROWSER is set, e.g. in tests).
+         *
+         * Whether we actually tried is REPORTED rather than assumed. xdg-open
+         * is a Linux/BSD utility: on macOS and Windows the spawn fails because
+         * the binary does not exist, and the old caller announced "opened in
+         * your browser" regardless. A reader on those systems then waits for a
+         * window that was never going to appear. spawn() failing is exactly the
+         * signal needed to say so, so it is kept instead of discarded. */
+        let browser_launched = if open_browser && std::env::var_os("POSIM_NO_BROWSER").is_none() {
+            std::process::Command::new("xdg-open")
                 .arg(&url)
                 .stdout(std::process::Stdio::null())
                 .stderr(std::process::Stdio::null())
-                .spawn();
-        }
+                .spawn()
+                .is_ok()
+        } else {
+            false
+        };
 
-        Ok(SceneHandle { shared, url })
+        Ok(SceneHandle {
+            shared,
+            url,
+            browser_launched,
+        })
     }
 
     fn lock(&self) -> Result<std::sync::MutexGuard<'_, Shared>, String> {

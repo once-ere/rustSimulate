@@ -32,9 +32,23 @@ You get back something like:
 
 ```
 scene window created: http://127.0.0.1:41234/
-(opened in your browser; if no window appeared, open that address yourself)
+(asked your desktop to open it; if no window appeared, open that address yourself)
 showing 4 entities; SCENE START begins the evolution — HELP lists all scene commands
 ```
+
+The middle line reports what was actually attempted rather than assuming
+it worked. posim tries exactly one command, `xdg-open <url>`, which is a
+Linux/BSD utility. When that launch does not happen — on macOS and
+Windows, where `xdg-open` does not exist, or whenever `$POSIM_NO_BROWSER`
+is set — the line reads instead:
+
+```
+(no browser was launched — open that address yourself)
+```
+
+In both cases the URL is printed and the window works; paste it into any
+browser (`open <url>` on macOS, `start <url>` on Windows). The listener
+is bound to `127.0.0.1`, so it is not reachable from another machine.
 
 If **no** bodies exist yet, the reply says so instead — the window
 would be an empty grid — and reminds you that the scene draws rigid
