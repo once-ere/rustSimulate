@@ -215,6 +215,43 @@ EOF
     printf "$stale\n"
   fi
 
+  # ---- 7. the stage notebooks must still execute ----------------------
+  #
+  # StageNbks/ is user-facing teaching material: eleven standalone posim
+  # notebooks, each claiming to reproduce a stage. They are the only
+  # shipped content whose correctness depends on the LANGUAGE not moving
+  # under them, and nothing else in this script exercises them.
+  #
+  # The need is not hypothetical. When they were written, running them
+  # found two real errors that reading them had not: two notebooks used a
+  # `version` command that does not exist, and two more asserted that
+  # `bessel_y_nu` would refuse at points where the language actually
+  # routes to a different, working implementation. Both would have
+  # shipped as confident, wrong instructions.
+  #
+  # Cost: about 14 seconds for all eleven.
+  nb_bad=""
+  if [ -x target/release/posim ]; then
+    for nb in StageNbks/*.posim; do
+      [ -e "$nb" ] || continue
+      if target/release/posim --notebook "$nb" 2>&1 | grep -q 'Err\['; then
+        nb_bad="$nb_bad $nb"
+      fi
+    done
+    if [ -z "$nb_bad" ]; then
+      pass "every StageNbks notebook executes without error"
+    else
+      bad "stage notebooks failed to execute cleanly:"
+      for nb in $nb_bad; do
+        printf '        %s\n' "$nb"
+        target/release/posim --notebook "$nb" 2>&1 | grep 'Err\[' | head -2 \
+          | sed 's/^/          /'
+      done
+    fi
+  else
+    bad "target/release/posim missing — cannot check the stage notebooks"
+  fi
+
   # Claims retired by a later stage must not come back. These are real
   # sentences that shipped and became false; the pattern is the record.
   #

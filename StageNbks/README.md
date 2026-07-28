@@ -36,7 +36,16 @@ cargo run -p posim --release
 ```
 
 Every notebook has been executed end to end; all eleven run with zero
-errors.
+errors, and that is **enforced by the build**: `scripts/certify_clean.sh`
+runs every notebook in this folder and fails if any of them emits an error
+line. The check costs about 14 seconds.
+
+That gate exists because the need was demonstrated rather than imagined.
+When these notebooks were first written, *running* them found two errors
+that *reading* them had not: two used a `version` command that does not
+exist, and two more asserted that `bessel_y_nu` would refuse at points
+where the language actually routes to a different, working implementation.
+Both would have shipped as confident, wrong instructions.
 
 ## Running all of them
 
