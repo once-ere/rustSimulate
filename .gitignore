@@ -46,3 +46,8 @@ session.posim
 
 # Films written BY the stage notebooks when they run (regenerated on demand).
 StageNbks/out_*.html
+
+# Scratch recovery artifact. Its content is a tracked example target,
+# posim/examples/scene_server_reference.rs — a loose copy must never
+# shadow it or get pushed alongside it.
+recover.txt
