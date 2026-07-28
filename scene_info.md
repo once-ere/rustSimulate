@@ -36,6 +36,11 @@ scene window created: http://127.0.0.1:41234/
 showing 4 entities; SCENE START begins the evolution — HELP lists all scene commands
 ```
 
+If **no** bodies exist yet, the reply says so instead — the window
+would be an empty grid — and reminds you that the scene draws rigid
+bodies only (`NEW` adds them, then `SCENE REFRESH`); quantum problems
+are viewed with `QM ANIMATE` / `QM2 ANIMATE`, not the scene window.
+
 The window shows **all simulator entities** (points, spheres, cuboids,
 tori, disks, cylinders, dumbbells), a ground grid, the world axes,
 motion trails, and object labels (an object registered with

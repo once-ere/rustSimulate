@@ -265,11 +265,13 @@ pub fn run_script(path: &str) -> Result<(), String> {
     }
 }
 
-/// Dynamic-notebook mode: execute a notebook file (one that ends by
-/// opening the scene window with `SCENE CREATE`), then stay in the
-/// interactive loop — the GUI window remains alive, the loaded cells
-/// keep their `In[n]` numbers, and the next prompt continues the
-/// numbering, exactly like opening a saved notebook in Jupyter.
+/// Dynamic-notebook mode: execute a notebook file, then stay in the
+/// interactive loop — the loaded cells keep their `In[n]` numbers and
+/// the next prompt continues the numbering, exactly like opening a
+/// saved notebook in Jupyter. The sign-off line reports what the file
+/// actually left behind: a live scene window, bodies awaiting SCENE
+/// CREATE, a quantum problem (which the 3-D scene cannot draw), or
+/// pure numerics.
 pub fn run_notebook(path: &str) -> Result<(), String> {
     let mut nb = Notebook::default();
     println!("posim — physical_object simulator notebook (sundials_rs backend)");
@@ -277,41 +279,43 @@ pub fn run_notebook(path: &str) -> Result<(), String> {
     if replay_into(&mut nb, path)? {
         return Err(format!("dynamic notebook {path} had failing cells"));
     }
-    // Report what is ACTUALLY there. The old message told every reader
-    // to "press Start in the scene window" regardless, which is a lie
-    // for any notebook that opens no window: `SCENE START` then answers
-    // "no scene window — run SCENE CREATE first", and a reader who
-    // follows the instruction gets an error for doing as they were told.
-    // A notebook of pure function evaluations has no scene at all.
-    let bodies = nb.state.system.objects.len();
-    let windowed = nb.state.scene.is_some();
-    println!();
-    match (windowed, bodies) {
-        (true, 0) => {
-            println!("{path} loaded. A scene window is OPEN but the notebook created no");
-            println!("bodies, so it has nothing to draw. SCENE START would advance an");
-            println!("empty world. Add bodies, then SCENE REFRESH.");
-        }
-        (true, n) => {
-            println!("{path} loaded — the scene window is open with {n} entit{}.",
-                     if n == 1 { "y" } else { "ies" });
-            println!("Press Start in the window, or type SCENE START.");
-        }
-        (false, 0) => {
-            println!("{path} loaded. This notebook builds NO simulation bodies, so there");
-            println!("is nothing to display: SCENE CREATE would open an empty window and");
-            println!("SCENE START would run a world containing nothing. Its results are");
-            println!("the values printed above.");
-        }
-        (false, n) => {
-            println!("{path} loaded — {n} entit{} built, no window yet.",
-                     if n == 1 { "y" } else { "ies" });
-            println!("Type SCENE CREATE to open one, then SCENE START (or press Start).");
-        }
-    }
-    println!("Type HELP for commands, %quit to leave.\n");
+    println!("\n{path} loaded — {}", loaded_hint(&nb));
+    println!("type HELP for commands, %quit to leave\n");
     repl_loop(&mut nb);
     Ok(())
+}
+
+/// The state-dependent half of the `--notebook` sign-off message.
+/// Never promises a scene window that does not exist.
+fn loaded_hint(nb: &Notebook) -> String {
+    let bodies = nb.state.system.objects.len();
+    if nb.state.scene.is_some() {
+        return "the simulation is ready: press Start in the scene\n\
+                window (or type SCENE START)"
+            .to_string();
+    }
+    if bodies > 0 {
+        return format!(
+            "{bodies} bod{} loaded; type SCENE CREATE to open the scene\n\
+             window, then SCENE START (or STEP/RUN here at the prompt)",
+            if bodies == 1 { "y is" } else { "ies are" },
+        );
+    }
+    if nb.state.qm.grid.is_some() || nb.state.qm.psi.is_some() {
+        return "a 1-D quantum problem is set up. The 3-D scene window draws\n\
+                rigid bodies only — QM ANIMATE \"<file>.html\" <time> writes a\n\
+                browser film of |psi|^2 instead (QM shows the configuration)"
+            .to_string();
+    }
+    if nb.state.qm2.grid.is_some() || nb.state.qm2.psi.is_some() {
+        return "a 2-D quantum problem is set up. The 3-D scene window draws\n\
+                rigid bodies only — QM2 ANIMATE \"<file>.html\" <time> writes a\n\
+                browser film of |psi|^2 instead (QM2 shows the configuration)"
+            .to_string();
+    }
+    "its results are printed above (no bodies were left in the\n\
+     system, so there is nothing for the scene window to show)"
+        .to_string()
 }
 
 /// Replays a script file into an existing notebook, echoing cells;
