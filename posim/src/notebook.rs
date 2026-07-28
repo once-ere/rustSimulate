@@ -277,8 +277,39 @@ pub fn run_notebook(path: &str) -> Result<(), String> {
     if replay_into(&mut nb, path)? {
         return Err(format!("dynamic notebook {path} had failing cells"));
     }
-    println!("\n{path} loaded — the simulation is ready: press Start in the scene");
-    println!("window (or type SCENE START); type HELP for commands, %quit to leave\n");
+    // Report what is ACTUALLY there. The old message told every reader
+    // to "press Start in the scene window" regardless, which is a lie
+    // for any notebook that opens no window: `SCENE START` then answers
+    // "no scene window — run SCENE CREATE first", and a reader who
+    // follows the instruction gets an error for doing as they were told.
+    // A notebook of pure function evaluations has no scene at all.
+    let bodies = nb.state.system.objects.len();
+    let windowed = nb.state.scene.is_some();
+    println!();
+    match (windowed, bodies) {
+        (true, 0) => {
+            println!("{path} loaded. A scene window is OPEN but the notebook created no");
+            println!("bodies, so it has nothing to draw. SCENE START would advance an");
+            println!("empty world. Add bodies, then SCENE REFRESH.");
+        }
+        (true, n) => {
+            println!("{path} loaded — the scene window is open with {n} entit{}.",
+                     if n == 1 { "y" } else { "ies" });
+            println!("Press Start in the window, or type SCENE START.");
+        }
+        (false, 0) => {
+            println!("{path} loaded. This notebook builds NO simulation bodies, so there");
+            println!("is nothing to display: SCENE CREATE would open an empty window and");
+            println!("SCENE START would run a world containing nothing. Its results are");
+            println!("the values printed above.");
+        }
+        (false, n) => {
+            println!("{path} loaded — {n} entit{} built, no window yet.",
+                     if n == 1 { "y" } else { "ies" });
+            println!("Type SCENE CREATE to open one, then SCENE START (or press Start).");
+        }
+    }
+    println!("Type HELP for commands, %quit to leave.\n");
     repl_loop(&mut nb);
     Ok(())
 }

@@ -107,70 +107,36 @@
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
-# LAUNCHING THE BROWSER GUI TO INVESTIGATE THIS STAGE
+# THE BROWSER GUI FOR THIS NOTEBOOK - AN HTML FILM, NOT THE SCENE WINDOW
 # ---------------------------------------------------------------------------
 #
-# posim ships a live 3-D scene window that is served over HTTP and viewed in
-# an ordinary web browser. There is no separate application to install.
+# This notebook evolves a WAVEFUNCTION, not rigid bodies. The 3-D scene
+# window draws simulator bodies and would show '0 entities' here, with the
+# Start / Pause / Stop / Reverse buttons all responding over an empty world.
+# Do not use it for this notebook.
 #
-# COMPLETE PROCEDURE, from nothing to a moving picture:
+# The correct viewer is the self-contained HTML animation that the command
+# lines below WRITE FOR YOU as the notebook runs:
 #
-#   1. Open a terminal at the repository root and start posim interactively:
+#     qm animate "<file>.html" <total time> frames <n>
 #
-#          cargo run -p posim --release
+# One file, no server, no dependencies. posim prints the path it wrote.
 #
-#      You will get the banner and an 'In[1]:=' prompt.
+# HOW TO OPEN IT:
+#     Linux    xdg-open <file>.html
+#     macOS    open <file>.html
+#     Windows  start <file>.html
+#   or use File > Open in any browser, or drag the file onto a browser
+#   window.
 #
-#   2. Build a scene. You must create bodies BEFORE opening the window,
-#      because the window shows the entities that exist when it is created.
-#      (The command lines further down this notebook do exactly that.)
+# CONTROLS IN THE PAGE: it plays automatically on load and loops. The
+# on-page controls are Play/Pause and a frame slider; dragging the slider
+# scrubs through the run. There is no server behind it, so it keeps working
+# after posim exits and can be copied elsewhere.
 #
-#   3. Open the window:
-#
-#          scene create
-#
-#      posim replies with, for example:
-#
-#          scene window created: http://127.0.0.1:41234/
-#          (opened in your browser; if no window appeared, open that address
-#           yourself)
-#          showing 4 entities; SCENE START begins the evolution
-#
-#      The port is chosen freely each run. To pin it, pass one:
-#
-#          scene create 8080
-#
-#      then the address is always http://127.0.0.1:8080/ .
-#
-#   4. If no browser opened by itself, copy the printed address into any
-#      browser (Firefox, Chrome, Safari, Edge - it is plain HTML, CSS and
-#      JavaScript over a websocket; nothing else is required).
-#
-#   5. Drive the animation from the SAME posim prompt while the page is open:
-#
-#          scene start          begin evolving
-#          scene pause          freeze
-#          scene stop           halt
-#          scene reverse        play backwards through the snapshot history
-#          scene set_time_step 0.001      seconds of simulated time per frame
-#          scene refresh        re-read the body list after adding bodies
-#          scene close          shut the window and free the port
-#
-#      In the page itself: drag with the mouse to orbit, scroll to zoom,
-#      shift-drag or the arrow keys to pan, and the on-screen buttons mirror
-#      the commands above.
-#
-#   6. HELP lists every scene command with its arguments.
-#
-# TROUBLESHOOTING, precisely:
-#   * 'no scene window - run SCENE CREATE first' means step 3 was skipped.
-#   * A blank page means no bodies existed at 'scene create' time: add them,
-#     then issue 'scene refresh'.
-#   * If the port is busy, 'scene close' then 'scene create <other port>'.
-#   * The window is local only (127.0.0.1). It is not reachable from another
-#     machine, by design.
-# ---------------------------------------------------------------------------
-
+# IF YOU WANT A WORKING 3-D SCENE WINDOW instead, use a notebook that builds
+# bodies - StageNbks/Stage_2C.posim or StageNbks/Stage_2H.posim - each opens
+# one automatically and starts it running.
 # ---------------------------------------------------------------------------
 # ANIMATING THIS STAGE
 # ---------------------------------------------------------------------------
@@ -266,6 +232,28 @@ qm method cayley
 qm run 0.85 steps 400
 qm prob 0 5
 qm prob 15 20
+
+
+# ---------------------------------------------------------------------------
+# NOW WRITE THE FILM. This is the display for this notebook. It rebuilds the
+# periodic setup and writes a self-contained HTML animation of |psi|^2, then
+# a second one under reflecting walls so the two can be compared side by
+# side. posim prints each path as it is written; open them as described in
+# the GUI section above.
+# ---------------------------------------------------------------------------
+qm reset
+qm grid 0 20 400
+qm potential zero
+qm packet 17 0.8 6
+qm method nash strang
+qm animate "StageNbks/out_2A_nash_periodic.html" 1.5 frames 200
+
+qm reset
+qm grid 0 20 400
+qm potential zero
+qm packet 17 0.8 6
+qm method cayley
+qm animate "StageNbks/out_2A_cayley_reflecting.html" 1.5 frames 200
 
 # ===========================================================================
 # END OF STAGE #2A NOTEBOOK
