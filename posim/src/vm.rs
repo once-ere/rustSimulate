@@ -1622,12 +1622,22 @@ fn exec_scene(cmd: &SceneCmd, state: &mut SimState, stack: &mut Vec<Value>) -> R
         handle.set_box(state.box_size, &state.wall_indices, &state.names)?;
         let url = handle.url.clone();
         state.scene = Some(handle);
+        let n = state.system.objects.len();
+        let tail = if n == 0 {
+            "showing 0 entities — the window will be an empty grid. The scene\n\
+             draws rigid bodies only (NEW adds them, then SCENE REFRESH);\n\
+             quantum problems are viewed with QM ANIMATE / QM2 ANIMATE instead"
+                .to_string()
+        } else {
+            format!(
+                "showing {n} entit{}; SCENE START begins the evolution — HELP lists all scene commands",
+                if n == 1 { "y" } else { "ies" },
+            )
+        };
         return Ok(format!(
             "scene window created: {url}\n\
              (opened in your browser; if no window appeared, open that address yourself)\n\
-             showing {} entit{}; SCENE START begins the evolution — HELP lists all scene commands",
-            state.system.objects.len(),
-            if state.system.objects.len() == 1 { "y" } else { "ies" },
+             {tail}",
         ));
     }
     if matches!(cmd, SceneCmd::Close) {
