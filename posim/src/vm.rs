@@ -502,7 +502,7 @@ two-dimensional quantum mechanics (ADI; see grammar.md):
                             printed: an iterative solver has no exact
                             stopping point
   QM2 STATE <n>             load bound state n as psi
-  QM2 NORM | ENERGY | CENTROID
+  QM2 NORM | QM2 ENERGY | QM2 CENTROID
   QM2 PROB <xa> <xb>, <ya> <yb>
   QM2 ABSORB <width> <strength> [<power>] | QM2 ABSORB OFF
   QM2 ANIMATE \"<file>\" <t> [FRAMES <n>]
@@ -523,7 +523,7 @@ three-dimensional quantum mechanics (ADI; see grammar.md):
                             so it is REFUSED on larger grids rather than
                             left to exhaust memory. Propagation has no
                             such limit
-  QM3 NORM | ENERGY | CENTROID
+  QM3 NORM | QM3 ENERGY | QM3 CENTROID
   QM3 PROB <xa> <xb>, <ya> <yb>, <za> <zb>
   QM3 DRIVE <shape> <modulation> | QM3 DRIVE OFF
                             time-dependent V(x,y,z,t), as in 1-D and 2-D

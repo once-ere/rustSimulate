@@ -33,7 +33,7 @@ families themselves at length.
 
 ---
 
-## D2 — `parser.rs`'s own EBNF comment advertises a `QM2 ISO` the parser rejects
+## D2 — `parser.rs`'s own EBNF comment advertised a `QM2 ISO` the parser rejects — **FIXED**
 
 **Claim.** `posim/src/parser.rs:136`, inside the module-level EBNF:
 
@@ -61,6 +61,48 @@ comment in `parser.rs`, which is the one place a reader would trust most.
 **Index treatment.** No `QM2 ISO` entry. The `QM3 ISO` entry notes that the
 2-D family has no isosurface command, and why (a 2-D density is already
 drawable as a heat map).
+
+### Fixed, 2026-07-30
+
+The phantom production is gone from `parser.rs`, and — more to the point —
+a gate now makes it uncatchable-by-reading no longer uncatchable at all.
+`every_qm2_subcommand_is_documented_in_lockstep` and its `QM3` twin check
+their production in **both** directions:
+
+- *forward*, that every declared subcommand appears in `HELP_TEXT`, the
+  EBNF, `grammar.md` and `grammar.tex`;
+- *converse*, that every word the EBNF **quotes** is either a declared
+  subcommand or a declared argument word.
+
+The converse direction is the one that earns its keep, and it is the one
+the pre-existing `QM` gate never had. A forward-only check asks whether
+the documents mention what the code does; it can never ask whether the
+code does what the documents promise. Re-injecting the deleted line makes
+the test fail with:
+
+```
+QM2 grammar lockstep is broken:
+  the qm2cmd EBNF quotes `ISO`, which is neither a declared subcommand nor a
+  declared argument word — either the parser is missing an arm or the comment
+  is promising a command that does not exist
+  the qm2cmd EBNF quotes `LEVEL`, which is neither a declared subcommand nor a
+  declared argument word — …
+```
+
+`LEVEL` is the tell: it was only ever an argument of the isosurface
+command, so it had been orphaned by the same mistake and nothing noticed.
+
+**Extending the gate found four more gaps**, all of the same shape — the
+compressed spelling `QM2 NORM | ENERGY | CENTROID` in `HELP_TEXT` and
+`grammar.tex`, which names the family once and then lists bare words. A
+reader parses that correctly; a string search does not, and neither does
+anyone grepping for `QM2 CENTROID`. Now spelled out in full in both files,
+matching how `grammar.md` already wrote them.
+
+The subcommand lists are also no longer duplicated: `parser.rs` builds its
+`QM2`/`QM3: unknown subcommand` error messages from `QM2_SUBCOMMANDS` and
+`QM3_SUBCOMMANDS`, exactly as it already did for `QM_SUBCOMMANDS`. A
+duplicated list is a list that drifts.
 
 ---
 
@@ -223,10 +265,18 @@ Recorded so a later pass does not re-investigate them.
 
 ---
 
-## Recommendation carried into Phase 3
+## Status
 
-D2 exists because the lockstep test covers `QM` only. Extending
-`every_qm_subcommand_is_documented_in_lockstep` to the `QM2` and `QM3`
-families would have caught D2 at commit time, and would catch the next one.
-That is a change to the simulator, not to the index, so it is recorded as a
-suggestion rather than made here.
+| # | finding | state |
+|---|---|---|
+| D1 | `grammar.md` §2.2 omits `QM`/`QM2`/`QM3` | open — documentation |
+| D2 | phantom `QM2 ISO` in the `parser.rs` EBNF | **fixed 2026-07-30**, with a gate |
+| D3 | six undocumented path aliases | open — documentation |
+| D4 | `grammar.md` §3's EBNF has no comparison level | open — documentation |
+| D5 | `special_functions.md` calls `wigner` "planned" | open — documentation |
+| D6 | ten `special_functions` modules undocumented | open — documentation |
+
+D2 was the only finding that was a defect in *code-adjacent* material rather
+than in prose, and the only one a reader could act on and be wrong. The five
+that remain are documentation drift: the index carries the code's behaviour
+and points here, so no reader is misled by them in the meantime.

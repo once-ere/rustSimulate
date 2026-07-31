@@ -133,8 +133,16 @@
 //!           | "PROB" expr expr expr expr
 //!           | "ABSORB" ( "OFF" | expr expr [ expr ] )
 //!           | "ANIMATE" STRING expr [ "FRAMES" expr ]
-//!           | "ISO" STRING expr [ "FRAMES" expr ] [ "LEVEL" expr ]
 //!           | "RESET" ;
+//!
+//! (* QM2 has NO `ISO`. An earlier version of this comment listed one,
+//!    which `qm2_command` never implemented — so reading the grammar
+//!    was enough to believe in a command that errors when you type it.
+//!    A 2-D density is already drawable flat, as a heat map, so the
+//!    isosurface exists only where it buys something: QM3. The
+//!    `every_qm2_subcommand_is_documented_in_lockstep` test now checks
+//!    this production in BOTH directions, so a phantom cannot come
+//!    back. *)
 //!
 //! qm3cmd   := [ "STATUS" ]
 //!           | "GRID" expr{9} | "POTENTIAL" ( "ZERO" | IDENT )
@@ -848,10 +856,12 @@ impl Parser {
             }
             "reset" => Qm3Cmd::Reset,
             other => {
+                // Generated from the one authoritative list rather than
+                // hand-maintained beside it: a duplicated list is a
+                // list that drifts.
                 return Err(format!(
-                    "QM3: unknown subcommand `{other}` (grid, potential, drive, packet, \
-                     states, state, step, run, norm, energy, centroid, prob, absorb, \
-                     animate, iso, status, reset)"
+                    "QM3: unknown subcommand `{other}` ({})",
+                    crate::qm3::QM3_SUBCOMMANDS.join(", ")
                 ))
             }
         };
@@ -993,10 +1003,12 @@ impl Parser {
                 Qm2Cmd::Animate(path)
             }
             other => {
+                // Generated from the one authoritative list rather than
+                // hand-maintained beside it: a duplicated list is a
+                // list that drifts.
                 return Err(format!(
-                    "QM2: unknown subcommand `{other}` (grid, potential, packet, states, \
-                     state, step, run, norm, energy, centroid, prob, absorb, animate, \
-                     status, reset)"
+                    "QM2: unknown subcommand `{other}` ({})",
+                    crate::qm2::QM2_SUBCOMMANDS.join(", ")
                 ))
             }
         };

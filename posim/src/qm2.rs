@@ -23,6 +23,26 @@ use quantum::qm2d::{
 
 use crate::vm::{SimState, Value};
 
+/// Every `QM2` subcommand word the parser accepts, canonical spelling only.
+///
+/// This list is not documentation — it is the input to
+/// `every_qm2_subcommand_is_documented_in_lockstep`, which checks each
+/// word against the parser, `HELP_TEXT`, the EBNF comment and both
+/// grammar documents, **and checks the converse**: that every word the
+/// EBNF quotes is one this list declares.
+///
+/// The converse direction is the one that earns its keep. The `QM`
+/// family has had the forward check since Stage 2A; `QM2` and `QM3` had
+/// neither, and the EBNF comment for `qm2cmd` quietly advertised an
+/// `ISO` production that `qm2_command` never implemented. Nothing
+/// caught it, because a forward check only ever asks whether the
+/// documents mention what the code does — never whether the code does
+/// what the documents promise.
+pub const QM2_SUBCOMMANDS: &[&str] = &[
+    "status", "grid", "potential", "packet", "step", "run", "norm", "energy", "centroid",
+    "prob", "absorb", "drive", "states", "state", "reset", "animate",
+];
+
 /// A `QM2` subcommand.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Qm2Cmd {
@@ -700,6 +720,96 @@ draw(); requestAnimationFrame(loop);
 
 #[cfg(test)]
 mod tests {
+    /// Words the `qm2cmd` EBNF quotes that are arguments, not subcommands.
+    const QM2_ARGUMENT_WORDS: &[&str] = &["ZERO", "OFF", "STEPS", "FRAMES", "STATUS"];
+
+
+    /// Every subcommand of this family must appear in the parser, in
+    /// `HELP_TEXT`, and in both grammar documents — **and the EBNF must
+    /// promise nothing the parser does not implement.**
+    ///
+    /// That second direction is why this test exists. `QM` has had the
+    /// forward check since Stage 2A and has stayed clean; `QM2` and
+    /// `QM3` had no check at all, and the `qm2cmd` EBNF advertised an
+    /// `ISO` production for which `qm2_command` has no arm. Typing it
+    /// errors. A forward-only check could never have found that: it
+    /// asks whether the documents mention what the code does, never
+    /// whether the code does what the documents promise.
+    #[test]
+    fn every_qm2_subcommand_is_documented_in_lockstep() {
+        // `\_` in LaTeX, `\` nowhere else; case differs between the
+        // parser (lowercase) and the documents (upper).
+        let prep = |s: &str| s.replace('\\', "").to_ascii_uppercase();
+        let help = prep(crate::vm::HELP_TEXT);
+        // Only this family's production: the three qm*cmd blocks quote
+        // the same words, so searching the whole file would pass on a
+        // word this family never declared.
+        let all = prep(include_str!("parser.rs"));
+        let from = all.find("QM2CMD").expect("parser.rs must declare the qm2cmd production");
+        let to = all[from..].find("QM3CMD").map_or(all.len(), |k| from + k);
+        let ebnf = all[from..to].to_string();
+        let md = prep(include_str!("../../grammar.md"));
+        let tex = prep(include_str!("../../grammar.tex"));
+
+        let mut missing = Vec::new();
+
+        // Forward: everything the parser accepts is documented.
+        for w in super::QM2_SUBCOMMANDS {
+            let up = w.to_ascii_uppercase();
+            let needle = format!("QM2 {up}");
+            let ebnf_needle = format!("\"{up}\"");
+            for (what, hay) in [
+                ("HELP_TEXT", &help),
+                ("parser.rs EBNF", &ebnf),
+                ("grammar.md", &md),
+                ("grammar.tex", &tex),
+            ] {
+                // `QM2 STATUS` is spelled as bare `QM2` in the
+                // documents; the EBNF writes the optional `[ "STATUS" ]`.
+                if *w == "status" && what != "parser.rs EBNF" {
+                    continue;
+                }
+                let want = if what == "parser.rs EBNF" { &ebnf_needle } else { &needle };
+                if !hay.contains(want.as_str()) {
+                    missing.push(format!("{want} is missing from {what}"));
+                }
+            }
+        }
+
+        // Converse: the EBNF promises nothing the parser lacks. Every
+        // quoted word is either a declared subcommand or a declared
+        // argument word — a new quoted word must be classified as one or
+        // the other, deliberately.
+        let mut phantom = Vec::new();
+        let mut rest = ebnf.as_str();
+        while let Some(i) = rest.find('"') {
+            rest = &rest[i + 1..];
+            let Some(j) = rest.find('"') else { break };
+            let word = &rest[..j];
+            rest = &rest[j + 1..];
+            if word.is_empty() || !word.chars().all(|c| c.is_ascii_uppercase() || c == '_') {
+                continue; // punctuation like "," or a metavariable
+            }
+            let known = super::QM2_SUBCOMMANDS.iter().any(|s| s.eq_ignore_ascii_case(word))
+                || QM2_ARGUMENT_WORDS.contains(&word);
+            if !known {
+                phantom.push(format!(
+                    "the qm2cmd EBNF quotes `{word}`, which is neither a declared \
+                     subcommand nor a declared argument word — either the parser is \
+                     missing an arm or the comment is promising a command that does \
+                     not exist"
+                ));
+            }
+        }
+
+        missing.extend(phantom);
+        assert!(
+            missing.is_empty(),
+            "QM2 grammar lockstep is broken:\n  {}",
+            missing.join("\n  ")
+        );
+    }
+
     use crate::vm::{execute_line, SimState};
 
     fn run(lines: &[&str]) -> (SimState, Vec<String>) {
