@@ -231,7 +231,13 @@ def build_keywords():
             locations=[{"file": k["file"], "line": k["line"], "role": "lexer mapping"},
                        {"file": "posim/src/lexer.rs", "line": 10, "role": "Keyword enum"}],
             examples=exs,
-            seeAlso=[f"cmd.{name.lower()}"],
+            # A keyword links to its command entry when it heads one. Shape
+            # words head no command of their own (they are an argument of
+            # NEW), so they link to the shape's type entry instead — the
+            # build prunes any reference whose target does not exist, and a
+            # silently pruned link is a link the reader never gets.
+            seeAlso=[f"cmd.{name.lower()}", f"type.shape.{name.lower()}",
+                     f"cmd.scene.{name.lower()}", "cmd.method", "cmd.new"],
             status="complete" if exs else "stub",
         ))
     return out
@@ -896,11 +902,54 @@ def main():
             print(f"DUPLICATE id: {e['id']}", file=sys.stderr)
         seen.add(e["id"])
 
+    # Carry verification forward. A rebuild regenerates every entry from the
+    # inventories, which would silently discard the captured output of Phase 4
+    # — and an example whose `verified` date vanished on an unrelated rebuild
+    # is worse than one that never had it: the catalog would look unverified
+    # while nothing had actually changed. Results are keyed on the example's
+    # CODE, so an edited fragment correctly loses its date and must be re-run.
+    prior = {}
+    if os.path.exists(f"{D}/catalog.json"):
+        try:
+            for e in json.load(open(f"{D}/catalog.json")):
+                for x in e.get("examples", []):
+                    if x.get("verified"):
+                        prior[(x["medium"], x["code"])] = (x["expected"], x["verified"])
+        except (ValueError, OSError):
+            pass
+    carried = 0
+    for e in catalog:
+        for x in e["examples"]:
+            hit = prior.get((x["medium"], x["code"]))
+            if hit:
+                x["expected"], x["verified"] = hit
+                carried += 1
+    if prior:
+        print(f"carried verification forward into {carried} example slot(s) "
+              f"from {len(prior)} distinct fragment(s)", file=sys.stderr)
+
+    # Prune see-also references whose target does not exist, and self-links.
+    # Done here rather than in the renderer so the DATA is clean: the app
+    # already filters dead refs before drawing, which would have hidden the
+    # problem instead of fixing it.
+    ids = {e["id"] for e in catalog}
+    pruned = 0
+    for e in catalog:
+        keep = [r for r in e["seeAlso"] if r in ids and r != e["id"]]
+        pruned += len(e["seeAlso"]) - len(keep)
+        e["seeAlso"] = keep
+    if pruned:
+        print(f"pruned {pruned} dead see-also reference(s)", file=sys.stderr)
+
     meta = {
         "_meta": True,
         "phase": 3,
         "schema": "prompt_01.md section 5",
-        "examples_verified": False,
+        "examples_verified": carried > 0,
+        "verified_pass": carried,
+        "verified_total": sum(1 for e in catalog for x in e["examples"]
+                              if x["medium"] == "posim"),
+        "verified_date": "2026-07-30" if carried else None,
         "failure_rules": [
             "A posim fragment FAILS if the process exits nonzero.",
             "A posim fragment FAILS if stdout contains any line starting `Err[`.",

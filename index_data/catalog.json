@@ -4,24 +4,16 @@
   "phase": 3,
   "schema": "prompt_01.md section 5",
   "examples_verified": true,
+  "verified_pass": 942,
+  "verified_total": 942,
+  "verified_date": "2026-07-30",
   "failure_rules": [
    "A posim fragment FAILS if the process exits nonzero.",
    "A posim fragment FAILS if stdout contains any line starting `Err[`.",
    "A posim fragment FAILS if stdout contains a line matching `^%\\w+ .* failed:` \u2014 a failing magic (notably %load) exits 0 and emits NO Err[ line, so exit status alone would pass it vacuously.",
    "posim fragments must be run with cwd = the repository root: %load and %save resolve paths relative to the current directory.",
    "POSIM_NO_BROWSER=1 must be set so SCENE CREATE does not launch a browser."
-  ],
-  "verified_date": "2026-07-30",
-  "verified_pass": 942,
-  "verified_total": 942,
-  "shell_examples": {
-   "count": 65,
-   "verified": false,
-   "why": [
-    "48 are `cargo run -p posim --release -- --notebook <file>` launch lines. That mode loads the file and then STAYS INTERACTIVE by design, so it never exits and cannot be batch-verified. Their content is verified instead by the rung-2 `%load <file>` fragment on the same entry, which runs the same file through --script.",
-    "17 are `cargo run -p <crate> --release --example <name>`. The six physical_object physics examples are self-checking (they print SUCCESS/FAILURE and exit nonzero), and the project already runs them; they are not re-run here and are therefore not claimed as verified by this pass."
-   ]
-  }
+  ]
  },
  {
   "id": "kw.new",
@@ -63,6 +55,8 @@
    }
   ],
   "seeAlso": [
+   "cmd.new",
+   "cmd.method",
    "cmd.new"
   ],
   "invariants": [],
@@ -108,7 +102,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.set"
+   "cmd.set",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -153,7 +149,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.get"
+   "cmd.get",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -209,7 +207,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.del"
+   "cmd.del",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -254,7 +254,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.list"
+   "cmd.list",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -299,7 +301,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.step"
+   "cmd.step",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -344,7 +348,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.run"
+   "cmd.run",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -389,7 +395,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.steps"
+   "cmd.steps",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -434,7 +442,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.method"
+   "cmd.method",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -479,7 +489,8 @@
    }
   ],
   "seeAlso": [
-   "cmd.adams"
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -524,7 +535,8 @@
    }
   ],
   "seeAlso": [
-   "cmd.bdf"
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -569,7 +581,8 @@
    }
   ],
   "seeAlso": [
-   "cmd.sprk"
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -614,7 +627,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.energy"
+   "cmd.energy",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -659,7 +674,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.com"
+   "cmd.com",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -704,7 +721,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.momentum"
+   "cmd.momentum",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -749,7 +768,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.angmom"
+   "cmd.angmom",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -794,7 +815,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.laplace"
+   "cmd.laplace",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -839,7 +862,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.help"
+   "cmd.help",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -884,7 +909,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.point"
+   "type.shape.point",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -929,7 +956,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.sphere"
+   "type.shape.sphere",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -985,7 +1014,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.cuboid"
+   "type.shape.cuboid",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -1030,7 +1061,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.torus"
+   "type.shape.torus",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -1086,7 +1119,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.disk"
+   "type.shape.disk",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -1131,7 +1166,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.cylinder"
+   "type.shape.cylinder",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -1176,7 +1213,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.box"
+   "cmd.box",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -1221,7 +1260,10 @@
    }
   ],
   "seeAlso": [
-   "cmd.reset"
+   "cmd.reset",
+   "cmd.scene.reset",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -1266,7 +1308,8 @@
    }
   ],
   "seeAlso": [
-   "cmd.qm"
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -1311,7 +1354,8 @@
    }
   ],
   "seeAlso": [
-   "cmd.qm2"
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -1356,7 +1400,8 @@
    }
   ],
   "seeAlso": [
-   "cmd.qm3"
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -1395,13 +1440,14 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1 }\nscene create\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51047/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene: http://127.0.0.1:51047/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[4]= scene closed (http://127.0.0.1:51047/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51288/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene: http://127.0.0.1:51288/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[4]= scene closed (http://127.0.0.1:51288/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
   ],
   "seeAlso": [
-   "cmd.scene"
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -1440,13 +1486,15 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1 }\nscene create\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51048/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene closed (http://127.0.0.1:51048/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51287/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene closed (http://127.0.0.1:51287/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
   ],
   "seeAlso": [
-   "cmd.create"
+   "cmd.scene.create",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -1488,7 +1536,7 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1 }\nscene create\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51049/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene closed (http://127.0.0.1:51049/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51289/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene closed (http://127.0.0.1:51289/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -1496,13 +1544,15 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "new sphere { mass = 1 }\nscene create\nscene destroy",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51050/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene closed (http://127.0.0.1:51050/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51290/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene closed (http://127.0.0.1:51290/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
   ],
   "seeAlso": [
-   "cmd.close"
+   "cmd.scene.close",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -1541,13 +1591,15 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1 }\nscene create\nscene translate 2 0\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51051/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera target = [2, 0, 0]\nOut[4]= scene closed (http://127.0.0.1:51051/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51291/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera target = [2, 0, 0]\nOut[4]= scene closed (http://127.0.0.1:51291/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
   ],
   "seeAlso": [
-   "cmd.translate"
+   "cmd.scene.translate",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -1586,13 +1638,15 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1 }\nscene create\nscene rotate 15 -5\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51052/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera yaw = -45\u00b0, pitch = 50\u00b0\nOut[4]= scene closed (http://127.0.0.1:51052/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51292/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera yaw = -45\u00b0, pitch = 50\u00b0\nOut[4]= scene closed (http://127.0.0.1:51292/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
   ],
   "seeAlso": [
-   "cmd.rotate"
+   "cmd.scene.rotate",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -1631,13 +1685,15 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1 }\nscene create\nscene zoom in\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51053/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera distance = 9.6\nOut[4]= scene closed (http://127.0.0.1:51053/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51293/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera distance = 9.6\nOut[4]= scene closed (http://127.0.0.1:51293/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
   ],
   "seeAlso": [
-   "cmd.zoom"
+   "cmd.scene.zoom",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -1676,13 +1732,14 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1 }\nscene create\nscene zoom in\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51054/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera distance = 9.6\nOut[4]= scene closed (http://127.0.0.1:51054/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51295/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera distance = 9.6\nOut[4]= scene closed (http://127.0.0.1:51295/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
   ],
   "seeAlso": [
-   "cmd.in"
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -1721,13 +1778,14 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1 }\nscene create\nscene zoom out\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51055/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera distance = 15\nOut[4]= scene closed (http://127.0.0.1:51055/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51294/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera distance = 15\nOut[4]= scene closed (http://127.0.0.1:51294/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
   ],
   "seeAlso": [
-   "cmd.out"
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -1766,13 +1824,15 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1 }\nscene create\nscene hide 0\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51056/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= 1 object(s) hidden\nOut[4]= scene closed (http://127.0.0.1:51056/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51296/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= 1 object(s) hidden\nOut[4]= scene closed (http://127.0.0.1:51296/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
   ],
   "seeAlso": [
-   "cmd.hide"
+   "cmd.scene.hide",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -1817,7 +1877,10 @@
    }
   ],
   "seeAlso": [
-   "cmd.show"
+   "cmd.show",
+   "cmd.scene.show",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -1856,13 +1919,15 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1 }\nscene create\nscene refresh\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51057/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene refreshed from the notebook state (1 entities, t = 0)\nOut[4]= scene closed (http://127.0.0.1:51057/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51298/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene refreshed from the notebook state (1 entities, t = 0)\nOut[4]= scene closed (http://127.0.0.1:51298/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
   ],
   "seeAlso": [
-   "cmd.refresh"
+   "cmd.scene.refresh",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -1901,13 +1966,15 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1 }\nscene create\nscene redraw\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51058/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene redraw queued for every window\nOut[4]= scene closed (http://127.0.0.1:51058/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51297/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene redraw queued for every window\nOut[4]= scene closed (http://127.0.0.1:51297/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
   ],
   "seeAlso": [
-   "cmd.redraw"
+   "cmd.scene.redraw",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -1946,13 +2013,15 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51059/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene closed (http://127.0.0.1:51059/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51299/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene closed (http://127.0.0.1:51299/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
   ],
   "seeAlso": [
-   "cmd.start"
+   "cmd.scene.start",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -1991,13 +2060,15 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene stop\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51060/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: stopped\nOut[5]= scene closed (http://127.0.0.1:51060/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51300/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: stopped\nOut[5]= scene closed (http://127.0.0.1:51300/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
   ],
   "seeAlso": [
-   "cmd.stop"
+   "cmd.scene.stop",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -2036,13 +2107,15 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51062/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene closed (http://127.0.0.1:51062/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51301/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene closed (http://127.0.0.1:51301/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
   ],
   "seeAlso": [
-   "cmd.pause"
+   "cmd.scene.pause",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -2081,13 +2154,15 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\n# playback advances on WALL-CLOCK time, on its own thread, so a\n# batch script must actually spend some \u2014 otherwise PAUSE lands\n# before the first frame is recorded and REVERSE has nothing to\n# rewind.\ndef v2(x, y) { 0.5 * (x * x + y * y) }\nqm2 grid -5 5 40, -5 5 40\nqm2 potential v2\nqm2 states 3\nscene pause\nscene reverse\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51061/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= function v2(2 parameter(s)) defined \u2014 1 body line(s)\nOut[5]= grid x [-5, 5] x 40, y [-5, 5] x 40 \u2014 1600 points, hx = 0.243902, hy = 0.243902 (potential and psi cleared)\nOut[6]= potential `v2` sampled at 1600 points, V in [0.014872099940511627, 22.62046400951814] (psi cleared)\nOut[7]= 3 lowest bound state(s) \u2014 Lanczos, 210 iterations:\n  E[0] = 0.9962679948   residual 5.91e-8\n  E[1] = 1.9887755462   residual 1.73e-8\n  E[2] = 1.9887755462   residual 5.48e-8\nOut[8]= scene playback: paused\nOut[9]= scene playback: reversing\nOut[10]= scene closed (http://127.0.0.1:51061/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51302/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= function v2(2 parameter(s)) defined \u2014 1 body line(s)\nOut[5]= grid x [-5, 5] x 40, y [-5, 5] x 40 \u2014 1600 points, hx = 0.243902, hy = 0.243902 (potential and psi cleared)\nOut[6]= potential `v2` sampled at 1600 points, V in [0.014872099940511627, 22.62046400951814] (psi cleared)\nOut[7]= 3 lowest bound state(s) \u2014 Lanczos, 210 iterations:\n  E[0] = 0.9962679948   residual 5.91e-8\n  E[1] = 1.9887755462   residual 1.73e-8\n  E[2] = 1.9887755462   residual 5.48e-8\nOut[8]= scene playback: paused\nOut[9]= scene playback: reversing\nOut[10]= scene closed (http://127.0.0.1:51302/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
   ],
   "seeAlso": [
-   "cmd.reverse"
+   "cmd.scene.reverse",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -2129,7 +2204,7 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1 }\nscene create\nscene set_time_step 0.005\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51063/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene time step dt = 0.005\nOut[4]= scene closed (http://127.0.0.1:51063/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51303/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene time step dt = 0.005\nOut[4]= scene closed (http://127.0.0.1:51303/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -2137,13 +2212,15 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "new sphere { mass = 1 }\nscene create\nscene settimestep 0.005\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51064/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene time step dt = 0.005\nOut[4]= scene closed (http://127.0.0.1:51064/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51305/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene time step dt = 0.005\nOut[4]= scene closed (http://127.0.0.1:51305/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
   ],
   "seeAlso": [
-   "cmd.set_time_step"
+   "cmd.scene.set_time_step",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -2182,13 +2259,15 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1 }\nscene create\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51065/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene: http://127.0.0.1:51065/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[4]= scene closed (http://127.0.0.1:51065/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51304/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene: http://127.0.0.1:51304/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[4]= scene closed (http://127.0.0.1:51304/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
   ],
   "seeAlso": [
-   "cmd.status"
+   "cmd.scene.status",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -2227,13 +2306,15 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1 }\nscene create\nscene events\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51066/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= (no scene events)\nOut[4]= scene closed (http://127.0.0.1:51066/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51307/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= (no scene events)\nOut[4]= scene closed (http://127.0.0.1:51307/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
   ],
   "seeAlso": [
-   "cmd.events"
+   "cmd.scene.events",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -2272,13 +2353,14 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1 }\nscene create\nscene hide all\nscene show all\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51067/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= 1 object(s) hidden\nOut[4]= 0 object(s) hidden\nOut[5]= scene closed (http://127.0.0.1:51067/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51306/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= 1 object(s) hidden\nOut[4]= 0 object(s) hidden\nOut[5]= scene closed (http://127.0.0.1:51306/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
   ],
   "seeAlso": [
-   "cmd.all"
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -2323,7 +2405,8 @@
    }
   ],
   "seeAlso": [
-   "cmd.as"
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -2368,7 +2451,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.let"
+   "cmd.let",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -2424,7 +2509,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.funcs"
+   "cmd.funcs",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -2480,7 +2567,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.dumbbell"
+   "type.shape.dumbbell",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -2525,7 +2614,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.collide"
+   "cmd.collide",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -2570,7 +2661,9 @@
    }
   ],
   "seeAlso": [
-   "cmd.contacts"
+   "cmd.contacts",
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -2615,7 +2708,8 @@
    }
   ],
   "seeAlso": [
-   "cmd.on"
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -2660,7 +2754,8 @@
    }
   ],
   "seeAlso": [
-   "cmd.off"
+   "cmd.method",
+   "cmd.new"
   ],
   "invariants": [],
   "status": "complete"
@@ -12881,7 +12976,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load dynamic_notebooks/billiard_box.posim\nscene close",
-    "expected": "Out[2]= obj0\nOut[5]= obj1\nOut[8]= obj2\nOut[9]= 1.4449999999999998\nOut[10]= 1.7\nOut[11]= scene window created: http://127.0.0.1:51068/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 3 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[12]= scene time step dt = 0.02\nOut[13]= scene closed (http://127.0.0.1:51068/)",
+    "expected": "Out[2]= obj0\nOut[5]= obj1\nOut[8]= obj2\nOut[9]= 1.4449999999999998\nOut[10]= 1.7\nOut[11]= scene window created: http://127.0.0.1:51308/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 3 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[12]= scene time step dt = 0.02\nOut[13]= scene closed (http://127.0.0.1:51308/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -12930,7 +13025,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load dynamic_notebooks/billiard_break.posim\nscene close",
-    "expected": "Out[2]= obj0\nOut[3]= obj1\nOut[4]= obj2\nOut[5]= obj3\nOut[6]= 2\nOut[7]= [2, 0, 0]\nOut[8]= [0, 0, 0]\nOut[9]= scene window created: http://127.0.0.1:51069/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 4 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[10]= scene closed (http://127.0.0.1:51069/)",
+    "expected": "Out[2]= obj0\nOut[3]= obj1\nOut[4]= obj2\nOut[5]= obj3\nOut[6]= 2\nOut[7]= [2, 0, 0]\nOut[8]= [0, 0, 0]\nOut[9]= scene window created: http://127.0.0.1:51309/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 4 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[10]= scene closed (http://127.0.0.1:51309/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -12979,7 +13074,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load dynamic_notebooks/bouncing_ball_restitution.posim\nscene close",
-    "expected": "Out[3]= obj0\nOut[6]= obj1\nOut[8]= collisions ON (1 collidable pair(s); 0 impulse(s) so far)\nOut[9]= 50\nOut[10]= [0, 0, 0]\nOut[11]= 0.8\nOut[12]= 0.9486832980505138\nOut[13]= 3.38\nOut[14]= scene window created: http://127.0.0.1:51070/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[15]= camera target = [0, 2, 0]\nOut[16]= scene closed (http://127.0.0.1:51070/)",
+    "expected": "Out[3]= obj0\nOut[6]= obj1\nOut[8]= collisions ON (1 collidable pair(s); 0 impulse(s) so far)\nOut[9]= 50\nOut[10]= [0, 0, 0]\nOut[11]= 0.8\nOut[12]= 0.9486832980505138\nOut[13]= 3.38\nOut[14]= scene window created: http://127.0.0.1:51310/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[15]= camera target = [0, 2, 0]\nOut[16]= scene closed (http://127.0.0.1:51310/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -13028,7 +13123,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load dynamic_notebooks/box_of_shapes.posim\nscene close",
-    "expected": "Out[2]= box: inner size 4 x 4 x 4 \u2014 six static walls obj0, obj1, obj2, obj3, obj4, obj5 with inverse_mass = 0 (infinitely massive); objects collide elastically off the inside faces\nOut[3]= obj6\nOut[4]= obj7\nOut[5]= obj8\nOut[6]= obj9\nOut[7]= obj10\nOut[8]= obj11\nOut[9]= obj0: cuboid he=[1, 4, 4], mass=0, charge=0, pos=[3, 0, 0] [wall: static, inverse_mass=0]\nobj1: cuboid he=[1, 4, 4], mass=0, charge=0, pos=[-3, 0, 0] [wall: static, inverse_mass=0]\nobj2: cuboid he=[4, 1, 4], mass=0, charge=0, pos=[0, 3, 0] [wall: static, inverse_mass=0]\nobj3: cuboid he=[4, 1, 4], mass=0, charge=0, pos=[0, -3, 0] [wall: static, inverse_mass=0]\nobj4: cuboid he=[4, 4, 1], mass=0, charge=0, pos=[0, 0, 3] [wall: static, inverse_mass=0]\nobj5: cuboid he=[4, 4, 1], mass=0, charge=0, pos=[0, 0, -3] [wall: static, inverse_mass=0]\nobj6: torus ring=1.5 tube=0.5, mass=1, charge=0, pos=[0, 0, 0]\nobj7: point, mass=1, charge=0, pos=[1.40659, -0.995859, 0.569601]\nobj8: sphere r=0.5, mass=2, charge=0, pos=[1.424704, 1.367496, -0.493612]\nobj9: disk r=1, mass=0.6666666666666666, charge=0, pos=[-0.677386, -1.041493, -1.091679]\nobj10: cuboid he=[0.5, 0.5, 0.5], mass=1.6666666666666667, charge=0, pos=[1.074397, 0.816223, 1.102099]\nobj11: cylinder r=0.5 h=1.5, mass=2, charge=0, pos=[-1.027024, -1.40389, -0.485619]\nOut[10]= collisions ON (51 collidable pair(s); 0 impulse(s) so far)\nOut[11]= 0\nOut[12]= [[1.28125, 0, 0], [0, 1.28125, 0], [0, 0, 2.4375]]\nOut[13]= 30000\nOut[14]= [100, 200, 100]\nOut[15]= scene window created: http://127.0.0.1:51071/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 12 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[16]= scene time step dt = 0.0002\nOut[17]= camera distance = 6\nOut[18]= scene closed (http://127.0.0.1:51071/)",
+    "expected": "Out[2]= box: inner size 4 x 4 x 4 \u2014 six static walls obj0, obj1, obj2, obj3, obj4, obj5 with inverse_mass = 0 (infinitely massive); objects collide elastically off the inside faces\nOut[3]= obj6\nOut[4]= obj7\nOut[5]= obj8\nOut[6]= obj9\nOut[7]= obj10\nOut[8]= obj11\nOut[9]= obj0: cuboid he=[1, 4, 4], mass=0, charge=0, pos=[3, 0, 0] [wall: static, inverse_mass=0]\nobj1: cuboid he=[1, 4, 4], mass=0, charge=0, pos=[-3, 0, 0] [wall: static, inverse_mass=0]\nobj2: cuboid he=[4, 1, 4], mass=0, charge=0, pos=[0, 3, 0] [wall: static, inverse_mass=0]\nobj3: cuboid he=[4, 1, 4], mass=0, charge=0, pos=[0, -3, 0] [wall: static, inverse_mass=0]\nobj4: cuboid he=[4, 4, 1], mass=0, charge=0, pos=[0, 0, 3] [wall: static, inverse_mass=0]\nobj5: cuboid he=[4, 4, 1], mass=0, charge=0, pos=[0, 0, -3] [wall: static, inverse_mass=0]\nobj6: torus ring=1.5 tube=0.5, mass=1, charge=0, pos=[0, 0, 0]\nobj7: point, mass=1, charge=0, pos=[1.40659, -0.995859, 0.569601]\nobj8: sphere r=0.5, mass=2, charge=0, pos=[1.424704, 1.367496, -0.493612]\nobj9: disk r=1, mass=0.6666666666666666, charge=0, pos=[-0.677386, -1.041493, -1.091679]\nobj10: cuboid he=[0.5, 0.5, 0.5], mass=1.6666666666666667, charge=0, pos=[1.074397, 0.816223, 1.102099]\nobj11: cylinder r=0.5 h=1.5, mass=2, charge=0, pos=[-1.027024, -1.40389, -0.485619]\nOut[10]= collisions ON (51 collidable pair(s); 0 impulse(s) so far)\nOut[11]= 0\nOut[12]= [[1.28125, 0, 0], [0, 1.28125, 0], [0, 0, 2.4375]]\nOut[13]= 30000\nOut[14]= [100, 200, 100]\nOut[15]= scene window created: http://127.0.0.1:51311/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 12 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[16]= scene time step dt = 0.0002\nOut[17]= camera distance = 6\nOut[18]= scene closed (http://127.0.0.1:51311/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -13077,7 +13172,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load dynamic_notebooks/box_of_shapes_m32.posim\nscene close",
-    "expected": "Out[2]= box: inner size 4 x 4 x 4 \u2014 six static walls obj0, obj1, obj2, obj3, obj4, obj5 with inverse_mass = 0 (infinitely massive); objects collide elastically off the inside faces\nOut[3]= obj6\nOut[4]= obj7\nOut[5]= obj8\nOut[6]= obj9\nOut[7]= obj10\nOut[8]= obj11\nOut[9]= obj0: cuboid he=[1, 4, 4], mass=0, charge=0, pos=[3, 0, 0] [wall: static, inverse_mass=0]\nobj1: cuboid he=[1, 4, 4], mass=0, charge=0, pos=[-3, 0, 0] [wall: static, inverse_mass=0]\nobj2: cuboid he=[4, 1, 4], mass=0, charge=0, pos=[0, 3, 0] [wall: static, inverse_mass=0]\nobj3: cuboid he=[4, 1, 4], mass=0, charge=0, pos=[0, -3, 0] [wall: static, inverse_mass=0]\nobj4: cuboid he=[4, 4, 1], mass=0, charge=0, pos=[0, 0, 3] [wall: static, inverse_mass=0]\nobj5: cuboid he=[4, 4, 1], mass=0, charge=0, pos=[0, 0, -3] [wall: static, inverse_mass=0]\nobj6: torus ring=1.5 tube=0.5, mass=1, charge=0, pos=[0, 0, 0]\nobj7: point, mass=32, charge=0, pos=[1.40659, -0.995859, 0.569601]\nobj8: sphere r=0.5, mass=2, charge=0, pos=[1.424704, 1.367496, -0.493612]\nobj9: disk r=1, mass=0.6666666666666666, charge=0, pos=[-0.677386, -1.041493, -1.091679]\nobj10: cuboid he=[0.5, 0.5, 0.5], mass=1.6666666666666667, charge=0, pos=[1.074397, 0.816223, 1.102099]\nobj11: cylinder r=0.5 h=1.5, mass=2, charge=0, pos=[-1.027024, -1.40389, -0.485619]\nOut[10]= collisions ON (51 collidable pair(s); 0 impulse(s) so far)\nOut[11]= 0\nOut[12]= 1\nOut[13]= 960000\nOut[14]= [3200, 6400, 3200]\nOut[15]= scene window created: http://127.0.0.1:51072/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 12 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[16]= scene time step dt = 0.0002\nOut[17]= camera distance = 6\nOut[18]= scene closed (http://127.0.0.1:51072/)",
+    "expected": "Out[2]= box: inner size 4 x 4 x 4 \u2014 six static walls obj0, obj1, obj2, obj3, obj4, obj5 with inverse_mass = 0 (infinitely massive); objects collide elastically off the inside faces\nOut[3]= obj6\nOut[4]= obj7\nOut[5]= obj8\nOut[6]= obj9\nOut[7]= obj10\nOut[8]= obj11\nOut[9]= obj0: cuboid he=[1, 4, 4], mass=0, charge=0, pos=[3, 0, 0] [wall: static, inverse_mass=0]\nobj1: cuboid he=[1, 4, 4], mass=0, charge=0, pos=[-3, 0, 0] [wall: static, inverse_mass=0]\nobj2: cuboid he=[4, 1, 4], mass=0, charge=0, pos=[0, 3, 0] [wall: static, inverse_mass=0]\nobj3: cuboid he=[4, 1, 4], mass=0, charge=0, pos=[0, -3, 0] [wall: static, inverse_mass=0]\nobj4: cuboid he=[4, 4, 1], mass=0, charge=0, pos=[0, 0, 3] [wall: static, inverse_mass=0]\nobj5: cuboid he=[4, 4, 1], mass=0, charge=0, pos=[0, 0, -3] [wall: static, inverse_mass=0]\nobj6: torus ring=1.5 tube=0.5, mass=1, charge=0, pos=[0, 0, 0]\nobj7: point, mass=32, charge=0, pos=[1.40659, -0.995859, 0.569601]\nobj8: sphere r=0.5, mass=2, charge=0, pos=[1.424704, 1.367496, -0.493612]\nobj9: disk r=1, mass=0.6666666666666666, charge=0, pos=[-0.677386, -1.041493, -1.091679]\nobj10: cuboid he=[0.5, 0.5, 0.5], mass=1.6666666666666667, charge=0, pos=[1.074397, 0.816223, 1.102099]\nobj11: cylinder r=0.5 h=1.5, mass=2, charge=0, pos=[-1.027024, -1.40389, -0.485619]\nOut[10]= collisions ON (51 collidable pair(s); 0 impulse(s) so far)\nOut[11]= 0\nOut[12]= 1\nOut[13]= 960000\nOut[14]= [3200, 6400, 3200]\nOut[15]= scene window created: http://127.0.0.1:51312/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 12 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[16]= scene time step dt = 0.0002\nOut[17]= camera distance = 6\nOut[18]= scene closed (http://127.0.0.1:51312/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -13126,7 +13221,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load dynamic_notebooks/charged_in_b_field.posim\nscene close",
-    "expected": "Out[1]= obj0\nOut[3]= method = CVODE BDF\nOut[4]= 2.0943951023931953\nOut[5]= 1\nOut[6]= 9\nOut[7]= [6, 0, 0]\nOut[8]= 3\nOut[9]= scene window created: http://127.0.0.1:51073/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[10]= scene time step dt = 0.005\nOut[11]= camera target = [0, 1, 0]\nOut[12]= camera distance = 4.8\nOut[13]= scene closed (http://127.0.0.1:51073/)",
+    "expected": "Out[1]= obj0\nOut[3]= method = CVODE BDF\nOut[4]= 2.0943951023931953\nOut[5]= 1\nOut[6]= 9\nOut[7]= [6, 0, 0]\nOut[8]= 3\nOut[9]= scene window created: http://127.0.0.1:51313/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[10]= scene time step dt = 0.005\nOut[11]= camera target = [0, 1, 0]\nOut[12]= camera distance = 4.8\nOut[13]= scene closed (http://127.0.0.1:51313/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -13175,7 +13270,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load dynamic_notebooks/charged_in_e_field.posim\nscene close",
-    "expected": "Out[2]= obj0\nOut[4]= 0\nOut[5]= [0, 0, 0]\nOut[6]= 3\nOut[7]= scene window created: http://127.0.0.1:51074/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[8]= camera target = [3, 0, 0]\nOut[9]= scene closed (http://127.0.0.1:51074/)",
+    "expected": "Out[2]= obj0\nOut[4]= 0\nOut[5]= [0, 0, 0]\nOut[6]= 3\nOut[7]= scene window created: http://127.0.0.1:51314/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[8]= camera target = [3, 0, 0]\nOut[9]= scene closed (http://127.0.0.1:51314/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -13224,7 +13319,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load dynamic_notebooks/colliding_binary.posim\nscene close",
-    "expected": "Out[2]= obj0\nOut[3]= obj1\nOut[4]= -0.4000000000105867\nOut[5]= [0, 0, 0]\nOut[6]= scene window created: http://127.0.0.1:51075/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[7]= camera distance = 4\nOut[8]= scene closed (http://127.0.0.1:51075/)",
+    "expected": "Out[2]= obj0\nOut[3]= obj1\nOut[4]= -0.4000000000105867\nOut[5]= [0, 0, 0]\nOut[6]= scene window created: http://127.0.0.1:51315/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[7]= camera distance = 4\nOut[8]= scene closed (http://127.0.0.1:51315/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -13322,7 +13417,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load dynamic_notebooks/head_on_exchange.posim\nscene close",
-    "expected": "Out[2]= obj0\nOut[3]= obj1\nOut[4]= collisions ON (1 collidable pair(s); 0 impulse(s) so far)\nOut[5]= [0, 0, 0]\nOut[6]= 1\nOut[7]= scene window created: http://127.0.0.1:51076/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[8]= scene closed (http://127.0.0.1:51076/)",
+    "expected": "Out[2]= obj0\nOut[3]= obj1\nOut[4]= collisions ON (1 collidable pair(s); 0 impulse(s) so far)\nOut[5]= [0, 0, 0]\nOut[6]= 1\nOut[7]= scene window created: http://127.0.0.1:51317/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[8]= scene closed (http://127.0.0.1:51317/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -13371,7 +13466,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load dynamic_notebooks/kepler_orbit.posim\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= obj1\nOut[5]= -0.5\nOut[6]= [0.5999999974000001, 0, 0]\nOut[7]= scene window created: http://127.0.0.1:51078/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[8]= scene closed (http://127.0.0.1:51078/)",
+    "expected": "Out[1]= obj0\nOut[2]= obj1\nOut[5]= -0.5\nOut[6]= [0.5999999974000001, 0, 0]\nOut[7]= scene window created: http://127.0.0.1:51316/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[8]= scene closed (http://127.0.0.1:51316/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -13420,7 +13515,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load dynamic_notebooks/magnetic_spin_up.posim\nscene close",
-    "expected": "Out[1]= obj0\nOut[3]= [0, 0, 0]\nOut[4]= 0\nOut[5]= scene window created: http://127.0.0.1:51077/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[6]= camera distance = 4\nOut[7]= scene closed (http://127.0.0.1:51077/)",
+    "expected": "Out[1]= obj0\nOut[3]= [0, 0, 0]\nOut[4]= 0\nOut[5]= scene window created: http://127.0.0.1:51319/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[6]= camera distance = 4\nOut[7]= scene closed (http://127.0.0.1:51319/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -13469,7 +13564,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load dynamic_notebooks/newtons_cradle.posim\nscene close",
-    "expected": "Out[2]= obj0\nOut[3]= obj1\nOut[4]= obj2\nOut[5]= obj3\nOut[6]= obj4\nOut[7]= 0.5\nOut[8]= [1, 0, 0]\nOut[9]= 1\nOut[10]= 0\nOut[11]= scene window created: http://127.0.0.1:51079/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 5 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[12]= scene closed (http://127.0.0.1:51079/)",
+    "expected": "Out[2]= obj0\nOut[3]= obj1\nOut[4]= obj2\nOut[5]= obj3\nOut[6]= obj4\nOut[7]= 0.5\nOut[8]= [1, 0, 0]\nOut[9]= 1\nOut[10]= 0\nOut[11]= scene window created: http://127.0.0.1:51318/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 5 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[12]= scene closed (http://127.0.0.1:51318/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -13518,7 +13613,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load dynamic_notebooks/outer_solar_system.posim\nscene close",
-    "expected": "Out[1]= obj0 as sun\nOut[2]= obj1 as jupiter\nOut[3]= obj2 as saturn\nOut[4]= obj3 as uranus\nOut[5]= obj4 as neptune\nOut[6]= obj5 as pluto\nOut[11]= -0.000000032154531832081636\nOut[12]= [0.000006183816317477499, -0.000002438293159516941, -0.0000012254817893370849]\nOut[13]= [0.0002047098298789105, -0.006550139855052495, -0.002824833990245127]\nOut[14]= scene window created: http://127.0.0.1:51080/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 6 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[15]= scene time step dt = 50\nOut[16]= scene closed (http://127.0.0.1:51080/)",
+    "expected": "Out[1]= obj0 as sun\nOut[2]= obj1 as jupiter\nOut[3]= obj2 as saturn\nOut[4]= obj3 as uranus\nOut[5]= obj4 as neptune\nOut[6]= obj5 as pluto\nOut[11]= -0.000000032154531832081636\nOut[12]= [0.000006183816317477499, -0.000002438293159516941, -0.0000012254817893370849]\nOut[13]= [0.0002047098298789105, -0.006550139855052495, -0.002824833990245127]\nOut[14]= scene window created: http://127.0.0.1:51320/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 6 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[15]= scene time step dt = 50\nOut[16]= scene closed (http://127.0.0.1:51320/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -13567,7 +13662,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load dynamic_notebooks/restitution_ladder.posim\nscene close",
-    "expected": "Out[2]= obj0\nOut[3]= obj1\nOut[4]= obj2\nOut[5]= obj3\nOut[6]= obj4\nOut[7]= obj5\nOut[8]= obj6\nOut[9]= obj7\nOut[10]= 4\nOut[11]= [0, 0, 0]\nOut[12]= [0, 0, 0]\nOut[13]= 1\nOut[14]= 0.8\nOut[15]= 0.5\nOut[16]= 0.2\nOut[17]= scene window created: http://127.0.0.1:51081/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 8 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[18]= scene closed (http://127.0.0.1:51081/)",
+    "expected": "Out[2]= obj0\nOut[3]= obj1\nOut[4]= obj2\nOut[5]= obj3\nOut[6]= obj4\nOut[7]= obj5\nOut[8]= obj6\nOut[9]= obj7\nOut[10]= 4\nOut[11]= [0, 0, 0]\nOut[12]= [0, 0, 0]\nOut[13]= 1\nOut[14]= 0.8\nOut[15]= 0.5\nOut[16]= 0.2\nOut[17]= scene window created: http://127.0.0.1:51321/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 8 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[18]= scene closed (http://127.0.0.1:51321/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -13616,7 +13711,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load dynamic_notebooks/spin_up.posim\nscene close",
-    "expected": "Out[2]= obj0\nOut[3]= obj1\nOut[4]= [0, 0, 0]\nOut[5]= [4, 0, 0]\nOut[6]= [0, 0, -2]\nOut[7]= 8\nOut[8]= scene window created: http://127.0.0.1:51083/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[9]= scene closed (http://127.0.0.1:51083/)",
+    "expected": "Out[2]= obj0\nOut[3]= obj1\nOut[4]= [0, 0, 0]\nOut[5]= [4, 0, 0]\nOut[6]= [0, 0, -2]\nOut[7]= 8\nOut[8]= scene window created: http://127.0.0.1:51322/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[9]= scene closed (http://127.0.0.1:51322/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -13665,7 +13760,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load dynamic_notebooks/spinning_target.posim\nscene close",
-    "expected": "Out[2]= obj0\nOut[3]= obj1\nOut[4]= [0, 0, 0.96]\nOut[5]= [0, 0, 0.15999999999999992]\nOut[6]= [2, 0, 0]\nOut[7]= 2.96\nOut[8]= scene window created: http://127.0.0.1:51082/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[9]= scene closed (http://127.0.0.1:51082/)",
+    "expected": "Out[2]= obj0\nOut[3]= obj1\nOut[4]= [0, 0, 0.96]\nOut[5]= [0, 0, 0.15999999999999992]\nOut[6]= [2, 0, 0]\nOut[7]= 2.96\nOut[8]= scene window created: http://127.0.0.1:51324/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[9]= scene closed (http://127.0.0.1:51324/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -13714,7 +13809,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load dynamic_notebooks/static_anchor.posim\nscene close",
-    "expected": "Out[1]= obj0\nOut[3]= obj1\nOut[6]= 0\nOut[7]= 0\nOut[8]= [0, 10, 0]\nOut[9]= [1, 10, 0]\nOut[10]= obj0: point, mass=0, charge=0, pos=[0, 10, 0] [static, inverse_mass=0]\nobj1: point, mass=1, charge=0, pos=[1, 10, 0]\nOut[11]= 98.10000000000001\nOut[12]= [0, 0, 0]\nOut[13]= [0, 0, 0]\nOut[14]= scene window created: http://127.0.0.1:51086/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[15]= scene time step dt = 0.02\nOut[16]= camera target = [0.5, 4, 0]\nOut[17]= camera distance = 31.40586131600278\nOut[18]= scene closed (http://127.0.0.1:51086/)",
+    "expected": "Out[1]= obj0\nOut[3]= obj1\nOut[6]= 0\nOut[7]= 0\nOut[8]= [0, 10, 0]\nOut[9]= [1, 10, 0]\nOut[10]= obj0: point, mass=0, charge=0, pos=[0, 10, 0] [static, inverse_mass=0]\nobj1: point, mass=1, charge=0, pos=[1, 10, 0]\nOut[11]= 98.10000000000001\nOut[12]= [0, 0, 0]\nOut[13]= [0, 0, 0]\nOut[14]= scene window created: http://127.0.0.1:51323/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[15]= scene time step dt = 0.02\nOut[16]= camera target = [0.5, 4, 0]\nOut[17]= camera distance = 31.40586131600278\nOut[18]= scene closed (http://127.0.0.1:51323/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -13763,7 +13858,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load dynamic_notebooks/thin_wall_toi.posim\nscene close",
-    "expected": "Out[2]= obj0\nOut[5]= obj1\nOut[6]= 5000\nOut[7]= [100, 0, 0]\nOut[8]= 0\nOut[9]= 100\nOut[10]= -2\nOut[11]= scene window created: http://127.0.0.1:51084/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[12]= scene time step dt = 0.0005\nOut[13]= camera target = [-1, 0, 0]\nOut[14]= camera distance = 3\nOut[15]= scene closed (http://127.0.0.1:51084/)",
+    "expected": "Out[2]= obj0\nOut[5]= obj1\nOut[6]= 5000\nOut[7]= [100, 0, 0]\nOut[8]= 0\nOut[9]= 100\nOut[10]= -2\nOut[11]= scene window created: http://127.0.0.1:51325/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[12]= scene time step dt = 0.0005\nOut[13]= camera target = [-1, 0, 0]\nOut[14]= camera distance = 3\nOut[15]= scene closed (http://127.0.0.1:51325/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -13812,7 +13907,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load dynamic_notebooks/three_bodies.posim\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= obj1\nOut[3]= obj2\nOut[5]= [0, 0, 0]\nOut[6]= [-0.011494252873563218, 7.846743295019157, 0]\nOut[7]= scene window created: http://127.0.0.1:51085/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 3 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[8]= camera target = [0, 4, 0]\nOut[9]= scene closed (http://127.0.0.1:51085/)",
+    "expected": "Out[1]= obj0\nOut[2]= obj1\nOut[3]= obj2\nOut[5]= [0, 0, 0]\nOut[6]= [-0.011494252873563218, 7.846743295019157, 0]\nOut[7]= scene window created: http://127.0.0.1:51326/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 3 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[8]= camera target = [0, 4, 0]\nOut[9]= scene closed (http://127.0.0.1:51326/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -13861,7 +13956,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load dynamic_notebooks/thrown_ball.posim\nscene close",
-    "expected": "Out[1]= obj0\nOut[3]= 131.92245\nOut[4]= [4.35, 4.35, 0]\nOut[5]= [0, 1, 0]\nOut[6]= 183.6\nOut[7]= 3.058103975535168\nOut[8]= 46.87155963302752\nOut[9]= scene window created: http://127.0.0.1:51087/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[10]= scene time step dt = 0.02\nOut[11]= camera target = [90, 20, 0]\nOut[12]= camera distance = 200\nOut[13]= scene closed (http://127.0.0.1:51087/)",
+    "expected": "Out[1]= obj0\nOut[3]= 131.92245\nOut[4]= [4.35, 4.35, 0]\nOut[5]= [0, 1, 0]\nOut[6]= 183.6\nOut[7]= 3.058103975535168\nOut[8]= 46.87155963302752\nOut[9]= scene window created: http://127.0.0.1:51327/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[10]= scene time step dt = 0.02\nOut[11]= camera target = [90, 20, 0]\nOut[12]= camera distance = 200\nOut[13]= scene closed (http://127.0.0.1:51327/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -13910,7 +14005,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load dynamic_notebooks/tumbling_body.posim\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= [[5, 0, 0], [0, 4.25, 0], [0, 0, 1.25]]\nOut[3]= [0.010000000000000002, 3, 0.010000000000000002]\nOut[4]= [0.05, 12.75, 0.0125]\nOut[5]= 19.1253125\nOut[6]= scene window created: http://127.0.0.1:51088/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[7]= scene time step dt = 0.05\nOut[8]= scene closed (http://127.0.0.1:51088/)",
+    "expected": "Out[1]= obj0\nOut[2]= [[5, 0, 0], [0, 4.25, 0], [0, 0, 1.25]]\nOut[3]= [0.010000000000000002, 3, 0.010000000000000002]\nOut[4]= [0.05, 12.75, 0.0125]\nOut[5]= 19.1253125\nOut[6]= scene window created: http://127.0.0.1:51328/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[7]= scene time step dt = 0.05\nOut[8]= scene closed (http://127.0.0.1:51328/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -14008,7 +14103,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load dynamic_notebooks/two_dumbbells.posim\nscene close",
-    "expected": "new dumbbell as name { m1 = m1, m2 = m2, m_rod = m_rod, r1 = r1, r2 = r2, rod_radius = rod_radius, length = length, position = position, velocity = velocity, angular_velocity = angular_velocity }\n}\nOut[2]= function create_dumbell(11 parameter(s)) defined \u2014 1 body line(s)\nOut[3]= obj0 as dumbell0\nOut[4]= obj1 as dumbell1\nOut[5]= obj0: dumbbell r1=0.25 r2=0.25 rod_r=0.1 len=1, mass=3.5, charge=0, pos=[-2, 0.15, 0]\nobj1: dumbbell r1=0.3 r2=0.2 rod_r=0.08 len=1.2, mass=3.4, charge=0, pos=[2, -0.15, 0]\nOut[6]= 1\nOut[7]= 0.3999999999999999\nOut[8]= 1.5\nOut[9]= 7.865310611764706\nOut[10]= [0.15000000000000036, 0, 0]\nOut[11]= [0.4443030588235295, 0, -1.5059999999999998]\nOut[12]= scene window created: http://127.0.0.1:51089/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[13]= scene closed (http://127.0.0.1:51089/)",
+    "expected": "new dumbbell as name { m1 = m1, m2 = m2, m_rod = m_rod, r1 = r1, r2 = r2, rod_radius = rod_radius, length = length, position = position, velocity = velocity, angular_velocity = angular_velocity }\n}\nOut[2]= function create_dumbell(11 parameter(s)) defined \u2014 1 body line(s)\nOut[3]= obj0 as dumbell0\nOut[4]= obj1 as dumbell1\nOut[5]= obj0: dumbbell r1=0.25 r2=0.25 rod_r=0.1 len=1, mass=3.5, charge=0, pos=[-2, 0.15, 0]\nobj1: dumbbell r1=0.3 r2=0.2 rod_r=0.08 len=1.2, mass=3.4, charge=0, pos=[2, -0.15, 0]\nOut[6]= 1\nOut[7]= 0.3999999999999999\nOut[8]= 1.5\nOut[9]= 7.865310611764706\nOut[10]= [0.15000000000000036, 0, 0]\nOut[11]= [0.4443030588235295, 0, -1.5059999999999998]\nOut[12]= scene window created: http://127.0.0.1:51329/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[13]= scene closed (http://127.0.0.1:51329/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -14057,7 +14152,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load dynamic_notebooks/unequal_masses.posim\nscene close",
-    "expected": "Out[2]= obj0\nOut[3]= obj1\nOut[4]= 0.5\nOut[5]= [1, 0, 0]\nOut[6]= scene window created: http://127.0.0.1:51090/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[7]= scene closed (http://127.0.0.1:51090/)",
+    "expected": "Out[2]= obj0\nOut[3]= obj1\nOut[4]= 0.5\nOut[5]= [1, 0, 0]\nOut[6]= scene window created: http://127.0.0.1:51330/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[7]= scene closed (http://127.0.0.1:51330/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -14249,7 +14344,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load StageNbks/Stage_2C.posim\nscene close",
-    "expected": "Out[2]= box: inner size 4 x 4 x 4 \u2014 six static walls obj0, obj1, obj2, obj3, obj4, obj5 with inverse_mass = 0 (infinitely massive); objects collide elastically off the inside faces\nOut[3]= obj6\nOut[4]= obj7\nOut[5]= obj8\nOut[6]= obj9\nOut[7]= obj10\nOut[8]= obj11\nOut[9]= 960000\nOut[10]= t = 1 (120549 solver steps, 1000 snapshots, |dE/E| = 7.438e-8, 9407 collision(s) \u2014 CONTACTS lists them)\nOut[11]= 959999.9285972986\nOut[12]= system reset\nOut[14]= box: inner size 4 x 4 x 4 \u2014 six static walls obj0, obj1, obj2, obj3, obj4, obj5 with inverse_mass = 0 (infinitely massive); objects collide elastically off the inside faces\nOut[15]= obj6\nOut[16]= obj7\nOut[17]= obj8\nOut[18]= obj9\nOut[19]= obj10\nOut[20]= obj11\nOut[21]= t = 1 (116274 solver steps, 8 snapshots, |dE/E| = 5.857e-8, 9829 collision(s) \u2014 CONTACTS lists them)\nOut[22]= 959999.9437739411\nOut[23]= scene window created: http://127.0.0.1:51161/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 12 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[24]= scene time step dt = 0.0002\nOut[25]= camera distance = 6\nOut[26]= scene playback: running\nOut[27]= scene: http://127.0.0.1:51161/  (0 window(s) connected)\nmode = running, t = 1, dt = 0.0002, steps = 0, history = 0 frame(s)\nentities = 12 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 6, target = [0, 0, 0]\nOut[28]= scene closed (http://127.0.0.1:51161/)",
+    "expected": "Out[2]= box: inner size 4 x 4 x 4 \u2014 six static walls obj0, obj1, obj2, obj3, obj4, obj5 with inverse_mass = 0 (infinitely massive); objects collide elastically off the inside faces\nOut[3]= obj6\nOut[4]= obj7\nOut[5]= obj8\nOut[6]= obj9\nOut[7]= obj10\nOut[8]= obj11\nOut[9]= 960000\nOut[10]= t = 1 (120549 solver steps, 1000 snapshots, |dE/E| = 7.438e-8, 9407 collision(s) \u2014 CONTACTS lists them)\nOut[11]= 959999.9285972986\nOut[12]= system reset\nOut[14]= box: inner size 4 x 4 x 4 \u2014 six static walls obj0, obj1, obj2, obj3, obj4, obj5 with inverse_mass = 0 (infinitely massive); objects collide elastically off the inside faces\nOut[15]= obj6\nOut[16]= obj7\nOut[17]= obj8\nOut[18]= obj9\nOut[19]= obj10\nOut[20]= obj11\nOut[21]= t = 1 (116274 solver steps, 8 snapshots, |dE/E| = 5.857e-8, 9829 collision(s) \u2014 CONTACTS lists them)\nOut[22]= 959999.9437739411\nOut[23]= scene window created: http://127.0.0.1:51401/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 12 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[24]= scene time step dt = 0.0002\nOut[25]= camera distance = 6\nOut[26]= scene playback: running\nOut[27]= scene: http://127.0.0.1:51401/  (0 window(s) connected)\nmode = running, t = 1, dt = 0.0002, steps = 0, history = 0 frame(s)\nentities = 12 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 6, target = [0, 0, 0]\nOut[28]= scene closed (http://127.0.0.1:51401/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -14441,7 +14536,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load StageNbks/Stage_2G.posim\nscene close",
-    "expected": "Out[1]= -0.14123306066859603 + 0i\nOut[2]= -0.14123306066859612\nOut[3]= 0.09400096238953329 + 0.00000000000000020122792321330962i\nOut[4]= 0.09400096238953365\nOut[5]= -0.12418126954461764 + -0i\nOut[6]= -0.12418126954461771\nOut[7]= system reset\nOut[9]= obj0\nOut[11]= obj1\nOut[13]= obj2\nOut[14]= 9\nOut[15]= t = 2 (64 solver steps, 20 snapshots, |dE/E| = 3.409e-1, 2 collision(s) \u2014 CONTACTS lists them)\nOut[16]= 5.9318554310480875\nOut[17]= [2.435540069686411, 2.435540069686411, 0]\nOut[18]= scene window created: http://127.0.0.1:51091/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 3 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[19]= scene time step dt = 0.002\nOut[20]= camera distance = 6\nOut[21]= scene playback: running\nOut[22]= scene: http://127.0.0.1:51091/  (0 window(s) connected)\nmode = running, t = 2, dt = 0.002, steps = 0, history = 0 frame(s)\nentities = 3 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 6, target = [0, 0, 0]\nOut[23]= scene closed (http://127.0.0.1:51091/)",
+    "expected": "Out[1]= -0.14123306066859603 + 0i\nOut[2]= -0.14123306066859612\nOut[3]= 0.09400096238953329 + 0.00000000000000020122792321330962i\nOut[4]= 0.09400096238953365\nOut[5]= -0.12418126954461764 + -0i\nOut[6]= -0.12418126954461771\nOut[7]= system reset\nOut[9]= obj0\nOut[11]= obj1\nOut[13]= obj2\nOut[14]= 9\nOut[15]= t = 2 (64 solver steps, 20 snapshots, |dE/E| = 3.409e-1, 2 collision(s) \u2014 CONTACTS lists them)\nOut[16]= 5.9318554310480875\nOut[17]= [2.435540069686411, 2.435540069686411, 0]\nOut[18]= scene window created: http://127.0.0.1:51331/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 3 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[19]= scene time step dt = 0.002\nOut[20]= camera distance = 6\nOut[21]= scene playback: running\nOut[22]= scene: http://127.0.0.1:51331/  (0 window(s) connected)\nmode = running, t = 2, dt = 0.002, steps = 0, history = 0 frame(s)\nentities = 3 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 6, target = [0, 0, 0]\nOut[23]= scene closed (http://127.0.0.1:51331/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -14489,7 +14584,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load StageNbks/Stage_2H.posim\nscene close",
-    "expected": "Out[1]= system reset\nOut[3]= obj0\nOut[4]= obj1\nOut[5]= obj2\nOut[6]= obj3\nOut[7]= obj4\nOut[8]= 0.5\nOut[9]= [1, 0, 0]\nOut[10]= t = 6 (28 solver steps, 60 snapshots, |dE/E| = 0.000e0, 4 collision(s) \u2014 CONTACTS lists them)\nOut[11]= 0.5\nOut[12]= [1, 0, 0]\nOut[13]= [0, 0, 0]\nOut[14]= [1, 0, 0]\nOut[15]= system reset\nOut[17]= obj0\nOut[19]= obj1\nOut[21]= t = 6 (2281 solver steps, 60 snapshots, |dE/E| = 7.448e-1, 316 collision(s) \u2014 CONTACTS lists them)\nOut[22]= [0, 0.49999999900000003, 0]\nOut[23]= [0, 0.4563136479111678, 0]\nOut[24]= scene window created: http://127.0.0.1:51092/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[25]= scene time step dt = 0.005\nOut[26]= camera distance = 6\nOut[27]= scene playback: running\nOut[28]= scene: http://127.0.0.1:51092/  (0 window(s) connected)\nmode = running, t = 6, dt = 0.005, steps = 0, history = 0 frame(s)\nentities = 2 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 6, target = [0, 0, 0]\nOut[29]= scene closed (http://127.0.0.1:51092/)",
+    "expected": "Out[1]= system reset\nOut[3]= obj0\nOut[4]= obj1\nOut[5]= obj2\nOut[6]= obj3\nOut[7]= obj4\nOut[8]= 0.5\nOut[9]= [1, 0, 0]\nOut[10]= t = 6 (28 solver steps, 60 snapshots, |dE/E| = 0.000e0, 4 collision(s) \u2014 CONTACTS lists them)\nOut[11]= 0.5\nOut[12]= [1, 0, 0]\nOut[13]= [0, 0, 0]\nOut[14]= [1, 0, 0]\nOut[15]= system reset\nOut[17]= obj0\nOut[19]= obj1\nOut[21]= t = 6 (2281 solver steps, 60 snapshots, |dE/E| = 7.448e-1, 316 collision(s) \u2014 CONTACTS lists them)\nOut[22]= [0, 0.49999999900000003, 0]\nOut[23]= [0, 0.4563136479111678, 0]\nOut[24]= scene window created: http://127.0.0.1:51332/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[25]= scene time step dt = 0.005\nOut[26]= camera distance = 6\nOut[27]= scene playback: running\nOut[28]= scene: http://127.0.0.1:51332/  (0 window(s) connected)\nmode = running, t = 6, dt = 0.005, steps = 0, history = 0 frame(s)\nentities = 2 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 6, target = [0, 0, 0]\nOut[29]= scene closed (http://127.0.0.1:51332/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -19692,7 +19787,7 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51093/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene closed (http://127.0.0.1:51093/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51333/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene closed (http://127.0.0.1:51333/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -19708,7 +19803,7 @@
     "level": "advanced",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51094/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene: http://127.0.0.1:51094/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[4]= scene closed (http://127.0.0.1:51094/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51334/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene: http://127.0.0.1:51334/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[4]= scene closed (http://127.0.0.1:51334/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -19716,13 +19811,12 @@
     "level": "expert",
     "medium": "posim",
     "code": "box 4\nnew point { mass = 1, velocity = [10, 20, 10] }\nscene create\nscene set_time_step 0.001\nscene status\nscene close",
-    "expected": "Out[1]= box: inner size 4 x 4 x 4 \u2014 six static walls obj0, obj1, obj2, obj3, obj4, obj5 with inverse_mass = 0 (infinitely massive); objects collide elastically off the inside faces\nOut[2]= obj6\nOut[3]= scene window created: http://127.0.0.1:51095/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 7 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[4]= scene time step dt = 0.001\nOut[5]= scene: http://127.0.0.1:51095/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.001, steps = 0, history = 0 frame(s)\nentities = 7 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene closed (http://127.0.0.1:51095/)",
+    "expected": "Out[1]= box: inner size 4 x 4 x 4 \u2014 six static walls obj0, obj1, obj2, obj3, obj4, obj5 with inverse_mass = 0 (infinitely massive); objects collide elastically off the inside faces\nOut[2]= obj6\nOut[3]= scene window created: http://127.0.0.1:51335/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 7 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[4]= scene time step dt = 0.001\nOut[5]= scene: http://127.0.0.1:51335/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.001, steps = 0, history = 0 frame(s)\nentities = 7 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene closed (http://127.0.0.1:51335/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
   ],
   "seeAlso": [
-   "cmd.scene.create",
    "cmd.scene.status"
   ],
   "invariants": [
@@ -19773,7 +19867,7 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51096/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene closed (http://127.0.0.1:51096/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51336/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene closed (http://127.0.0.1:51336/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -19781,7 +19875,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene destroy",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51097/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene closed (http://127.0.0.1:51097/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51337/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene closed (http://127.0.0.1:51337/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -19789,7 +19883,7 @@
     "level": "advanced",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene close\nscene create\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51098/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene closed (http://127.0.0.1:51098/)\nOut[4]= scene window created: http://127.0.0.1:51099/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[5]= scene closed (http://127.0.0.1:51099/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51338/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene closed (http://127.0.0.1:51338/)\nOut[4]= scene window created: http://127.0.0.1:51339/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[5]= scene closed (http://127.0.0.1:51339/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -19797,7 +19891,7 @@
     "level": "expert",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51100/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene: http://127.0.0.1:51100/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[4]= scene closed (http://127.0.0.1:51100/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51340/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene: http://127.0.0.1:51340/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[4]= scene closed (http://127.0.0.1:51340/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
@@ -19850,7 +19944,7 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene translate 2 0\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51101/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera target = [2, 0, 0]\nOut[4]= scene closed (http://127.0.0.1:51101/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51341/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera target = [2, 0, 0]\nOut[4]= scene closed (http://127.0.0.1:51341/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -19858,7 +19952,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene translate 2 0 1\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51102/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera target = [2, 0, 1]\nOut[4]= scene closed (http://127.0.0.1:51102/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51342/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera target = [2, 0, 1]\nOut[4]= scene closed (http://127.0.0.1:51342/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -19866,7 +19960,7 @@
     "level": "advanced",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene translate 2*2 0 1/2\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51103/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera target = [4, 0, 0.5]\nOut[4]= scene closed (http://127.0.0.1:51103/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51343/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera target = [4, 0, 0.5]\nOut[4]= scene closed (http://127.0.0.1:51343/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -19874,7 +19968,7 @@
     "level": "expert",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene translate (1 + 0.5) -2\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51104/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera target = [1.5, -2, 0]\nOut[4]= scene: http://127.0.0.1:51104/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [1.5, -2, 0]\nOut[5]= scene closed (http://127.0.0.1:51104/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51344/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera target = [1.5, -2, 0]\nOut[4]= scene: http://127.0.0.1:51344/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [1.5, -2, 0]\nOut[5]= scene closed (http://127.0.0.1:51344/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
@@ -19927,7 +20021,7 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene rotate 30 -10\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51105/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera yaw = -30\u00b0, pitch = 45\u00b0\nOut[4]= scene closed (http://127.0.0.1:51105/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51345/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera yaw = -30\u00b0, pitch = 45\u00b0\nOut[4]= scene closed (http://127.0.0.1:51345/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -19935,7 +20029,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene rotate 15 -5\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51106/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera yaw = -45\u00b0, pitch = 50\u00b0\nOut[4]= scene closed (http://127.0.0.1:51106/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51346/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera yaw = -45\u00b0, pitch = 50\u00b0\nOut[4]= scene closed (http://127.0.0.1:51346/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -19943,7 +20037,7 @@
     "level": "advanced",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene rotate 90 0\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51107/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera yaw = 30\u00b0, pitch = 55\u00b0\nOut[4]= scene: http://127.0.0.1:51107/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = 30\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[5]= scene closed (http://127.0.0.1:51107/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51347/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera yaw = 30\u00b0, pitch = 55\u00b0\nOut[4]= scene: http://127.0.0.1:51347/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = 30\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[5]= scene closed (http://127.0.0.1:51347/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -19951,7 +20045,7 @@
     "level": "expert",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene rotate (10 + 20) -10\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51108/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera yaw = -30\u00b0, pitch = 45\u00b0\nOut[4]= scene: http://127.0.0.1:51108/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -30\u00b0, pitch = 45\u00b0, dist = 12, target = [0, 0, 0]\nOut[5]= scene closed (http://127.0.0.1:51108/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51348/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera yaw = -30\u00b0, pitch = 45\u00b0\nOut[4]= scene: http://127.0.0.1:51348/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -30\u00b0, pitch = 45\u00b0, dist = 12, target = [0, 0, 0]\nOut[5]= scene closed (http://127.0.0.1:51348/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
@@ -20004,7 +20098,7 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene zoom in\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51109/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera distance = 9.6\nOut[4]= scene closed (http://127.0.0.1:51109/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51349/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera distance = 9.6\nOut[4]= scene closed (http://127.0.0.1:51349/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20012,7 +20106,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene zoom out\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51110/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera distance = 15\nOut[4]= scene closed (http://127.0.0.1:51110/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51350/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera distance = 15\nOut[4]= scene closed (http://127.0.0.1:51350/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20020,7 +20114,7 @@
     "level": "advanced",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene zoom 2\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51111/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera distance = 6\nOut[4]= scene closed (http://127.0.0.1:51111/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51351/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera distance = 6\nOut[4]= scene closed (http://127.0.0.1:51351/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20028,7 +20122,7 @@
     "level": "expert",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene zoom (1 + 0.5)\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51112/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera distance = 8\nOut[4]= scene: http://127.0.0.1:51112/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 8, target = [0, 0, 0]\nOut[5]= scene closed (http://127.0.0.1:51112/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51352/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera distance = 8\nOut[4]= scene: http://127.0.0.1:51352/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 8, target = [0, 0, 0]\nOut[5]= scene closed (http://127.0.0.1:51352/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
@@ -20081,7 +20175,7 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene hide 0\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51113/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= 1 object(s) hidden\nOut[4]= scene closed (http://127.0.0.1:51113/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51353/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= 1 object(s) hidden\nOut[4]= scene closed (http://127.0.0.1:51353/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20089,7 +20183,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene hide all\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51114/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= 1 object(s) hidden\nOut[4]= scene closed (http://127.0.0.1:51114/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51354/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= 1 object(s) hidden\nOut[4]= scene closed (http://127.0.0.1:51354/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20097,7 +20191,7 @@
     "level": "advanced",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene hide\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51115/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= 1 object(s) hidden\nOut[4]= scene: http://127.0.0.1:51115/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: obj0)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[5]= scene closed (http://127.0.0.1:51115/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51355/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= 1 object(s) hidden\nOut[4]= scene: http://127.0.0.1:51355/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: obj0)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[5]= scene closed (http://127.0.0.1:51355/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20105,7 +20199,7 @@
     "level": "expert",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene hide 0\nscene show all\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51116/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= 1 object(s) hidden\nOut[4]= 0 object(s) hidden\nOut[5]= scene: http://127.0.0.1:51116/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene closed (http://127.0.0.1:51116/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51356/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= 1 object(s) hidden\nOut[4]= 0 object(s) hidden\nOut[5]= scene: http://127.0.0.1:51356/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene closed (http://127.0.0.1:51356/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
@@ -20158,7 +20252,7 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene hide 0\nscene show 0\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51117/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= 1 object(s) hidden\nOut[4]= 0 object(s) hidden\nOut[5]= scene closed (http://127.0.0.1:51117/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51357/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= 1 object(s) hidden\nOut[4]= 0 object(s) hidden\nOut[5]= scene closed (http://127.0.0.1:51357/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20166,7 +20260,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene hide all\nscene show all\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51118/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= 1 object(s) hidden\nOut[4]= 0 object(s) hidden\nOut[5]= scene closed (http://127.0.0.1:51118/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51358/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= 1 object(s) hidden\nOut[4]= 0 object(s) hidden\nOut[5]= scene closed (http://127.0.0.1:51358/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20174,7 +20268,7 @@
     "level": "advanced",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene show all\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51119/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= 0 object(s) hidden\nOut[4]= scene: http://127.0.0.1:51119/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[5]= scene closed (http://127.0.0.1:51119/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51359/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= 0 object(s) hidden\nOut[4]= scene: http://127.0.0.1:51359/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[5]= scene closed (http://127.0.0.1:51359/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20182,7 +20276,7 @@
     "level": "expert",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene hide 0\nscene status\nscene show all\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51120/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= 1 object(s) hidden\nOut[4]= scene: http://127.0.0.1:51120/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: obj0)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[5]= 0 object(s) hidden\nOut[6]= scene: http://127.0.0.1:51120/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[7]= scene closed (http://127.0.0.1:51120/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51360/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= 1 object(s) hidden\nOut[4]= scene: http://127.0.0.1:51360/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: obj0)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[5]= 0 object(s) hidden\nOut[6]= scene: http://127.0.0.1:51360/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[7]= scene closed (http://127.0.0.1:51360/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
@@ -20235,7 +20329,7 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene refresh\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51121/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene refreshed from the notebook state (1 entities, t = 0)\nOut[4]= scene closed (http://127.0.0.1:51121/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51361/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene refreshed from the notebook state (1 entities, t = 0)\nOut[4]= scene closed (http://127.0.0.1:51361/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20243,7 +20337,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nnew point { mass = 1 }\nscene refresh\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51122/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= obj1\nOut[4]= scene refreshed from the notebook state (2 entities, t = 0)\nOut[5]= scene: http://127.0.0.1:51122/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 2 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene closed (http://127.0.0.1:51122/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51362/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= obj1\nOut[4]= scene refreshed from the notebook state (2 entities, t = 0)\nOut[5]= scene: http://127.0.0.1:51362/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 2 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene closed (http://127.0.0.1:51362/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20251,7 +20345,7 @@
     "level": "advanced",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nbox 4\nscene refresh\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51123/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= box: inner size 4 x 4 x 4 \u2014 six static walls obj1, obj2, obj3, obj4, obj5, obj6 with inverse_mass = 0 (infinitely massive); objects collide elastically off the inside faces\n(scene window open: SCENE REFRESH shows the box)\nOut[4]= scene refreshed from the notebook state (7 entities, t = 0)\nOut[5]= scene: http://127.0.0.1:51123/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 7 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene closed (http://127.0.0.1:51123/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51363/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= box: inner size 4 x 4 x 4 \u2014 six static walls obj1, obj2, obj3, obj4, obj5, obj6 with inverse_mass = 0 (infinitely massive); objects collide elastically off the inside faces\n(scene window open: SCENE REFRESH shows the box)\nOut[4]= scene refreshed from the notebook state (7 entities, t = 0)\nOut[5]= scene: http://127.0.0.1:51363/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 7 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene closed (http://127.0.0.1:51363/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20259,7 +20353,7 @@
     "level": "expert",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene refresh\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51124/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene refreshed from the notebook state (1 entities, t = 0)\nOut[6]= scene: http://127.0.0.1:51124/  (0 window(s) connected)\nmode = paused, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[7]= scene closed (http://127.0.0.1:51124/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51364/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene refreshed from the notebook state (1 entities, t = 0)\nOut[6]= scene: http://127.0.0.1:51364/  (0 window(s) connected)\nmode = paused, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[7]= scene closed (http://127.0.0.1:51364/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
@@ -20312,7 +20406,7 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene redraw\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51125/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene redraw queued for every window\nOut[4]= scene closed (http://127.0.0.1:51125/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51365/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene redraw queued for every window\nOut[4]= scene closed (http://127.0.0.1:51365/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20320,7 +20414,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene redraw\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51126/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene redraw queued for every window\nOut[4]= scene: http://127.0.0.1:51126/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[5]= scene closed (http://127.0.0.1:51126/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51366/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene redraw queued for every window\nOut[4]= scene: http://127.0.0.1:51366/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[5]= scene closed (http://127.0.0.1:51366/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20328,7 +20422,7 @@
     "level": "advanced",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene zoom 2\nscene redraw\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51127/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera distance = 6\nOut[4]= scene redraw queued for every window\nOut[5]= scene closed (http://127.0.0.1:51127/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51367/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera distance = 6\nOut[4]= scene redraw queued for every window\nOut[5]= scene closed (http://127.0.0.1:51367/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20336,7 +20430,7 @@
     "level": "expert",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene redraw\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51128/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene redraw queued for every window\nOut[6]= scene: http://127.0.0.1:51128/  (0 window(s) connected)\nmode = paused, t = 0.01, dt = 0.01, steps = 1, history = 1 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[7]= scene closed (http://127.0.0.1:51128/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51368/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene redraw queued for every window\nOut[6]= scene: http://127.0.0.1:51368/  (0 window(s) connected)\nmode = paused, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[7]= scene closed (http://127.0.0.1:51368/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
@@ -20389,7 +20483,7 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51129/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene closed (http://127.0.0.1:51129/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51369/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene closed (http://127.0.0.1:51369/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20397,7 +20491,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51130/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene: http://127.0.0.1:51130/  (0 window(s) connected)\nmode = running, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[5]= scene closed (http://127.0.0.1:51130/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51370/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene: http://127.0.0.1:51370/  (0 window(s) connected)\nmode = running, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[5]= scene closed (http://127.0.0.1:51370/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20405,7 +20499,7 @@
     "level": "advanced",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene set_time_step 0.005\nscene start\nscene pause\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51131/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene time step dt = 0.005\nOut[4]= scene playback: running\nOut[5]= scene playback: paused\nOut[6]= scene closed (http://127.0.0.1:51131/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51371/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene time step dt = 0.005\nOut[4]= scene playback: running\nOut[5]= scene playback: paused\nOut[6]= scene closed (http://127.0.0.1:51371/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20413,7 +20507,7 @@
     "level": "expert",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene status\nget system.time\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51132/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene: http://127.0.0.1:51132/  (0 window(s) connected)\nmode = paused, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= 0\nOut[7]= scene closed (http://127.0.0.1:51132/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51372/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene: http://127.0.0.1:51372/  (0 window(s) connected)\nmode = paused, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= 0\nOut[7]= scene closed (http://127.0.0.1:51372/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
@@ -20466,7 +20560,7 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene stop\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51133/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: stopped\nOut[5]= scene closed (http://127.0.0.1:51133/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51373/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: stopped\nOut[5]= scene closed (http://127.0.0.1:51373/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20474,7 +20568,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene stop\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51134/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: stopped\nOut[5]= scene: http://127.0.0.1:51134/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene closed (http://127.0.0.1:51134/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51374/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: stopped\nOut[5]= scene: http://127.0.0.1:51374/  (0 window(s) connected)\nmode = stopped, t = 0.01, dt = 0.01, steps = 1, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene closed (http://127.0.0.1:51374/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20482,7 +20576,7 @@
     "level": "advanced",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene stop\nscene start\nscene pause\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51135/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: stopped\nOut[5]= scene playback: running\nOut[6]= scene playback: paused\nOut[7]= scene closed (http://127.0.0.1:51135/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51375/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: stopped\nOut[5]= scene playback: running\nOut[6]= scene playback: paused\nOut[7]= scene closed (http://127.0.0.1:51375/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20490,7 +20584,7 @@
     "level": "expert",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene status\nscene stop\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51136/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene: http://127.0.0.1:51136/  (0 window(s) connected)\nmode = paused, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene playback: stopped\nOut[7]= scene: http://127.0.0.1:51136/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[8]= scene closed (http://127.0.0.1:51136/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51376/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene: http://127.0.0.1:51376/  (0 window(s) connected)\nmode = paused, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene playback: stopped\nOut[7]= scene: http://127.0.0.1:51376/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[8]= scene closed (http://127.0.0.1:51376/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
@@ -20543,7 +20637,7 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51137/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene closed (http://127.0.0.1:51137/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51377/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene closed (http://127.0.0.1:51377/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20551,7 +20645,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51138/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene: http://127.0.0.1:51138/  (0 window(s) connected)\nmode = paused, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene closed (http://127.0.0.1:51138/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51378/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene: http://127.0.0.1:51378/  (0 window(s) connected)\nmode = paused, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene closed (http://127.0.0.1:51378/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20559,7 +20653,7 @@
     "level": "advanced",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene start\nscene pause\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51139/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene playback: running\nOut[6]= scene playback: paused\nOut[7]= scene closed (http://127.0.0.1:51139/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51379/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene playback: running\nOut[6]= scene playback: paused\nOut[7]= scene closed (http://127.0.0.1:51379/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20567,7 +20661,7 @@
     "level": "expert",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\n# playback advances on WALL-CLOCK time, on its own thread, so a batch\n# script must actually spend some \u2014 otherwise PAUSE lands before the\n# first frame is recorded and REVERSE has nothing to rewind. The work\n# below also shows the isolation: the notebook computes while the\n# window animates, and neither moves the other.\ndef v2(x, y) { 0.5 * (x * x + y * y) }\nqm2 grid -5 5 40, -5 5 40\nqm2 potential v2\nqm2 states 3\nscene pause\nscene reverse\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51140/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= function v2(2 parameter(s)) defined \u2014 1 body line(s)\nOut[5]= grid x [-5, 5] x 40, y [-5, 5] x 40 \u2014 1600 points, hx = 0.243902, hy = 0.243902 (potential and psi cleared)\nOut[6]= potential `v2` sampled at 1600 points, V in [0.014872099940511627, 22.62046400951814] (psi cleared)\nOut[7]= 3 lowest bound state(s) \u2014 Lanczos, 210 iterations:\n  E[0] = 0.9962679948   residual 5.91e-8\n  E[1] = 1.9887755462   residual 1.73e-8\n  E[2] = 1.9887755462   residual 5.48e-8\nOut[8]= scene playback: paused\nOut[9]= scene playback: reversing\nOut[10]= scene closed (http://127.0.0.1:51140/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51380/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= function v2(2 parameter(s)) defined \u2014 1 body line(s)\nOut[5]= grid x [-5, 5] x 40, y [-5, 5] x 40 \u2014 1600 points, hx = 0.243902, hy = 0.243902 (potential and psi cleared)\nOut[6]= potential `v2` sampled at 1600 points, V in [0.014872099940511627, 22.62046400951814] (psi cleared)\nOut[7]= 3 lowest bound state(s) \u2014 Lanczos, 210 iterations:\n  E[0] = 0.9962679948   residual 5.91e-8\n  E[1] = 1.9887755462   residual 1.73e-8\n  E[2] = 1.9887755462   residual 5.48e-8\nOut[8]= scene playback: paused\nOut[9]= scene playback: reversing\nOut[10]= scene closed (http://127.0.0.1:51380/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
@@ -20622,7 +20716,7 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\n# playback advances on WALL-CLOCK time, on its own thread, so a batch\n# script must actually spend some \u2014 otherwise PAUSE lands before the\n# first frame is recorded and REVERSE has nothing to rewind. The work\n# below also shows the isolation: the notebook computes while the\n# window animates, and neither moves the other.\ndef v2(x, y) { 0.5 * (x * x + y * y) }\nqm2 grid -5 5 40, -5 5 40\nqm2 potential v2\nqm2 states 3\nscene pause\nscene reverse\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51141/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= function v2(2 parameter(s)) defined \u2014 1 body line(s)\nOut[5]= grid x [-5, 5] x 40, y [-5, 5] x 40 \u2014 1600 points, hx = 0.243902, hy = 0.243902 (potential and psi cleared)\nOut[6]= potential `v2` sampled at 1600 points, V in [0.014872099940511627, 22.62046400951814] (psi cleared)\nOut[7]= 3 lowest bound state(s) \u2014 Lanczos, 210 iterations:\n  E[0] = 0.9962679948   residual 5.91e-8\n  E[1] = 1.9887755462   residual 1.73e-8\n  E[2] = 1.9887755462   residual 5.48e-8\nOut[8]= scene playback: paused\nOut[9]= scene playback: reversing\nOut[10]= scene closed (http://127.0.0.1:51141/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51381/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= function v2(2 parameter(s)) defined \u2014 1 body line(s)\nOut[5]= grid x [-5, 5] x 40, y [-5, 5] x 40 \u2014 1600 points, hx = 0.243902, hy = 0.243902 (potential and psi cleared)\nOut[6]= potential `v2` sampled at 1600 points, V in [0.014872099940511627, 22.62046400951814] (psi cleared)\nOut[7]= 3 lowest bound state(s) \u2014 Lanczos, 210 iterations:\n  E[0] = 0.9962679948   residual 5.91e-8\n  E[1] = 1.9887755462   residual 1.73e-8\n  E[2] = 1.9887755462   residual 5.48e-8\nOut[8]= scene playback: paused\nOut[9]= scene playback: reversing\nOut[10]= scene closed (http://127.0.0.1:51381/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20630,7 +20724,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene set_time_step 0.001\nscene start\n# playback advances on WALL-CLOCK time, on its own thread, so a batch\n# script must actually spend some \u2014 otherwise PAUSE lands before the\n# first frame is recorded and REVERSE has nothing to rewind. The work\n# below also shows the isolation: the notebook computes while the\n# window animates, and neither moves the other.\ndef v2(x, y) { 0.5 * (x * x + y * y) }\nqm2 grid -5 5 40, -5 5 40\nqm2 potential v2\nqm2 states 3\nscene pause\nscene reverse\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51142/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene time step dt = 0.001\nOut[4]= scene playback: running\nOut[5]= function v2(2 parameter(s)) defined \u2014 1 body line(s)\nOut[6]= grid x [-5, 5] x 40, y [-5, 5] x 40 \u2014 1600 points, hx = 0.243902, hy = 0.243902 (potential and psi cleared)\nOut[7]= potential `v2` sampled at 1600 points, V in [0.014872099940511627, 22.62046400951814] (psi cleared)\nOut[8]= 3 lowest bound state(s) \u2014 Lanczos, 210 iterations:\n  E[0] = 0.9962679948   residual 5.91e-8\n  E[1] = 1.9887755462   residual 1.73e-8\n  E[2] = 1.9887755462   residual 5.48e-8\nOut[9]= scene playback: paused\nOut[10]= scene playback: reversing\nOut[11]= scene closed (http://127.0.0.1:51142/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51382/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene time step dt = 0.001\nOut[4]= scene playback: running\nOut[5]= function v2(2 parameter(s)) defined \u2014 1 body line(s)\nOut[6]= grid x [-5, 5] x 40, y [-5, 5] x 40 \u2014 1600 points, hx = 0.243902, hy = 0.243902 (potential and psi cleared)\nOut[7]= potential `v2` sampled at 1600 points, V in [0.014872099940511627, 22.62046400951814] (psi cleared)\nOut[8]= 3 lowest bound state(s) \u2014 Lanczos, 210 iterations:\n  E[0] = 0.9962679948   residual 5.91e-8\n  E[1] = 1.9887755462   residual 1.73e-8\n  E[2] = 1.9887755462   residual 5.48e-8\nOut[9]= scene playback: paused\nOut[10]= scene playback: reversing\nOut[11]= scene closed (http://127.0.0.1:51382/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20638,7 +20732,7 @@
     "level": "advanced",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\n# playback advances on WALL-CLOCK time, on its own thread, so a batch\n# script must actually spend some \u2014 otherwise PAUSE lands before the\n# first frame is recorded and REVERSE has nothing to rewind. The work\n# below also shows the isolation: the notebook computes while the\n# window animates, and neither moves the other.\ndef v2(x, y) { 0.5 * (x * x + y * y) }\nqm2 grid -5 5 40, -5 5 40\nqm2 potential v2\nqm2 states 3\nscene pause\nscene reverse\nscene pause\nscene start\nscene pause\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51143/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= function v2(2 parameter(s)) defined \u2014 1 body line(s)\nOut[5]= grid x [-5, 5] x 40, y [-5, 5] x 40 \u2014 1600 points, hx = 0.243902, hy = 0.243902 (potential and psi cleared)\nOut[6]= potential `v2` sampled at 1600 points, V in [0.014872099940511627, 22.62046400951814] (psi cleared)\nOut[7]= 3 lowest bound state(s) \u2014 Lanczos, 210 iterations:\n  E[0] = 0.9962679948   residual 5.91e-8\n  E[1] = 1.9887755462   residual 1.73e-8\n  E[2] = 1.9887755462   residual 5.48e-8\nOut[8]= scene playback: paused\nOut[9]= scene playback: reversing\nOut[10]= scene playback: paused\nOut[11]= scene playback: running\nOut[12]= scene playback: paused\nOut[13]= scene closed (http://127.0.0.1:51143/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51383/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= function v2(2 parameter(s)) defined \u2014 1 body line(s)\nOut[5]= grid x [-5, 5] x 40, y [-5, 5] x 40 \u2014 1600 points, hx = 0.243902, hy = 0.243902 (potential and psi cleared)\nOut[6]= potential `v2` sampled at 1600 points, V in [0.014872099940511627, 22.62046400951814] (psi cleared)\nOut[7]= 3 lowest bound state(s) \u2014 Lanczos, 210 iterations:\n  E[0] = 0.9962679948   residual 5.91e-8\n  E[1] = 1.9887755462   residual 1.73e-8\n  E[2] = 1.9887755462   residual 5.48e-8\nOut[8]= scene playback: paused\nOut[9]= scene playback: reversing\nOut[10]= scene playback: paused\nOut[11]= scene playback: running\nOut[12]= scene playback: paused\nOut[13]= scene closed (http://127.0.0.1:51383/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20646,7 +20740,7 @@
     "level": "expert",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\n# playback advances on WALL-CLOCK time, on its own thread, so a batch\n# script must actually spend some \u2014 otherwise PAUSE lands before the\n# first frame is recorded and REVERSE has nothing to rewind. The work\n# below also shows the isolation: the notebook computes while the\n# window animates, and neither moves the other.\ndef v2(x, y) { 0.5 * (x * x + y * y) }\nqm2 grid -5 5 40, -5 5 40\nqm2 potential v2\nqm2 states 3\nscene pause\nscene reverse\nscene events\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51144/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= function v2(2 parameter(s)) defined \u2014 1 body line(s)\nOut[5]= grid x [-5, 5] x 40, y [-5, 5] x 40 \u2014 1600 points, hx = 0.243902, hy = 0.243902 (potential and psi cleared)\nOut[6]= potential `v2` sampled at 1600 points, V in [0.014872099940511627, 22.62046400951814] (psi cleared)\nOut[7]= 3 lowest bound state(s) \u2014 Lanczos, 210 iterations:\n  E[0] = 0.9962679948   residual 5.91e-8\n  E[1] = 1.9887755462   residual 1.73e-8\n  E[2] = 1.9887755462   residual 5.48e-8\nOut[8]= scene playback: paused\nOut[9]= scene playback: reversing\nOut[10]= (no scene events)\nOut[11]= scene closed (http://127.0.0.1:51144/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51384/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= function v2(2 parameter(s)) defined \u2014 1 body line(s)\nOut[5]= grid x [-5, 5] x 40, y [-5, 5] x 40 \u2014 1600 points, hx = 0.243902, hy = 0.243902 (potential and psi cleared)\nOut[6]= potential `v2` sampled at 1600 points, V in [0.014872099940511627, 22.62046400951814] (psi cleared)\nOut[7]= 3 lowest bound state(s) \u2014 Lanczos, 210 iterations:\n  E[0] = 0.9962679948   residual 5.91e-8\n  E[1] = 1.9887755462   residual 1.73e-8\n  E[2] = 1.9887755462   residual 5.48e-8\nOut[8]= scene playback: paused\nOut[9]= scene playback: reversing\nOut[10]= (no scene events)\nOut[11]= scene closed (http://127.0.0.1:51384/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
@@ -20699,7 +20793,7 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene reset\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51145/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback reset to its initial state (t = 0, 1 entity); Start runs the simulation again from the beginning\nOut[4]= scene closed (http://127.0.0.1:51145/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51385/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback reset to its initial state (t = 0, 1 entity); Start runs the simulation again from the beginning\nOut[4]= scene closed (http://127.0.0.1:51385/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20707,7 +20801,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene reset\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51146/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene playback reset to its initial state (t = 0, 1 entity); Start runs the simulation again from the beginning\nOut[6]= scene: http://127.0.0.1:51146/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[7]= scene closed (http://127.0.0.1:51146/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51386/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene playback reset to its initial state (t = 0, 1 entity); Start runs the simulation again from the beginning\nOut[6]= scene: http://127.0.0.1:51386/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[7]= scene closed (http://127.0.0.1:51386/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20715,7 +20809,7 @@
     "level": "advanced",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene reset\nscene start\nscene pause\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51147/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback reset to its initial state (t = 0, 1 entity); Start runs the simulation again from the beginning\nOut[5]= scene playback: running\nOut[6]= scene playback: paused\nOut[7]= scene closed (http://127.0.0.1:51147/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51387/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback reset to its initial state (t = 0, 1 entity); Start runs the simulation again from the beginning\nOut[5]= scene playback: running\nOut[6]= scene playback: paused\nOut[7]= scene closed (http://127.0.0.1:51387/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20723,7 +20817,7 @@
     "level": "expert",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene set_time_step 0.005\nscene start\nscene pause\nscene status\nscene reset\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51148/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene time step dt = 0.005\nOut[4]= scene playback: running\nOut[5]= scene playback: paused\nOut[6]= scene: http://127.0.0.1:51148/  (0 window(s) connected)\nmode = paused, t = 0, dt = 0.005, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[7]= scene playback reset to its initial state (t = 0, 1 entity); Start runs the simulation again from the beginning\nOut[8]= scene: http://127.0.0.1:51148/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.005, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[9]= scene closed (http://127.0.0.1:51148/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51388/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene time step dt = 0.005\nOut[4]= scene playback: running\nOut[5]= scene playback: paused\nOut[6]= scene: http://127.0.0.1:51388/  (0 window(s) connected)\nmode = paused, t = 0, dt = 0.005, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[7]= scene playback reset to its initial state (t = 0, 1 entity); Start runs the simulation again from the beginning\nOut[8]= scene: http://127.0.0.1:51388/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.005, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[9]= scene closed (http://127.0.0.1:51388/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
@@ -20780,7 +20874,7 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene set_time_step 0.005\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51149/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene time step dt = 0.005\nOut[4]= scene closed (http://127.0.0.1:51149/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51389/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene time step dt = 0.005\nOut[4]= scene closed (http://127.0.0.1:51389/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20788,7 +20882,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene settimestep 0.0002\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51150/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene time step dt = 0.0002\nOut[4]= scene closed (http://127.0.0.1:51150/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51390/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene time step dt = 0.0002\nOut[4]= scene closed (http://127.0.0.1:51390/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20796,7 +20890,7 @@
     "level": "advanced",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene set_time_step 1/100\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51151/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene time step dt = 0.01\nOut[4]= scene closed (http://127.0.0.1:51151/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51391/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene time step dt = 0.01\nOut[4]= scene closed (http://127.0.0.1:51391/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20804,7 +20898,7 @@
     "level": "expert",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene set_time_step 0.001\nscene start\nscene pause\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51152/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene time step dt = 0.001\nOut[4]= scene playback: running\nOut[5]= scene playback: paused\nOut[6]= scene: http://127.0.0.1:51152/  (0 window(s) connected)\nmode = paused, t = 0, dt = 0.001, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[7]= scene closed (http://127.0.0.1:51152/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51392/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene time step dt = 0.001\nOut[4]= scene playback: running\nOut[5]= scene playback: paused\nOut[6]= scene: http://127.0.0.1:51392/  (0 window(s) connected)\nmode = paused, t = 0, dt = 0.001, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[7]= scene closed (http://127.0.0.1:51392/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
@@ -20859,7 +20953,7 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51153/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene: http://127.0.0.1:51153/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[4]= scene closed (http://127.0.0.1:51153/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51393/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene: http://127.0.0.1:51393/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[4]= scene closed (http://127.0.0.1:51393/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20867,7 +20961,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene zoom 2\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51154/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera distance = 6\nOut[4]= scene: http://127.0.0.1:51154/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 6, target = [0, 0, 0]\nOut[5]= scene closed (http://127.0.0.1:51154/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51394/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= camera distance = 6\nOut[4]= scene: http://127.0.0.1:51394/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 6, target = [0, 0, 0]\nOut[5]= scene closed (http://127.0.0.1:51394/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20875,7 +20969,7 @@
     "level": "advanced",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51155/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene: http://127.0.0.1:51155/  (0 window(s) connected)\nmode = paused, t = 0.01, dt = 0.01, steps = 1, history = 1 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene closed (http://127.0.0.1:51155/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51395/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene: http://127.0.0.1:51395/  (0 window(s) connected)\nmode = paused, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene closed (http://127.0.0.1:51395/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20883,14 +20977,13 @@
     "level": "expert",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\n# playback advances on WALL-CLOCK time, on its own thread, so a batch\n# script must actually spend some \u2014 otherwise PAUSE lands before the\n# first frame is recorded and REVERSE has nothing to rewind. The work\n# below also shows the isolation: the notebook computes while the\n# window animates, and neither moves the other.\ndef v2(x, y) { 0.5 * (x * x + y * y) }\nqm2 grid -5 5 40, -5 5 40\nqm2 potential v2\nqm2 states 3\nscene pause\nscene status\nscene reverse\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51156/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= function v2(2 parameter(s)) defined \u2014 1 body line(s)\nOut[5]= grid x [-5, 5] x 40, y [-5, 5] x 40 \u2014 1600 points, hx = 0.243902, hy = 0.243902 (potential and psi cleared)\nOut[6]= potential `v2` sampled at 1600 points, V in [0.014872099940511627, 22.62046400951814] (psi cleared)\nOut[7]= 3 lowest bound state(s) \u2014 Lanczos, 210 iterations:\n  E[0] = 0.9962679948   residual 5.91e-8\n  E[1] = 1.9887755462   residual 1.73e-8\n  E[2] = 1.9887755462   residual 5.48e-8\nOut[8]= scene playback: paused\nOut[9]= scene: http://127.0.0.1:51156/  (0 window(s) connected)\nmode = paused, t = 0.02, dt = 0.01, steps = 2, history = 2 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[10]= scene playback: reversing\nOut[11]= scene closed (http://127.0.0.1:51156/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51396/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= function v2(2 parameter(s)) defined \u2014 1 body line(s)\nOut[5]= grid x [-5, 5] x 40, y [-5, 5] x 40 \u2014 1600 points, hx = 0.243902, hy = 0.243902 (potential and psi cleared)\nOut[6]= potential `v2` sampled at 1600 points, V in [0.014872099940511627, 22.62046400951814] (psi cleared)\nOut[7]= 3 lowest bound state(s) \u2014 Lanczos, 210 iterations:\n  E[0] = 0.9962679948   residual 5.91e-8\n  E[1] = 1.9887755462   residual 1.73e-8\n  E[2] = 1.9887755462   residual 5.48e-8\nOut[8]= scene playback: paused\nOut[9]= scene: http://127.0.0.1:51396/  (0 window(s) connected)\nmode = paused, t = 0.02, dt = 0.01, steps = 2, history = 2 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[10]= scene playback: reversing\nOut[11]= scene closed (http://127.0.0.1:51396/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
   ],
   "seeAlso": [
-   "cmd.scene.create",
-   "cmd.scene.status"
+   "cmd.scene.create"
   ],
   "invariants": [
    "The window evolves a synchronized COPY: notebook STEP/RUN never move the window, and window playback never moves the notebook."
@@ -20936,7 +21029,7 @@
     "level": "trivial",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene events\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51157/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= (no scene events)\nOut[4]= scene closed (http://127.0.0.1:51157/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51397/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= (no scene events)\nOut[4]= scene closed (http://127.0.0.1:51397/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20944,7 +21037,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "new sphere { mass = 1, radius = 0.5 }\nscene create\nscene events\nscene events\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51158/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= (no scene events)\nOut[4]= (no scene events)\nOut[5]= scene closed (http://127.0.0.1:51158/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51398/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= (no scene events)\nOut[4]= (no scene events)\nOut[5]= scene closed (http://127.0.0.1:51398/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20952,7 +21045,7 @@
     "level": "advanced",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene events\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51159/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= (no scene events)\nOut[6]= scene closed (http://127.0.0.1:51159/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51399/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= (no scene events)\nOut[6]= scene closed (http://127.0.0.1:51399/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -20960,7 +21053,7 @@
     "level": "expert",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\n# playback advances on WALL-CLOCK time, on its own thread, so a batch\n# script must actually spend some \u2014 otherwise PAUSE lands before the\n# first frame is recorded and REVERSE has nothing to rewind. The work\n# below also shows the isolation: the notebook computes while the\n# window animates, and neither moves the other.\ndef v2(x, y) { 0.5 * (x * x + y * y) }\nqm2 grid -5 5 40, -5 5 40\nqm2 potential v2\nqm2 states 3\nscene pause\nscene reverse\nscene events\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51160/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= function v2(2 parameter(s)) defined \u2014 1 body line(s)\nOut[5]= grid x [-5, 5] x 40, y [-5, 5] x 40 \u2014 1600 points, hx = 0.243902, hy = 0.243902 (potential and psi cleared)\nOut[6]= potential `v2` sampled at 1600 points, V in [0.014872099940511627, 22.62046400951814] (psi cleared)\nOut[7]= 3 lowest bound state(s) \u2014 Lanczos, 210 iterations:\n  E[0] = 0.9962679948   residual 5.91e-8\n  E[1] = 1.9887755462   residual 1.73e-8\n  E[2] = 1.9887755462   residual 5.48e-8\nOut[8]= scene playback: paused\nOut[9]= scene playback: reversing\nOut[10]= (no scene events)\nOut[11]= scene closed (http://127.0.0.1:51160/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:51400/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= function v2(2 parameter(s)) defined \u2014 1 body line(s)\nOut[5]= grid x [-5, 5] x 40, y [-5, 5] x 40 \u2014 1600 points, hx = 0.243902, hy = 0.243902 (potential and psi cleared)\nOut[6]= potential `v2` sampled at 1600 points, V in [0.014872099940511627, 22.62046400951814] (psi cleared)\nOut[7]= 3 lowest bound state(s) \u2014 Lanczos, 210 iterations:\n  E[0] = 0.9962679948   residual 5.91e-8\n  E[1] = 1.9887755462   residual 1.73e-8\n  E[2] = 1.9887755462   residual 5.48e-8\nOut[8]= scene playback: paused\nOut[9]= scene playback: reversing\nOut[10]= (no scene events)\nOut[11]= scene closed (http://127.0.0.1:51400/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
