@@ -66,6 +66,9 @@ TWO_BALLS = (
 )
 
 
+# The media this project EXECUTES, as opposed to quotes or points at.
+EXECUTED_MEDIA = ("posim", "rust", "machine")
+
 LEVELS = ["trivial", "intermediate", "advanced", "expert"]
 
 
@@ -1125,6 +1128,12 @@ def main():
     carried = 0
     for e in catalog:
         for x in e["examples"]:
+            # Only fill a GAP. Overwriting a date the source file already
+            # supplies re-stamps a freshly verified example with the previous
+            # run's date, which is how the Rust snippets ended up a day behind
+            # the notebook ones.
+            if x["verified"]:
+                continue
             hit = prior.get((x["medium"], x["code"]))
             if hit:
                 x["expected"], x["verified"] = hit
@@ -1183,8 +1192,12 @@ def main():
         # total while counting them in the pass gave the home screen the
         # nonsense headline "1435 of 1411 examples verified".
         "verified_total": sum(1 for e in catalog for x in e["examples"]
-                              if x["medium"] in ("posim", "rust", "machine")),
-        "verified_date": "2026-07-31",
+                              if x["medium"] in EXECUTED_MEDIA),
+        # read off the examples rather than asserted: the meta cannot claim
+        # a date no example actually carries
+        "verified_date": max((x["verified"] for e in catalog
+                              for x in e["examples"] if x["verified"]),
+                             default=None),
         "verified_by": {
             "posim": "executed with `posim --script` from the repository root; "
                      "output captured into `expected`",

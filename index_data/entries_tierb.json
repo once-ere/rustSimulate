@@ -29,7 +29,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::boundary::{Boundary, Sdf};\n\n// Sdf is the trait every shape implements: a signed distance, plus a\n// surface normal that defaults to a central difference of it.\nlet s = Boundary::Sphere { radius: 0.5 };\nlet d = s.signed_distance(&Vec3::new(1.0, 0.0, 0.0));\nassert!((d - 0.5).abs() < 1e-9);   // 1.0 out from a radius-0.5 sphere",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -160,7 +160,7 @@
     "medium": "rust",
     "code": "use ::physical_object::boundary::Boundary;\nuse ::physical_object::boundary::analytic_inertia_tensor;\nuse ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = analytic_inertia_tensor(0.5, &Boundary::Sphere { radius: 0.5 });",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -203,7 +203,7 @@
     "medium": "rust",
     "code": "use ::physical_object::boundary::Boundary;\nuse ::physical_object::boundary::support_extent;\nuse ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = support_extent(&Boundary::Sphere { radius: 0.5 }, Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -246,7 +246,7 @@
     "medium": "rust",
     "code": "use ::physical_object::boundary::Boundary;\nuse ::physical_object::boundary::support_point;\nuse ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = support_point(&Boundary::Sphere { radius: 0.5 }, Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -289,7 +289,7 @@
     "medium": "rust",
     "code": "use ::physical_object::boundary::Boundary;\nuse ::physical_object::boundary::support_rank;\nuse ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = support_rank(&Boundary::Sphere { radius: 0.5 }, Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -332,7 +332,7 @@
     "medium": "rust",
     "code": "use ::physical_object::boundary::Boundary;\nuse ::physical_object::boundary::support_footprint_radius;\nuse ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = support_footprint_radius(&Boundary::Sphere { radius: 0.5 }, Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -375,7 +375,7 @@
     "medium": "rust",
     "code": "use ::physical_object::boundary::Boundary;\nuse ::physical_object::boundary::bounding_radius;\nuse ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = bounding_radius(&Boundary::Sphere { radius: 0.5 });",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -447,7 +447,7 @@
     "medium": "rust",
     "code": "use ::physical_object::collide::ZENO_GAP_RELATIVE;\n\n// the relative gap below which a contact is treated as resting rather\n// than as another impact \u2014 the anti-Zeno guard\nassert!(ZENO_GAP_RELATIVE > 0.0);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -490,7 +490,7 @@
     "medium": "rust",
     "code": "use ::physical_object::collide::same_burst;\nuse ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = same_burst(0.5, 0.5);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -596,7 +596,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::boundary::Boundary;\nuse ::physical_object::collide::{ContactGeometry, contact_geometry};\n\nlet a = physical_object::new_rigid(0, 1.0, 0.0, Vec3::new(-0.6, 0.0, 0.0),\n    Quat::identity(), Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0),\n    Mat3::identity(), Mat3::identity(), Boundary::Sphere { radius: 0.5 });\nlet b = physical_object::new_rigid(1, 1.0, 0.0, Vec3::new(0.6, 0.0, 0.0),\n    Quat::identity(), Vec3::new(-1.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0),\n    Mat3::identity(), Mat3::identity(), Boundary::Sphere { radius: 0.5 });\nlet g: Option<ContactGeometry> = contact_geometry(&a, &b, 1e-9);\n// the two spheres are 1.2 apart with radii 0.5 each, so they are NOT\n// touching yet and the narrow phase says so\nassert!(g.is_none());",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -741,7 +741,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::collide::world_aabb;\n\nlet o = physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0));\nlet (lo, hi) = world_aabb(&o);\nassert!(lo.x <= hi.x);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -813,7 +813,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::boundary::Boundary;\nuse ::physical_object::collide::contact_geometry;\n\nlet a = physical_object::new_rigid(0, 1.0, 0.0, Vec3::new(-0.6, 0.0, 0.0),\n    Quat::identity(), Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0),\n    Mat3::identity(), Mat3::identity(), Boundary::Sphere { radius: 0.5 });\nlet b = physical_object::new_rigid(1, 1.0, 0.0, Vec3::new(0.6, 0.0, 0.0),\n    Quat::identity(), Vec3::new(-1.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0),\n    Mat3::identity(), Mat3::identity(), Boundary::Sphere { radius: 0.5 });\n// separation > 0 means apart; the normal points from a toward b\nlet g = contact_geometry(&a, &b, 1e-9);\nlet _ = g;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -851,7 +851,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\nuse ::physical_object::collide::resolve_pair;\n\nlet mut sys = PhysicalObjectSystem::new(vec![\n    physical_object::new_point(0, 1.0, Vec3::new(-1.0, 0.0, 0.0), Vec3::new(1.0, 0.0, 0.0)),\n    physical_object::new_point(1, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(-1.0, 0.0, 0.0)),\n], 0.0);\n// two POINTS can never collide, so the resolver has nothing to do\nlet c = resolve_pair(&mut sys, 0, 1, false)?;\nassert!(c.is_none());",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -1108,7 +1108,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\nuse ::physical_object::integrate::run;\n\nlet mut sys = PhysicalObjectSystem::new(vec![\n    physical_object::new_point(0, 1.0, Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 0.0, 0.0)),\n], 0.0);\n// every step goes through the pure-Rust SUNDIALS solvers; there is no\n// hand-rolled stepper anywhere in the project\nlet report = run(&mut sys, 1.0, 2)?;\nlet _ = report;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -1298,7 +1298,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Vec3::new(0.5, 0.5, 0.5);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -1356,7 +1356,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Vec3::zeros();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -1433,7 +1433,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Vec3::new(1.0, 2.0, 3.0);\nlet _value = subject.to_array();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -1486,7 +1486,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Vec3::new(1.0, 2.0, 3.0);\nlet _value = subject.dot(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -1546,7 +1546,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Vec3::new(1.0, 2.0, 3.0);\nlet _value = subject.cross(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -1601,7 +1601,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Vec3::new(1.0, 2.0, 3.0);\nlet _value = subject.norm_squared();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -1659,7 +1659,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Vec3::new(1.0, 2.0, 3.0);\nlet _value = subject.norm();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -1714,7 +1714,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Vec3::new(1.0, 2.0, 3.0);\nlet _value = subject.normalize();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -1813,7 +1813,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Mat3::zeros();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -1866,7 +1866,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Mat3::identity();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -1914,7 +1914,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Mat3::from_diagonal(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -1967,7 +1967,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Mat3::identity();\nlet _value = subject.transpose();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -2010,7 +2010,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Mat3::identity();\nlet _value = subject.determinant();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -2053,7 +2053,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Mat3::identity();\nlet _value = subject.try_inverse();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -2096,7 +2096,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Mat3::identity();\nlet _value = subject.inverse_diagonal();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -2139,7 +2139,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Mat3::skew(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -2192,7 +2192,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Mat3::outer(Vec3::new(1.0, 0.0, 0.0), Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -2289,7 +2289,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Quat::new(0.5, 0.5, 0.5, 0.5);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -2342,7 +2342,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Quat::identity();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -2385,7 +2385,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Quat::pure(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -2438,7 +2438,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Quat::from_axis_angle(Vec3::new(1.0, 0.0, 0.0), 0.5);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -2496,7 +2496,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Quat::identity();\nlet _value = subject.norm();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -2551,7 +2551,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Quat::identity();\nlet _value = subject.normalize();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -2606,7 +2606,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Quat::identity();\nlet _value = subject.conjugate();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -2649,7 +2649,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Quat::identity();\nlet _value = subject.inverse();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -2702,7 +2702,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Quat::identity();\nlet _value = subject.rotate(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -2755,7 +2755,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Quat::identity();\nlet _value = subject.to_rotation_matrix();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -2862,7 +2862,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet _value = physical_object::new_point(1, 0.5, Vec3::new(1.0, 0.0, 0.0), Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -2900,7 +2900,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::boundary::Boundary;\n\n// id, mass, charge, then pose, then the two velocities, then the two\n// tensors, then the shape\nlet o = physical_object::new_rigid(\n    0, 2.0, 0.0,\n    Vec3::new(0.0, 0.0, 0.0), Quat::identity(),\n    Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0),\n    Mat3::identity(), Mat3::identity(),\n    Boundary::Sphere { radius: 0.5 },\n);\nassert_eq!(o.get_mass(), 2.0);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -3002,7 +3002,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_id();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -3045,7 +3045,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_id(1);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -3098,7 +3098,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_mass();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -3141,7 +3141,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_mass(0.5);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -3184,7 +3184,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_inverse_mass();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -3232,7 +3232,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_inverse_mass(0.5);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -3285,7 +3285,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_charge();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -3328,7 +3328,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_charge(0.5);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -3386,7 +3386,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_position();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -3439,7 +3439,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_position(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -3487,7 +3487,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_orientation();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -3540,7 +3540,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_orientation(Quat::identity());",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -3583,7 +3583,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_momentum();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -3636,7 +3636,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_momentum(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -3689,7 +3689,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_angular_momentum();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -3737,7 +3737,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_angular_momentum(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -3780,7 +3780,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_inertia_tensor();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -3823,7 +3823,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_inertia_tensor(Mat3::identity());",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -3871,7 +3871,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_inverse_inertia_tensor();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -3919,7 +3919,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_inverse_inertia_tensor(Mat3::identity());",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -3967,7 +3967,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_magnetic_moment_tensor();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -4010,7 +4010,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_magnetic_moment_tensor(Mat3::identity());",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -4063,7 +4063,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_restitution();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -4111,7 +4111,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_restitution(0.5);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -4164,7 +4164,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_boundary();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -4207,7 +4207,7 @@
     "medium": "rust",
     "code": "use ::physical_object::boundary::Boundary;\nuse ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_boundary(Boundary::Sphere { radius: 0.5 });",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -4255,7 +4255,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_velocity();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -4303,7 +4303,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_velocity(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -4351,7 +4351,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.linear_velocity();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -4399,7 +4399,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_angular_velocity();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -4442,7 +4442,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.world_inverse_inertia();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -4485,7 +4485,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_angular_velocity(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -4528,7 +4528,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.angular_velocity();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -4586,7 +4586,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.momentum();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -4634,7 +4634,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.orbital_angular_momentum(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -4677,7 +4677,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.total_angular_momentum(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -4720,7 +4720,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.laplace_vector(Vec3::new(1.0, 0.0, 0.0), 0.5);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -4768,7 +4768,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.kinetic_energy();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -4806,7 +4806,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.to_local_space(&Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -4844,7 +4844,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.to_world_space(&Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -4892,7 +4892,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.signed_distance(&Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -4935,7 +4935,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.surface_normal(&Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -4978,7 +4978,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.recompute_inertia_from_boundary();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -5036,7 +5036,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.integrate(&Vec3::new(1.0, 0.0, 0.0), &Vec3::new(1.0, 0.0, 0.0), 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -5177,7 +5177,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet _value = PhysicalObjectSystem::new(vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))], 0.5);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -5264,7 +5264,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet mut subject = PhysicalObjectSystem::new(\n    vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))],\n    1.0,\n);\nlet _value = subject.remove_object(1);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -5307,7 +5307,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet subject = PhysicalObjectSystem::new(\n    vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))],\n    1.0,\n);\nlet _value = subject.total_mass();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -5365,7 +5365,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet subject = PhysicalObjectSystem::new(\n    vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))],\n    1.0,\n);\nlet _value = subject.center_of_mass();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -5408,7 +5408,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet subject = PhysicalObjectSystem::new(\n    vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))],\n    1.0,\n);\nlet _value = subject.compute_accelerations();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -5456,7 +5456,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet subject = PhysicalObjectSystem::new(\n    vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))],\n    1.0,\n);\nlet _value = subject.total_momentum();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -5499,7 +5499,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet subject = PhysicalObjectSystem::new(\n    vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))],\n    1.0,\n);\nlet _value = subject.total_angular_momentum(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -5557,7 +5557,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet subject = PhysicalObjectSystem::new(\n    vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))],\n    1.0,\n);\nlet _value = subject.total_energy();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -5600,7 +5600,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet subject = PhysicalObjectSystem::new(\n    vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))],\n    1.0,\n);\nlet _value = subject.laplace_vector(1);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -5643,7 +5643,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet subject = PhysicalObjectSystem::new(\n    vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))],\n    1.0,\n);\nlet _value = subject.state_len();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -5686,7 +5686,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet subject = PhysicalObjectSystem::new(\n    vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))],\n    1.0,\n);\nlet _value = subject.pack_state();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -5729,7 +5729,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet mut subject = PhysicalObjectSystem::new(\n    vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))],\n    1.0,\n);\nsubject.unpack_state(&[1.0, 2.0, 3.0]);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -8975,7 +8975,7 @@
     "medium": "rust",
     "code": "use ::special_functions::airy_complex::airy_c;\nuse ::special_functions::complex::Complex64;\n\nlet _value = airy_c(Complex64::new(1.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -9023,7 +9023,7 @@
     "medium": "rust",
     "code": "use ::special_functions::airy_uniform::jy_airy;\n\nlet _value = jy_airy(0.5, 2.0);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -9071,7 +9071,7 @@
     "medium": "rust",
     "code": "use ::special_functions::airy_uniform::jy_airy_c;\nuse ::special_functions::complex::Complex64;\n\nlet _value = jy_airy_c(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -9124,7 +9124,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel::bessel_j_array;\n\nlet _value = bessel_j_array(4, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -9179,7 +9179,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel::bessel_j;\n\nlet _value = bessel_j(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -9229,7 +9229,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_cnu::bessel_j_cnu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_j_cnu(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -9277,7 +9277,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_cnu::bessel_i_cnu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_i_cnu(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -9330,7 +9330,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_cnu::bessel_y_cnu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_y_cnu(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -9378,7 +9378,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_cnu::bessel_k_cnu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_k_cnu(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -9460,7 +9460,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_cnu_large::j_asym;\nuse ::special_functions::complex::Complex64;\n\nlet _value = j_asym(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -9508,7 +9508,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_cnu_large::y_asym;\nuse ::special_functions::complex::Complex64;\n\nlet _value = y_asym(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -9561,7 +9561,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_cnu_large::k_asym;\nuse ::special_functions::complex::Complex64;\n\nlet _value = k_asym(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -9609,7 +9609,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_cnu_large::i_asym;\nuse ::special_functions::complex::Complex64;\n\nlet _value = i_asym(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -9652,7 +9652,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_cnu_large::ik_uniform_unscaled;\nuse ::special_functions::complex::Complex64;\n\nlet _value = ik_uniform_unscaled(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -9695,7 +9695,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_complex::bessel_j_array_c;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_j_array_c(1, Complex64::new(1.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -9738,7 +9738,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_complex::bessel_j_c;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_j_c(0, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -9781,7 +9781,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_complex::bessel_i_c;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_i_c(0, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -9819,7 +9819,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_complex::bessel_y_array_c;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_y_array_c(1, Complex64::new(1.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -9867,7 +9867,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_complex::bessel_y_c;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_y_c(0, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -9915,7 +9915,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_complex::bessel_k_c;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_k_c(0, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -9958,7 +9958,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_complex::bessel_j_nu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_j_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -10013,7 +10013,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_complex::bessel_i_nu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_i_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -10068,7 +10068,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_complex::bessel_y_nu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_y_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -10113,7 +10113,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_complex::bessel_k_nu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_k_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -10153,7 +10153,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_scaled::asym_error_estimate;\nuse ::special_functions::complex::Complex64;\n\nlet _value = asym_error_estimate(0.5, Complex64::new(2.0, 0.5));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -10196,7 +10196,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_scaled::hankel_h1_scaled_nu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = hankel_h1_scaled_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -10239,7 +10239,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_scaled::hankel_h2_scaled_nu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = hankel_h2_scaled_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -10287,7 +10287,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_scaled::bessel_k_scaled_nu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_k_scaled_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -10330,7 +10330,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_scaled::bessel_i_scaled_nu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_i_scaled_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -10373,7 +10373,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_scaled::bessel_j_scaled_nu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_j_scaled_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -10421,7 +10421,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_scaled::bessel_y_scaled_nu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_y_scaled_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -10513,7 +10513,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet _value = Complex64::new(0.5, 2.0);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -10571,7 +10571,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet _value = Complex64::real(0.5);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -10609,7 +10609,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet v = Complex64::I * Complex64::I;\nassert_eq!(v, Complex64::real(-1.0));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -10686,7 +10686,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet v = Complex64::ONE * Complex64::new(3.0, -4.0);\nassert_eq!(v.abs(), 5.0);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -10739,7 +10739,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet subject = Complex64::new(3.0, -4.0);\nlet _value = subject.conj();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -10782,7 +10782,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet subject = Complex64::new(3.0, -4.0);\nlet _value = subject.norm_sqr();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -10840,7 +10840,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet subject = Complex64::new(3.0, -4.0);\nlet _value = subject.abs();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -10885,7 +10885,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet subject = Complex64::new(3.0, -4.0);\nlet _value = subject.arg();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -10943,7 +10943,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet subject = Complex64::new(3.0, -4.0);\nlet _value = subject.exp();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -10998,7 +10998,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet subject = Complex64::new(3.0, -4.0);\nlet _value = subject.ln();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -11056,7 +11056,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet subject = Complex64::new(3.0, -4.0);\nlet _value = subject.powf(0.5);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -11153,7 +11153,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet subject = Complex64::new(3.0, -4.0);\nlet _value = subject.sin();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -11203,7 +11203,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet subject = Complex64::new(3.0, -4.0);\nlet _value = subject.cos();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -11263,7 +11263,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet _value = Complex64::from_polar(0.5, 2.0);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -11316,7 +11316,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet subject = Complex64::new(3.0, -4.0);\nlet _value = subject.is_finite();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -11374,7 +11374,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet subject = Complex64::new(3.0, -4.0);\nlet _value = subject.inv();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -11456,7 +11456,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::debye::ik_uniform;\n\nlet _value = ik_uniform(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -11499,7 +11499,7 @@
     "medium": "rust",
     "code": "use ::special_functions::debye::jy_debye;\n\nlet _value = jy_debye(0.5, 2.0);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -11547,7 +11547,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::debye::jy_debye_c;\n\nlet _value = jy_debye_c(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5));",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -11590,7 +11590,7 @@
     "medium": "rust",
     "code": "use ::special_functions::debye::jy_log_magnitude;\n\nlet _value = jy_log_magnitude(0.5, 2.0);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -11705,7 +11705,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::gamma_complex::ln_gamma_c;\n\nlet _value = ln_gamma_c(Complex64::new(1.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -11753,7 +11753,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::gamma_complex::gamma_c;\n\nlet _value = gamma_c(Complex64::new(1.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -11801,7 +11801,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::gamma_complex::rgamma_c;\n\nlet _value = rgamma_c(Complex64::new(1.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -11844,7 +11844,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::hankel_h1_c;\n\nlet _value = hankel_h1_c(0, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -11887,7 +11887,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::hankel_h2_c;\n\nlet _value = hankel_h2_c(0, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -11935,7 +11935,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::hankel_h1_nu;\n\nlet _value = hankel_h1_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -11990,7 +11990,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::hankel_h2_nu;\n\nlet _value = hankel_h2_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -12035,7 +12035,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::hankel_h1_prime_c;\n\nlet _value = hankel_h1_prime_c(0, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -12078,7 +12078,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::hankel_h2_prime_c;\n\nlet _value = hankel_h2_prime_c(0, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -12131,7 +12131,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::hankel_h1_prime_nu;\n\nlet _value = hankel_h1_prime_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -12186,7 +12186,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::hankel_h2_prime_nu;\n\nlet _value = hankel_h2_prime_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -12231,7 +12231,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::sph_hankel_h1;\n\nlet _value = sph_hankel_h1(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -12286,7 +12286,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::sph_hankel_h2;\n\nlet _value = sph_hankel_h2(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -12341,7 +12341,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::sph_hankel_h1_prime;\n\nlet _value = sph_hankel_h1_prime(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -12396,7 +12396,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::sph_hankel_h2_prime;\n\nlet _value = sph_hankel_h2_prime(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -12480,7 +12480,7 @@
     "medium": "rust",
     "code": "use ::special_functions::lanczos::{LanczosResult, Stop};\n\n// what QM2/QM3 STATES return: the k lowest eigenvalues with their vectors\n// and the residual that justifies trusting them \u2014 an iterative eigensolver\n// has no exact stopping point, so the residual is part of the answer\nlet r = LanczosResult { values: vec![1.0], vectors: vec![vec![1.0]],\n                        residuals: vec![1e-8], iterations: 1, stop: Stop::Converged };\nassert_eq!(r.values.len(), r.residuals.len());",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -12572,7 +12572,7 @@
     "medium": "rust",
     "code": "use ::special_functions::legendre::legendre_p;\n\nlet _value = legendre_p(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -12627,7 +12627,7 @@
     "medium": "rust",
     "code": "use ::special_functions::legendre::legendre_p_prime;\n\nlet _value = legendre_p_prime(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -12682,7 +12682,7 @@
     "medium": "rust",
     "code": "use ::special_functions::legendre::assoc_legendre_p;\n\nlet _value = assoc_legendre_p(1, 1, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -12737,7 +12737,7 @@
     "medium": "rust",
     "code": "use ::special_functions::legendre::norm_assoc_legendre_p;\n\nlet _value = norm_assoc_legendre_p(1, 1, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -12792,7 +12792,7 @@
     "medium": "rust",
     "code": "use ::special_functions::legendre::sph_harm;\n\nlet _value = sph_harm(1, 1, 0.5, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -12847,7 +12847,7 @@
     "medium": "rust",
     "code": "use ::special_functions::legendre::sph_harm_real;\n\nlet _value = sph_harm_real(1, 1, 0.5, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -12892,7 +12892,7 @@
     "medium": "rust",
     "code": "use ::special_functions::rel_err;\n\nlet _value = rel_err(0.5, 2.0);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -12937,7 +12937,7 @@
     "medium": "rust",
     "code": "use ::special_functions::orthopoly::hermite_h;\n\nlet _value = hermite_h(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -12992,7 +12992,7 @@
     "medium": "rust",
     "code": "use ::special_functions::orthopoly::hermite_he;\n\nlet _value = hermite_he(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -13047,7 +13047,7 @@
     "medium": "rust",
     "code": "use ::special_functions::orthopoly::laguerre_l;\n\nlet _value = laguerre_l(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -13102,7 +13102,7 @@
     "medium": "rust",
     "code": "use ::special_functions::orthopoly::laguerre_l_assoc;\n\nlet _value = laguerre_l_assoc(1, 0.5, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -13157,7 +13157,7 @@
     "medium": "rust",
     "code": "use ::special_functions::orthopoly::chebyshev_t;\n\nlet _value = chebyshev_t(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -13212,7 +13212,7 @@
     "medium": "rust",
     "code": "use ::special_functions::orthopoly::chebyshev_u;\n\nlet _value = chebyshev_u(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -13267,7 +13267,7 @@
     "medium": "rust",
     "code": "use ::special_functions::orthopoly::gegenbauer_c;\n\nlet _value = gegenbauer_c(1, 0.5, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -13322,7 +13322,7 @@
     "medium": "rust",
     "code": "use ::special_functions::orthopoly::jacobi_p;\n\nlet _value = jacobi_p(1, 0.5, 0.5, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -13377,7 +13377,7 @@
     "medium": "rust",
     "code": "use ::special_functions::quadrature::gauss_legendre;\n\nlet _value = gauss_legendre(1)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -13466,7 +13466,7 @@
     "medium": "rust",
     "code": "use ::special_functions::quadrature::integrate_adaptive;\n\nlet v = integrate_adaptive(|x: f64| x * x * x, 0.0, 1.0, 1e-10)?;\nassert!((v - 0.25).abs() < 1e-10);\n// and the honest failure: 1/sqrt(x) on [0,1] is finite but Simpson\n// cannot resolve the endpoint, so it ERRORS rather than guessing.\nassert!(integrate_adaptive(|x: f64| 1.0 / x.sqrt(), 0.0, 1.0, 1e-10).is_err());",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -13504,7 +13504,7 @@
     "medium": "rust",
     "code": "use ::special_functions::quadrature::brent_root;\n\n// cos x = x, bracketed on [0, 1]\nlet r = brent_root(|x: f64| x.cos() - x, 0.0, 1.0, 1e-12)?;\nassert!((r - 0.739085133215).abs() < 1e-9);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -13542,7 +13542,7 @@
     "medium": "rust",
     "code": "use ::special_functions::quadrature::find_roots;\n\n// find_roots CANNOT tell a pole from a root: a pole flips the sign of f\n// too, and Brent converges on it. Check f at each value it returns.\nlet rs = find_roots(|x: f64| x.sin(), 0.1, 7.0, 100, 1e-12)?;\nassert!(!rs.is_empty());",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -13590,7 +13590,7 @@
     "medium": "rust",
     "code": "use ::special_functions::sph_bessel::sph_j;\n\nlet _value = sph_j(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -13635,7 +13635,7 @@
     "medium": "rust",
     "code": "use ::special_functions::sph_bessel::sph_y;\n\nlet _value = sph_y(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -13690,7 +13690,7 @@
     "medium": "rust",
     "code": "use ::special_functions::sph_bessel::sph_j_prime;\n\nlet _value = sph_j_prime(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -13745,7 +13745,7 @@
     "medium": "rust",
     "code": "use ::special_functions::sph_bessel::sph_y_prime;\n\nlet _value = sph_y_prime(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -13800,7 +13800,7 @@
     "medium": "rust",
     "code": "use ::special_functions::tridiag::solve_tridiag;\n\nlet _value = solve_tridiag(&[1.0, 2.0, 3.0], &[1.0, 2.0, 3.0], &[1.0, 2.0, 3.0], &[1.0, 2.0, 3.0])?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -14106,7 +14106,7 @@
     "medium": "rust",
     "code": "use ::quantum::absorber::Ramp;\n\nlet ramp = Ramp { width: 15.0, power: 2.0 };\n// power 2 is the measured optimum: too steep a ramp is a mirror,\n// whether it is real or imaginary\nassert_eq!(ramp.power, 2.0);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -14144,7 +14144,7 @@
     "medium": "rust",
     "code": "use ::quantum::absorber::Band;\n\nlet band = Band { k_lo: 1.0, k_hi: 4.0, samples: 8 };\nassert_eq!(band.samples, 8);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -14182,7 +14182,7 @@
     "medium": "rust",
     "code": "use ::quantum::absorber::Leak;\n\n// the two ways probability escapes an absorber, which trade off against\n// each other: too weak and it passes THROUGH, too strong and it reflects\n// off the absorber's own leading edge\nlet leak = Leak { k: 3.0, reflection: 1e-9, leakage: 2e-9, absorbed: 1.0 };\nassert!(leak.escaped() > 0.0);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -14220,7 +14220,7 @@
     "medium": "rust",
     "code": "use ::quantum::absorber::Leak;\n\nlet leak = Leak { k: 3.0, reflection: 1e-9, leakage: 2e-9, absorbed: 1.0 };\n// R + T: everything the absorber failed to swallow\nassert!((leak.escaped() - 3e-9).abs() < 1e-18);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -14297,7 +14297,7 @@
     "medium": "rust",
     "code": "use ::quantum::absorber::{Ramp, Band, worst_escape};\n\nlet w = worst_escape(Ramp { width: 15.0, power: 2.0 }, 3.0,\n                    Band { k_lo: 2.0, k_hi: 4.0, samples: 4 }, 1.0, 1.0)?;\nassert!(w >= 0.0);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -14335,7 +14335,7 @@
     "medium": "rust",
     "code": "use ::quantum::absorber::{Ramp, Band, choose_strength};\n\n// the tuning surface has a wide optimum \u2014 over an order of magnitude \u2014\n// but it is not infinite, so the strength is SEARCHED rather than guessed\nlet (strength, escape) = choose_strength(Ramp { width: 15.0, power: 2.0 },\n                                        Band { k_lo: 2.0, k_hi: 4.0, samples: 4 },\n                                        1.0, 1.0)?;\nassert!(strength > 0.0 && escape >= 0.0);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -14373,7 +14373,7 @@
     "medium": "rust",
     "code": "use ::quantum::isosurface::Mesh;\n\nlet m = Mesh::default();\nassert!(m.triangles.is_empty() || !m.triangles.is_empty());",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -14518,7 +14518,7 @@
     "medium": "rust",
     "code": "use ::quantum::isosurface::Mesh;\n\nlet m = Mesh::default();\n// checked by the divergence theorem against shapes whose volume is known\nassert_eq!(m.enclosed_volume(), 0.0);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -14556,7 +14556,7 @@
     "medium": "rust",
     "code": "use ::quantum::isosurface::Mesh;\n\nlet m = Mesh::default();\n// every directed edge exactly once, its reverse exactly once: a hole\n// leaves an unmatched edge, a flipped triangle leaves a duplicate\nassert!(m.is_watertight());",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -14667,7 +14667,7 @@
     "medium": "rust",
     "code": "use ::quantum::nash::PeriodicGrid;\n\nlet _value = PeriodicGrid::new(0.5, 0.5, 1)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -14827,7 +14827,7 @@
     "medium": "rust",
     "code": "use ::quantum::nash::order_for;\n\nlet _value = order_for(0.5, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -14870,7 +14870,7 @@
     "medium": "rust",
     "code": "use ::quantum::nash::truncation_bound;\n\nlet _value = truncation_bound(0.5, 1)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -15049,7 +15049,7 @@
     "medium": "rust",
     "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.splitting();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -15107,7 +15107,7 @@
     "medium": "rust",
     "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.grid();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -15145,7 +15145,7 @@
     "medium": "rust",
     "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.dt();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -15198,7 +15198,7 @@
     "medium": "rust",
     "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.hbar();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -15256,7 +15256,7 @@
     "medium": "rust",
     "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.mass();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -15304,7 +15304,7 @@
     "medium": "rust",
     "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.lambda();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -15362,7 +15362,7 @@
     "medium": "rust",
     "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.order();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -15405,7 +15405,7 @@
     "medium": "rust",
     "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.truncation_error();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -15675,7 +15675,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::Grid;\n\nlet _value = Grid::new(0.5, 0.5, 1)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -15718,7 +15718,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::Grid;\n\nlet subject = Grid::new(-8.0, 8.0, 60)?;\nlet _value = subject.h();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -15761,7 +15761,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::Grid;\n\nlet subject = Grid::new(-8.0, 8.0, 60)?;\nlet _value = subject.x(1);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -15819,7 +15819,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::Grid;\n\nlet subject = Grid::new(-8.0, 8.0, 60)?;\nlet _value = subject.points();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -15906,7 +15906,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::{Grid, Hamiltonian};\n\nlet _value = Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 0.5, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -15978,7 +15978,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::{Grid, Hamiltonian};\n\nlet h = Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?;\n// QM STATES is refused while an absorber is on, because H - iW is not\n// Hermitian; this is the Hermitian half of the same operator\nlet bare = h.without_absorber();\nlet _ = bare;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -16031,7 +16031,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::{Grid, Hamiltonian};\n\nlet subject = Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?;\nlet _value = subject.is_absorbing();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -16162,7 +16162,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::{Grid, Hamiltonian};\n\nlet subject = Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?;\nlet _value = subject.bound_states(1)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -16234,7 +16234,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::Grid;\nuse ::quantum::qm1d::Wavefunction;\nuse ::special_functions::complex::Complex64;\n\nlet _value = Wavefunction::new(Grid::new(-8.0, 8.0, 60)?, vec![Complex64::new(1.0, 0.0); 60])?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -16277,7 +16277,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::Grid;\nuse ::quantum::qm1d::Wavefunction;\n\nlet _value = Wavefunction::gaussian(Grid::new(-8.0, 8.0, 60)?, 0.5, 0.5, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -16320,7 +16320,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::Grid;\nuse ::quantum::qm1d::Wavefunction;\n\nlet _value = Wavefunction::from_real(Grid::new(-8.0, 8.0, 60)?, &[1.0, 2.0, 3.0])?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -16780,7 +16780,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::{Grid, Hamiltonian, Propagator};\n\nlet subject = Propagator::new(Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?, 0.01)?;\nlet _value = subject.dt();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -16833,7 +16833,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::{Grid, Hamiltonian, Propagator};\n\nlet subject = Propagator::new(Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?, 0.01)?;\nlet _value = subject.hamiltonian();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -17052,7 +17052,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::{Grid, Hamiltonian, DrivenPropagator};\n\nlet subject = DrivenPropagator::new(Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?, vec![0.0; 60], 0.01)?;\nlet _value = subject.time();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -17090,7 +17090,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::{Grid, Hamiltonian, DrivenPropagator};\n\nlet subject = DrivenPropagator::new(Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?, vec![0.0; 60], 0.01)?;\nlet _value = subject.dt();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -17128,7 +17128,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::{Grid, Hamiltonian, DrivenPropagator};\n\nlet h = Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?;\nlet d = DrivenPropagator::new(h, vec![0.0; 60], 0.01)?;\n// the modulation is a CLOSURE of t, sampled at the MIDPOINT of each step \u2014\n// which is what keeps the scheme second order\nlet hn = d.hamiltonian_now(|t: f64| 0.3 * t.cos())?;\nlet _ = hn;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -17259,7 +17259,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::barrier_transmission;\n\nlet _value = barrier_transmission(0.5, 0.5, 0.5);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -17390,7 +17390,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::Grid2;\n\nlet subject = Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?;\nlet _value = subject.hx();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -17443,7 +17443,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::Grid2;\n\nlet subject = Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?;\nlet _value = subject.hy();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -17486,7 +17486,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::Grid2;\n\nlet subject = Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?;\nlet _value = subject.x(1);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -17539,7 +17539,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::Grid2;\n\nlet subject = Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?;\nlet _value = subject.y(1);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -17592,7 +17592,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::Grid2;\n\nlet subject = Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?;\nlet _value = subject.idx(1, 1);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -17650,7 +17650,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::Grid2;\n\nlet subject = Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?;\nlet _value = subject.len();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -17698,7 +17698,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::Grid2;\n\nlet subject = Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?;\nlet _value = subject.is_empty();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -17741,7 +17741,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::Grid2;\n\nlet subject = Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?;\nlet _value = subject.cell();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -17823,7 +17823,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::Grid2;\nuse ::quantum::qm2d::Hamiltonian2;\n\nlet _value = Hamiltonian2::new(Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?, vec![0.0; 60], 0.5, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -18217,7 +18217,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::Grid2;\nuse ::quantum::qm2d::Wavefunction2;\nuse ::special_functions::complex::Complex64;\n\nlet _value = Wavefunction2::new(Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?, vec![Complex64::new(1.0, 0.0); 60])?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -18677,7 +18677,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::{Grid2, Hamiltonian2, Propagator2};\n\nlet subject = Propagator2::new(Hamiltonian2::new(Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?, vec![0.0; 400], 1.0, 1.0)?, 0.01)?;\nlet _value = subject.dt();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -18730,7 +18730,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::{Grid2, Hamiltonian2, Propagator2};\n\nlet subject = Propagator2::new(Hamiltonian2::new(Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?, vec![0.0; 400], 1.0, 1.0)?, 0.01)?;\nlet _value = subject.hamiltonian();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -18944,7 +18944,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::{Grid2, Hamiltonian2, DrivenPropagator2};\n\nlet subject = DrivenPropagator2::new(Hamiltonian2::new(Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?, vec![0.0; 400], 1.0, 1.0)?, vec![0.0; 400], 0.01)?;\nlet _value = subject.time();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -18982,7 +18982,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::{Grid2, Hamiltonian2, DrivenPropagator2};\n\nlet subject = DrivenPropagator2::new(Hamiltonian2::new(Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?, vec![0.0; 400], 1.0, 1.0)?, vec![0.0; 400], 0.01)?;\nlet _value = subject.dt();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -19230,7 +19230,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\n\nlet subject = Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?;\nlet _value = subject.hx();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -19283,7 +19283,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\n\nlet subject = Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?;\nlet _value = subject.hy();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -19326,7 +19326,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\n\nlet subject = Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?;\nlet _value = subject.hz();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -19369,7 +19369,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\n\nlet subject = Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?;\nlet _value = subject.x(1);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -19422,7 +19422,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\n\nlet subject = Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?;\nlet _value = subject.y(1);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -19465,7 +19465,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\n\nlet subject = Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?;\nlet _value = subject.z(1);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -19518,7 +19518,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\n\nlet subject = Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?;\nlet _value = subject.idx(1, 1, 1);",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -19576,7 +19576,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\n\nlet subject = Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?;\nlet _value = subject.len();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -19624,7 +19624,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\n\nlet subject = Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?;\nlet _value = subject.is_empty();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -19667,7 +19667,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\n\nlet subject = Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?;\nlet _value = subject.cell();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -19744,7 +19744,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\nuse ::quantum::qm3d::Hamiltonian3;\n\nlet _value = Hamiltonian3::new(Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?, vec![0.0; 60], 0.5, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -20138,7 +20138,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\nuse ::quantum::qm3d::Wavefunction3;\nuse ::special_functions::complex::Complex64;\n\nlet _value = Wavefunction3::new(Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?, vec![Complex64::new(1.0, 0.0); 60])?;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -20627,7 +20627,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::{Grid3, Hamiltonian3, Propagator3};\n\nlet subject = Propagator3::new(Hamiltonian3::new(Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?, vec![0.0; 1000], 1.0, 1.0)?, 0.01)?;\nlet _value = subject.dt();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -20680,7 +20680,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::{Grid3, Hamiltonian3, Propagator3};\n\nlet subject = Propagator3::new(Hamiltonian3::new(Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?, vec![0.0; 1000], 1.0, 1.0)?, 0.01)?;\nlet _value = subject.hamiltonian();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -20894,7 +20894,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::{Grid3, Hamiltonian3, DrivenPropagator3};\n\nlet subject = DrivenPropagator3::new(Hamiltonian3::new(Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?, vec![0.0; 1000], 1.0, 1.0)?, vec![0.0; 1000], 0.01)?;\nlet _value = subject.time();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -20932,7 +20932,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::{Grid3, Hamiltonian3, DrivenPropagator3};\n\nlet subject = DrivenPropagator3::new(Hamiltonian3::new(Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?, vec![0.0; 1000], 1.0, 1.0)?, vec![0.0; 1000], 0.01)?;\nlet _value = subject.dt();",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
@@ -21136,7 +21136,7 @@
     "medium": "rust",
     "code": "use ::quantum::transfer::scatter_real;\n\n// T(E) and R(E) for a potential sampled on a grid, by transfer matrix \u2014\n// exact at one energy, with no packet and no time stepping\nlet v = vec![0.0f64; 40];\nlet out = scatter_real(&v, -8.0, 8.0, 2.0, 1.0, 1.0)?;\nlet _ = out;",
     "expected": "compiles",
-    "verified": "2026-07-30",
+    "verified": "2026-07-31",
     "runner": "cargo build"
    }
   ],
