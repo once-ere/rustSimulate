@@ -51,3 +51,6 @@ StageNbks/out_*.html
 # posim/examples/scene_server_reference.rs — a loose copy must never
 # shadow it or get pushed alongside it.
 recover.txt
+
+# PHASE 1 refined-prompt artifact (working document, never published)
+/prompt_01.md
