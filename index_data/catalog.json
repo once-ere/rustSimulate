@@ -38,11 +38,14 @@
   "schema": "prompt_01.md section 5",
   "examples_verified": true,
   "verified_pass": 1435,
-  "verified_total": 1411,
-  "verified_date": "2026-07-30",
+  "verified_total": 1435,
+  "verified_date": "2026-07-31",
   "verified_by": {
    "posim": "executed with `posim --script` from the repository root; output captured into `expected`",
-   "rust": "compiled by `cargo build -p posim --example \u2026` via tools/verify_tierb_examples.py; `expected` reads `compiles`"
+   "rust": "compiled by `cargo build -p posim --example \u2026` via tools/verify_tierb_examples.py; `expected` reads `compiles`",
+   "machine": "executed through the JSONL protocol with `posim --machine`; a reply carrying \"ok\":false is the machine-mode equivalent of an Err[] line",
+   "quoted": "NOT run by this page \u2014 a transcript quoted verbatim from the document that published it",
+   "shell": "NOT run by this page \u2014 a command you run yourself, pointing at a program verified elsewhere"
   },
   "shell_examples": {
    "verified": false,

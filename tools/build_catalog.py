@@ -1179,14 +1179,24 @@ def main():
         # they are excluded from the total rather than counted as failures.
         "verified_pass": sum(1 for e in catalog for x in e["examples"]
                              if x["verified"]),
+        # machine-mode fragments are EXECUTED too — omitting them from the
+        # total while counting them in the pass gave the home screen the
+        # nonsense headline "1435 of 1411 examples verified".
         "verified_total": sum(1 for e in catalog for x in e["examples"]
-                              if x["medium"] in ("posim", "rust")),
-        "verified_date": "2026-07-30",
+                              if x["medium"] in ("posim", "rust", "machine")),
+        "verified_date": "2026-07-31",
         "verified_by": {
             "posim": "executed with `posim --script` from the repository root; "
                      "output captured into `expected`",
             "rust": "compiled by `cargo build -p posim --example …` via "
                     "tools/verify_tierb_examples.py; `expected` reads `compiles`",
+            "machine": "executed through the JSONL protocol with `posim --machine`; "
+                       "a reply carrying \"ok\":false is the machine-mode equivalent "
+                       "of an Err[] line",
+            "quoted": "NOT run by this page — a transcript quoted verbatim from the "
+                      "document that published it",
+            "shell": "NOT run by this page — a command you run yourself, pointing at a "
+                     "program verified elsewhere",
         },
         "shell_examples": {
             "verified": False,
