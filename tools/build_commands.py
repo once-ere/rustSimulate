@@ -565,6 +565,16 @@ out.append(E(
 SP = "new sphere { mass = 1, radius = 0.5 }\nscene create"
 SM = "new point { mass = 1, velocity = [1, 0, 0] }\nscene create"
 
+SPIN = ("# playback advances on WALL-CLOCK time, on its own thread, so a batch\n"
+        "# script must actually spend some — otherwise PAUSE lands before the\n"
+        "# first frame is recorded and REVERSE has nothing to rewind. The work\n"
+        "# below also shows the isolation: the notebook computes while the\n"
+        "# window animates, and neither moves the other.\n"
+        "def v2(x, y) { 0.5 * (x * x + y * y) }\n"
+        "qm2 grid -5 5 40, -5 5 40\n"
+        "qm2 potential v2\n"
+        "qm2 states 3")
+
 SCENE = [
     ("create", "SCENE CREATE", "SCENE CREATE [ NUMBER ]",
      "Open the scene window. Starts a tiny web server INSIDE posim (pure Rust standard "
@@ -651,19 +661,20 @@ SCENE = [
      [SM + "\nscene start\nscene pause\nscene close",
       SM + "\nscene start\nscene pause\nscene status\nscene close",
       SM + "\nscene start\nscene pause\nscene start\nscene pause\nscene close",
-      SM + "\nscene start\nscene pause\nscene reverse\nscene status\nscene close"], []),
+      SM + "\nscene start\n" + SPIN + "\nscene pause\nscene reverse\nscene close"], []),
     ("reverse", "SCENE REVERSE", "SCENE REVERSE",
      "Play BACKWARD in time through the recorded history. While running forward the playback "
      "thread records a snapshot of the whole system before every step (a ring buffer, at most "
      "20 000 frames); REVERSE replays those newest-first, which is an EXACT rewind -- "
      "bit-for-bit the states you already visited, not negative-dt integration. When the buffer "
      "runs out it pauses and sends an event.",
-     [SM + "\nscene start\nscene pause\nscene reverse\nscene close",
-      SM + "\nscene start\nscene pause\nscene reverse\nscene status\nscene close",
-      SM + "\nscene set_time_step 0.005\nscene start\nscene pause\nscene reverse\n"
-      "scene status\nscene close",
-      SM + "\nscene start\nscene pause\nscene reverse\nscene events\nscene status\n"
-      "scene close"],
+     [SM + "\nscene start\n" + SPIN + "\nscene pause\nscene reverse\nscene close",
+      SM + "\nscene set_time_step 0.001\nscene start\n" + SPIN +
+      "\nscene pause\nscene reverse\nscene close",
+      SM + "\nscene start\n" + SPIN + "\nscene pause\nscene reverse\n"
+      "scene pause\nscene start\nscene pause\nscene close",
+      SM + "\nscene start\n" + SPIN + "\nscene pause\nscene reverse\n"
+      "scene events\nscene close"],
      ["scene: nothing to reverse - no forward history recorded yet (SCENE START first)"]),
     ("reset", "SCENE RESET", "SCENE RESET",
      "Re-initialise the playback: every mutable value and the time return to their initial "
@@ -690,8 +701,8 @@ SCENE = [
      "hidden list; camera.",
      [SP + "\nscene status\nscene close", SP + "\nscene zoom 2\nscene status\nscene close",
       SM + "\nscene start\nscene pause\nscene status\nscene close",
-      SM + "\nscene start\nscene pause\nscene status\nscene reverse\nscene status\n"
-      "scene close"],
+      SM + "\nscene start\n" + SPIN + "\nscene pause\nscene status\n"
+      "scene reverse\nscene close"],
      ["no scene window - run SCENE CREATE first"]),
     ("events", "SCENE EVENTS", "SCENE EVENTS",
      "Print (and clear) the asynchronous messages the window has sent: JavaScript errors, "
@@ -700,7 +711,8 @@ SCENE = [
      "[scene] ... lines, without you asking.",
      [SP + "\nscene events\nscene close", SP + "\nscene events\nscene events\nscene close",
       SM + "\nscene start\nscene pause\nscene events\nscene close",
-      SM + "\nscene start\nscene pause\nscene reverse\nscene events\nscene close"], []),
+      SM + "\nscene start\n" + SPIN + "\nscene pause\nscene reverse\n"
+      "scene events\nscene close"], []),
 ]
 
 for sid, nm, syn, defn, rungs, errs in SCENE:

@@ -1,5 +1,5 @@
 {
- "phase": 2,
+ "phase": 4,
  "extracted": "2026-07-30",
  "tier_A_notebook_surface": {
   "keyword": 57,
@@ -42,5 +42,15 @@
  ],
  "divergences_found": 6,
  "prose_files_read": 21,
- "primary_source_files_scanned": 325
+ "primary_source_files_scanned": 325,
+ "catalog": {
+  "entries": 452,
+  "examples_total": 1007,
+  "examples_posim_verified": 942,
+  "examples_shell_not_batch_verifiable": 65,
+  "pass_rate": "942/942 (100%)",
+  "verified_date": "2026-07-30",
+  "stubs": 76
+ },
+ "divergences_fixed": 1
 }

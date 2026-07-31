@@ -35,6 +35,21 @@ MAKER = {
     "sphere, disk, cylinder": "new sphere { mass = 2, radius = 0.5 }",
 }
 
+# Some fields have a range the generic sample would violate: writing
+# tube_radius = 3 on a ring-1.5 torus asks for inner = -1.5, and
+# restitution = 3 is not a restitution. Per-field overrides keep every
+# generated SET example inside the field's own domain.
+PROP_SAMPLE = {
+    "tube_radius": "0.25",
+    "inner_radius": "0.5",
+    "outer_radius": "3",
+    "restitution": "0.8",
+    "rod_radius": "0.05",
+    "r1": "0.2",
+    "r2": "0.2",
+    "length": "2",
+}
+
 SAMPLE = {           # a plausible literal to write into a field of each type
     "number": "3",
     "vec3": "[1, 2, 3]",
@@ -145,7 +160,15 @@ KEYWORD_USE = {
     "START": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene close",
     "STOP": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene stop\nscene close",
     "PAUSE": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene close",
-    "REVERSE": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene reverse\nscene close",
+    "REVERSE": ("new point { mass = 1, velocity = [1, 0, 0] }\nscene create\n"
+                "scene start\n"
+                "# playback advances on WALL-CLOCK time, on its own thread, so a\n"
+                "# batch script must actually spend some — otherwise PAUSE lands\n"
+                "# before the first frame is recorded and REVERSE has nothing to\n"
+                "# rewind.\n"
+                "def v2(x, y) { 0.5 * (x * x + y * y) }\n"
+                "qm2 grid -5 5 40, -5 5 40\nqm2 potential v2\nqm2 states 3\n"
+                "scene pause\nscene reverse\nscene close"),
     "SET_TIME_STEP": "new sphere { mass = 1 }\nscene create\nscene set_time_step 0.005\nscene close",
     "STATUS": "new sphere { mass = 1 }\nscene create\nscene status\nscene close",
     "EVENTS": "new sphere { mass = 1 }\nscene create\nscene events\nscene close",
@@ -298,7 +321,8 @@ def prop_examples(p, root):
 
     out.append(ex("trivial", f"{maker}\nget obj0.{n}"))
     if rw == "RW":
-        out.append(ex("intermediate", f"{maker}\nset obj0.{n} = {SAMPLE[t]}\nget obj0.{n}"))
+        val = PROP_SAMPLE.get(n, SAMPLE[t])
+        out.append(ex("intermediate", f"{maker}\nset obj0.{n} = {val}\nget obj0.{n}"))
     else:
         out.append(ex("intermediate", f"{maker}\nobj0.{n}"))
     if t in ("vec3", "quaternion"):
@@ -734,6 +758,27 @@ def nb_anchors():
     return anchors
 
 
+def opens_window(path):
+    """Does this notebook actually EXECUTE `SCENE CREATE`?
+
+    Grepping the raw text is not good enough, and getting that wrong is
+    how this function was first written: ten notebooks discuss the scene
+    window in `#` comments without ever opening one, so a plain substring
+    search says yes and the generated `scene close` then errors with `no
+    scene window is open`. Strip comments the way the lexer does — `#` to
+    end of line — before deciding.
+    """
+    try:
+        text = open(path, encoding="utf-8").read()
+    except OSError:
+        return False
+    for raw in text.splitlines():
+        line = raw.split("#", 1)[0].strip().lower()
+        if line.startswith("scene ") and line.split()[1:2] == ["create"]:
+            return True
+    return False
+
+
 def build_notebooks():
     co = json.load(open(f"{D}/corpora.json"))
     anchors = nb_anchors()
@@ -775,8 +820,12 @@ def build_notebooks():
                     # failing %load exits 0 with no Err[ line — so this fragment is only
                     # meaningful from the repository root, and the verifier must treat a
                     # `failed:` line as a failure. See _meta.failure_rules.
+                    # Only close a window the file actually opened: the QM
+                    # notebooks (tunneling, double_slit) write an HTML film
+                    # instead and never call SCENE CREATE, so an
+                    # unconditional `scene close` errors on exactly those.
                     ex("intermediate",
-                       f"%load {path}" + ("\nscene close" if key == "dynamic_notebooks" else ""),
+                       f"%load {path}" + ("\nscene close" if opens_window(path) else ""),
                        runner="posim --script (from the repository root)"),
                 ],
                 seeAlso=["cmd.scene.create"] if key == "dynamic_notebooks" else ["cmd.collide"],

@@ -2775,7 +2775,7 @@
    {
     "level": "expert",
     "medium": "posim",
-    "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene reverse\nscene status\nscene close",
+    "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\n# playback advances on WALL-CLOCK time, on its own thread, so a batch\n# script must actually spend some \u2014 otherwise PAUSE lands before the\n# first frame is recorded and REVERSE has nothing to rewind. The work\n# below also shows the isolation: the notebook computes while the\n# window animates, and neither moves the other.\ndef v2(x, y) { 0.5 * (x * x + y * y) }\nqm2 grid -5 5 40, -5 5 40\nqm2 potential v2\nqm2 states 3\nscene pause\nscene reverse\nscene close",
     "expected": null,
     "verified": null,
     "runner": "posim --script"
@@ -2830,7 +2830,7 @@
    {
     "level": "trivial",
     "medium": "posim",
-    "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene reverse\nscene close",
+    "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\n# playback advances on WALL-CLOCK time, on its own thread, so a batch\n# script must actually spend some \u2014 otherwise PAUSE lands before the\n# first frame is recorded and REVERSE has nothing to rewind. The work\n# below also shows the isolation: the notebook computes while the\n# window animates, and neither moves the other.\ndef v2(x, y) { 0.5 * (x * x + y * y) }\nqm2 grid -5 5 40, -5 5 40\nqm2 potential v2\nqm2 states 3\nscene pause\nscene reverse\nscene close",
     "expected": null,
     "verified": null,
     "runner": "posim --script"
@@ -2838,7 +2838,7 @@
    {
     "level": "intermediate",
     "medium": "posim",
-    "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene reverse\nscene status\nscene close",
+    "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene set_time_step 0.001\nscene start\n# playback advances on WALL-CLOCK time, on its own thread, so a batch\n# script must actually spend some \u2014 otherwise PAUSE lands before the\n# first frame is recorded and REVERSE has nothing to rewind. The work\n# below also shows the isolation: the notebook computes while the\n# window animates, and neither moves the other.\ndef v2(x, y) { 0.5 * (x * x + y * y) }\nqm2 grid -5 5 40, -5 5 40\nqm2 potential v2\nqm2 states 3\nscene pause\nscene reverse\nscene close",
     "expected": null,
     "verified": null,
     "runner": "posim --script"
@@ -2846,7 +2846,7 @@
    {
     "level": "advanced",
     "medium": "posim",
-    "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene set_time_step 0.005\nscene start\nscene pause\nscene reverse\nscene status\nscene close",
+    "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\n# playback advances on WALL-CLOCK time, on its own thread, so a batch\n# script must actually spend some \u2014 otherwise PAUSE lands before the\n# first frame is recorded and REVERSE has nothing to rewind. The work\n# below also shows the isolation: the notebook computes while the\n# window animates, and neither moves the other.\ndef v2(x, y) { 0.5 * (x * x + y * y) }\nqm2 grid -5 5 40, -5 5 40\nqm2 potential v2\nqm2 states 3\nscene pause\nscene reverse\nscene pause\nscene start\nscene pause\nscene close",
     "expected": null,
     "verified": null,
     "runner": "posim --script"
@@ -2854,7 +2854,7 @@
    {
     "level": "expert",
     "medium": "posim",
-    "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene reverse\nscene events\nscene status\nscene close",
+    "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\n# playback advances on WALL-CLOCK time, on its own thread, so a batch\n# script must actually spend some \u2014 otherwise PAUSE lands before the\n# first frame is recorded and REVERSE has nothing to rewind. The work\n# below also shows the isolation: the notebook computes while the\n# window animates, and neither moves the other.\ndef v2(x, y) { 0.5 * (x * x + y * y) }\nqm2 grid -5 5 40, -5 5 40\nqm2 potential v2\nqm2 states 3\nscene pause\nscene reverse\nscene events\nscene close",
     "expected": null,
     "verified": null,
     "runner": "posim --script"
@@ -3091,7 +3091,7 @@
    {
     "level": "expert",
     "medium": "posim",
-    "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene status\nscene reverse\nscene status\nscene close",
+    "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\n# playback advances on WALL-CLOCK time, on its own thread, so a batch\n# script must actually spend some \u2014 otherwise PAUSE lands before the\n# first frame is recorded and REVERSE has nothing to rewind. The work\n# below also shows the isolation: the notebook computes while the\n# window animates, and neither moves the other.\ndef v2(x, y) { 0.5 * (x * x + y * y) }\nqm2 grid -5 5 40, -5 5 40\nqm2 potential v2\nqm2 states 3\nscene pause\nscene status\nscene reverse\nscene close",
     "expected": null,
     "verified": null,
     "runner": "posim --script"
@@ -3168,7 +3168,7 @@
    {
     "level": "expert",
     "medium": "posim",
-    "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene reverse\nscene events\nscene close",
+    "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\n# playback advances on WALL-CLOCK time, on its own thread, so a batch\n# script must actually spend some \u2014 otherwise PAUSE lands before the\n# first frame is recorded and REVERSE has nothing to rewind. The work\n# below also shows the isolation: the notebook computes while the\n# window animates, and neither moves the other.\ndef v2(x, y) { 0.5 * (x * x + y * y) }\nqm2 grid -5 5 40, -5 5 40\nqm2 potential v2\nqm2 states 3\nscene pause\nscene reverse\nscene events\nscene close",
     "expected": null,
     "verified": null,
     "runner": "posim --script"
