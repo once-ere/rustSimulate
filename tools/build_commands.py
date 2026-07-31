@@ -32,7 +32,9 @@ def E(id, name, summary, definition, syntax, rungs, **kw):
             "parameters": kw.get("parameters", []), "returns": kw.get("returns"),
             "errors": kw.get("errors", []),
             "locations": kw.get("locations", [{"file": P, "line": 8, "role": "grammar"}]),
-            "examples": [ex(l, c) for l, c in zip(LEVELS, rungs)],
+            "examples": [ex(l, c, medium=kw.get("medium", "posim"),
+                            runner=kw.get("runner", "posim --script"))
+                         for l, c in zip(LEVELS, rungs)],
             "seeAlso": kw.get("seeAlso", []), "invariants": kw.get("invariants", []),
             "status": "complete" if rungs else "stub"}
 
@@ -361,7 +363,14 @@ out.append(E(
     "Prints HELP_TEXT -- the quick-reference card covering NEW, BOX, DEF, SET/GET and their "
     "field lists, the observables, the QM/QM2/QM3 families and every registered special "
     "function.",
-    ["HELP"], ["help"],
+    ["HELP"],
+    # the discovery path, which is genuinely four steps: the card, then the
+    # three commands that answer what the card cannot — which functions you
+    # have defined, what one of them says, and what the session is set to
+    ["help",
+     "help\nfuncs",
+     "def probe(m = 2) { new sphere { mass = m } }\nfuncs\nshow probe",
+     "box 4\ncollide\nbox\nget system.method\nget system.count"],
     locations=[{"file": V, "line": 363, "role": "HELP_TEXT"},
                {"file": P, "line": 21, "role": "production"}],
     seeAlso=["cmd.funcs"]))
@@ -1059,6 +1068,45 @@ MACHINE_DOC = {
  "quit": "End the session.",
 }
 
+M_LADDER = {
+ "exec": [
+  "{\"op\":\"exec\",\"code\":\"new sphere { mass = 2, radius = 0.5 }\"}\n{\"op\":\"quit\"}",
+  "{\"op\":\"exec\",\"code\":\"new point { mass = 1, velocity = [0, 1, 0] }\"}\n{\"op\":\"exec\",\"code\":\"energy\"}\n{\"op\":\"quit\"}",
+  "{\"op\":\"exec\",\"code\":\"def mk(m = 3) {\\n  new sphere as pip { mass = m }\\n}\"}\n{\"op\":\"exec\",\"code\":\"mk()\"}\n{\"op\":\"get\",\"path\":\"pip.mass\"}\n{\"op\":\"quit\"}",
+  "{\"op\":\"exec\",\"code\":\"set system.g_constant = 0\"}\n{\"op\":\"exec\",\"code\":\"new sphere { mass = 1, radius = 0.5, position = [-2, 0, 0], velocity = [1, 0, 0] }\"}\n{\"op\":\"exec\",\"code\":\"new sphere { mass = 1, radius = 0.5, position = [2, 0, 0], velocity = [-1, 0, 0] }\"}\n{\"op\":\"exec\",\"code\":\"run 2 steps 2\"}\n{\"op\":\"get\",\"path\":\"contact0.normal\"}\n{\"op\":\"quit\"}"
+ ],
+ "get": [
+  "{\"op\":\"exec\",\"code\":\"new point { mass = 2, velocity = [3, 0, 0] }\"}\n{\"op\":\"get\",\"path\":\"obj0.momentum\"}\n{\"op\":\"quit\"}",
+  "{\"op\":\"exec\",\"code\":\"new point { mass = 2 }\"}\n{\"op\":\"get\",\"path\":\"obj0.mass\"}\n{\"op\":\"get\",\"path\":\"obj0.inverse_mass\"}\n{\"op\":\"quit\"}",
+  "{\"op\":\"exec\",\"code\":\"new sphere as ball { mass = 2, radius = 0.5 }\"}\n{\"op\":\"get\",\"path\":\"ball.inertia_tensor\"}\n{\"op\":\"quit\"}",
+  "{\"op\":\"exec\",\"code\":\"new point { mass = 1, position = [1, 2, 3] }\"}\n{\"op\":\"get\",\"path\":\"obj0.position\"}\n{\"op\":\"get\",\"path\":\"obj0.position.y\"}\n{\"op\":\"get\",\"path\":\"system.count\"}\n{\"op\":\"quit\"}"
+ ],
+ "set": [
+  "{\"op\":\"exec\",\"code\":\"new point { mass = 1 }\"}\n{\"op\":\"set\",\"path\":\"obj0.mass\",\"value\":5}\n{\"op\":\"get\",\"path\":\"obj0.mass\"}\n{\"op\":\"quit\"}",
+  "{\"op\":\"exec\",\"code\":\"new point { mass = 1 }\"}\n{\"op\":\"set\",\"path\":\"obj0.velocity\",\"value\":[1,2,3]}\n{\"op\":\"get\",\"path\":\"obj0.momentum\"}\n{\"op\":\"quit\"}",
+  "{\"op\":\"exec\",\"code\":\"new sphere { mass = 4, radius = 0.5 }\"}\n{\"op\":\"set\",\"path\":\"obj0.inverse_mass\",\"value\":0}\n{\"op\":\"get\",\"path\":\"obj0.mass\"}\n{\"op\":\"quit\"}",
+  "{\"op\":\"exec\",\"code\":\"new point { mass = 1, velocity = [0, 1, 0] }\"}\n{\"op\":\"get\",\"path\":\"obj0.momentum\"}\n{\"op\":\"set\",\"path\":\"obj0.mass\",\"value\":5}\n{\"op\":\"get\",\"path\":\"obj0.momentum\"}\n{\"op\":\"get\",\"path\":\"obj0.velocity\"}\n{\"op\":\"quit\"}"
+ ],
+ "state": [
+  "{\"op\":\"state\"}\n{\"op\":\"quit\"}",
+  "{\"op\":\"exec\",\"code\":\"new sphere { mass = 2, radius = 0.5 }\"}\n{\"op\":\"state\"}\n{\"op\":\"quit\"}",
+  "{\"op\":\"exec\",\"code\":\"box 4\"}\n{\"op\":\"state\"}\n{\"op\":\"quit\"}",
+  "{\"op\":\"exec\",\"code\":\"set system.g_constant = 0\"}\n{\"op\":\"exec\",\"code\":\"new dumbbell { m1 = 1, m2 = 2, m_rod = 0.5 }\"}\n{\"op\":\"exec\",\"code\":\"run 1 steps 2\"}\n{\"op\":\"state\"}\n{\"op\":\"quit\"}"
+ ],
+ "help": [
+  "{\"op\":\"help\"}\n{\"op\":\"quit\"}",
+  "{\"op\":\"help\"}\n{\"op\":\"exec\",\"code\":\"funcs\"}\n{\"op\":\"quit\"}",
+  "{\"op\":\"exec\",\"code\":\"def probe(m = 2) { new sphere { mass = m } }\"}\n{\"op\":\"help\"}\n{\"op\":\"exec\",\"code\":\"funcs\"}\n{\"op\":\"quit\"}",
+  "{\"op\":\"help\"}\n{\"op\":\"exec\",\"code\":\"collide\"}\n{\"op\":\"exec\",\"code\":\"box\"}\n{\"op\":\"quit\"}"
+ ],
+ "quit": [
+  "{\"op\":\"quit\"}",
+  "{\"op\":\"exec\",\"code\":\"new point { mass = 1 }\"}\n{\"op\":\"quit\"}",
+  "{\"op\":\"exec\",\"code\":\"new point { mass = 1 }\"}\n{\"op\":\"get\",\"path\":\"obj0.mass\"}\n{\"op\":\"quit\"}",
+  "{\"op\":\"exec\",\"code\":\"energy\"}\n{\"op\":\"state\"}\n{\"op\":\"quit\"}"
+ ]
+}
+
 for m in cmds["machine_ops"]:
     op = m["op"]
     out.append(E(
@@ -1070,12 +1118,14 @@ for m in cmds["machine_ops"]:
         'pushes asynchronous {"event": ...} lines that are NOT replies to any request; the '
         "JupyterLab kernel has a reader thread that streams them into your notebook as "
         "[scene] ... lines the moment they happen.",
-        [m["shape"]], [],
+        [m["shape"],
+         "printf '%s\\n' '" + m["shape"] + "' | posim --machine"],
+        M_LADDER[op],
+        medium="machine", runner="posim --machine",
         indexKeys=["{"],
         locations=[{"file": "posim/src/machine.rs", "line": 1, "role": "the protocol"},
                    {"file": "jupyter/README.md", "line": 53, "role": "spec"}],
-        seeAlso=["cmd.machine.exec" if op != "exec" else "cmd.machine.get"],
-        status="stub"))
+        seeAlso=["cmd.machine.exec" if op != "exec" else "cmd.machine.get"]))
 
 json.dump(out, open("index_data/entries_commands.json", "w"), indent=1)
 print(str(len(out)) + " command entries -> index_data/entries_commands.json")

@@ -52,6 +52,27 @@ def failures_in(stdout):
     return bad
 
 
+def run_machine(code):
+    """Feed JSONL requests to `posim --machine` and capture the replies.
+
+    Machine mode is every bit as runnable as the notebook — it is what the
+    JupyterLab kernel drives — so its examples are executed rather than left
+    as stubs. A reply line carrying "ok":false is a failure, the machine-mode
+    equivalent of an Err[] line.
+    """
+    try:
+        r = subprocess.run(
+            [BIN, "--machine"], input=code.rstrip("\n") + "\n",
+            capture_output=True, text=True, timeout=TIMEOUT,
+            env=dict(os.environ, POSIM_NO_BROWSER="1"), cwd=ROOT)
+    except subprocess.TimeoutExpired:
+        return False, "", ["timed out after %ds" % TIMEOUT]
+    reasons = [l.strip()[:120] for l in r.stdout.splitlines() if '"ok":false' in l]
+    if r.returncode != 0:
+        reasons.append("exit status %d" % r.returncode)
+    return (not reasons), r.stdout, reasons
+
+
 def run_posim(code):
     """Run one fragment. Returns (ok, stdout, [reasons])."""
     with tempfile.TemporaryDirectory() as d:
@@ -122,18 +143,21 @@ def main():
         if args.only and e["kind"] != args.only:
             continue
         for i, x in enumerate(e["examples"]):
-            if x["medium"] == "posim":
-                jobs.append((e["id"], e["kind"], i, x["code"]))
+            if x["medium"] in ("posim", "machine"):
+                jobs.append((e["id"], e["kind"], i, x["code"], x["medium"]))
 
-    print("verifying %d posim fragments with %d workers\n" % (len(jobs), args.jobs))
+    print("verifying %d fragments (%d posim, %d machine) with %d workers\n"
+          % (len(jobs), sum(1 for j in jobs if j[4] == "posim"),
+             sum(1 for j in jobs if j[4] == "machine"), args.jobs))
     results = {}
     t0 = time.time()
     done = 0
     with concurrent.futures.ThreadPoolExecutor(max_workers=args.jobs) as pool:
-        futures = {pool.submit(run_posim, code): (eid, kind, i)
-                   for eid, kind, i, code in jobs}
+        futures = {pool.submit(run_machine if med == "machine" else run_posim,
+                              code): (eid, kind, i, med)
+                   for eid, kind, i, code, med in jobs}
         for fut in concurrent.futures.as_completed(futures):
-            eid, kind, i = futures[fut]
+            eid, kind, i, _med = futures[fut]
             ok, out, reasons = fut.result()
             results[(eid, i)] = (ok, out, reasons)
             done += 1
@@ -150,7 +174,8 @@ def main():
                 continue
             ok, out, reasons = results[(e["id"], i)]
             if ok:
-                x["expected"] = transcript(out)
+                x["expected"] = (out.strip() if x["medium"] == "machine"
+                                 else transcript(out))
                 x["verified"] = TODAY
                 passed += 1
             else:

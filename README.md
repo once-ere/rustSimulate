@@ -87,10 +87,11 @@ instead of 5.
 | C | the vendored `sundials_rs` workspace | 3,887 | linked to the shipped example programs that call them |
 
 **Every example is checked, and the page says which kind of check it got:**
-a posim fragment is *executed* (`posim --script`, output captured), a Rust
-snippet is *compiled*, and a shell command reads "run this yourself" because it
-points at a program verified elsewhere rather than one this page ran. 1,261 of
-1,261 runnable examples pass.
+a posim fragment is *executed* (`posim --script`, output captured), a
+machine-mode fragment is *executed* through the JSONL protocol, a Rust snippet
+is *compiled*, and a shell command reads "run this yourself" because it points
+at a program verified elsewhere rather than one this page ran. 1,312 of 1,312
+runnable examples pass.
 
 Navigation is A–Z / 0–9 / special-character buckets, with search and kind
 filters. The whole thing is operable from the keyboard — press <kbd>?</kbd> for
@@ -111,10 +112,11 @@ The status page inside the app is the authority, and it is blunt:
   entry links to the shipped example *programs* that actually call it — those
   are diffed byte-for-byte against the upstream C references
   ([sundials_rs/VERIFICATION.md](sundials_rs/VERIFICATION.md)).
-- **230 of 254 Tier-A entries have the full four-rung example ladder.** The
-  remaining 24 are the six machine-mode JSON ops (a different medium) and the
-  shape entries, where a third and fourth rung would be padding rather than
-  teaching.
+- **All 254 Tier-A commands, builtins, field paths and types carry the full
+  four-rung ladder.** Closing the last 24 meant giving the machine-mode JSON
+  ops real executed examples (`posim --machine` is as runnable as the
+  notebook), and giving each shape a rung that *checks* its documented inertia
+  formula against the printed tensor rather than restating it.
 - Captured output has genuine run-to-run variation normalised — the
   OS-assigned scene port becomes `<port>`, playback counters become
   `<varies>`. Solver step counts are **not** normalised: those are

@@ -294,6 +294,22 @@ COUPLING = {
 }
 
 
+# The rung each of these fields actually needs: the refusal, the boundary
+# case, or the physical consequence — not a fourth restatement.
+FOURTH = {
+ "mass": "new sphere { mass = 4, radius = 0.5 }\nset obj0.mass = 0\nget obj0.inverse_mass\nget obj0.mass",
+ "inverse_mass": "set system.g_constant = 0\nnew sphere { mass = 1, radius = 0.5, position = [0, 2, 0], velocity = [0, -1, 0] }\nnew cuboid { mass = 1, half_extents = [2, 0.5, 2], inverse_mass = 0 }\nmomentum\nrun 3 steps 3\nmomentum\nget obj1.position",
+ "inertia_tensor": "new cuboid { mass = 1, inertia_tensor = [[2, 0, 0], [0, 3, 0], [0, 0, 4]], orientation = [0.7071067811865476, 0, 0, 0.7071067811865476] }\nset obj0.angular_velocity = [0, 2, 0]\nget obj0.angular_momentum",
+ "inner_radius": "new torus { mass = 1, inner_radius = 0, outer_radius = 2 }\nget obj0.ring_radius\nget obj0.tube_radius\nget obj0.inner_radius",
+ "outer_radius": "new torus { mass = 1, outer_radius = 0.5, inner_radius = 0.2 }\nget obj0.ring_radius\nget obj0.tube_radius",
+ "radius": "new cylinder { mass = 2, radius = 0.5, height = 1.5 }\nset obj0.radius = 1\nget obj0.boundary\nget obj0.height",
+ "height": "new cylinder { mass = 2, radius = 0.5, height = 1.5 }\nget obj0.height\nset obj0.half_height = 2\nget obj0.height",
+ "m1": "new dumbbell { m1 = 1, m2 = 2, m_rod = 0.5, velocity = [1, 0, 0] }\nget obj0.momentum\nset obj0.m1 = 3\nget obj0.momentum\nget obj0.velocity",
+ "restitution": "set system.g_constant = 0\nset system.gravity = [0, -9.81, 0]\nnew sphere { mass = 1, radius = 0.5, position = [0, 5, 0], restitution = 0.8 }\nnew cuboid { mass = 1, half_extents = [4, 0.5, 4], position = [0, 0, 0], inverse_mass = 0 }\nrun 2 steps 20\nget system.collisions",
+ "boundary": "new sphere { mass = 1, radius = 0.5 }\nnew torus { mass = 1, inner_radius = 1, outer_radius = 2 }\nnew dumbbell { m1 = 1, m2 = 2 }\nget obj0.boundary\nget obj1.boundary\nget obj2.boundary"
+}
+
+
 def prop_examples(p, root):
     """A ladder of self-contained fragments for one field path."""
     shapes = p.get("shapes", "all")
@@ -349,7 +365,13 @@ def prop_examples(p, root):
         out.append(ex("advanced", f"{maker}\nget obj0.{p['aliases'][0]}"))
     if n in COUPLING:
         out.append(ex("expert", COUPLING[n][0]))
-    elif t in ("number", "vec3", "quaternion", "mat3"):
+    # FOURTH is applied independently of COUPLING: a read-only field like
+    # `boundary` has no coupled invariant to demonstrate, but still deserves
+    # the rung that shows what it is FOR.
+    if n in FOURTH:
+        out.append(ex("expert", FOURTH[n]))
+    if not (n in COUPLING or n in FOURTH) \
+            and t in ("number", "vec3", "quaternion", "mat3"):
         # watch the field across a real integration: a static read tells you
         # the type, a read either side of a RUN tells you what it MEANS
         while len(out) < 4:
@@ -751,6 +773,41 @@ SHAPE_DOC = {
 }
 
 
+# Rungs 3 and 4 for each shape CHECK the documented inertia formula rather
+# than restate it: build it, read the tensor, subtract the analytic value.
+# An example that proves its own claim is worth more than one that repeats it.
+SHAPE_LADDER = {
+ "POINT": [
+  "new point { mass = 1, position = [1, 0, 0], velocity = [0, 3, 0] }\nangmom\ncross(obj0.position, obj0.momentum)",
+  "new point { mass = 1, position = [1, 0, 0], velocity = [0, 1, 0] }\nnew point { mass = 4, position = [-1, 0, 0], velocity = [0, -0.25, 0] }\nset system.g_constant = 0.001\nmomentum\nrun 3 steps 3\nmomentum"
+ ],
+ "SPHERE": [
+  "new sphere { mass = 2, radius = 0.5 }\nget obj0.inertia_tensor\n0.4 * 2 * 0.5 * 0.5",
+  "set system.g_constant = 0\nnew sphere { mass = 1, radius = 0.5, position = [-2, 0, 0], velocity = [1, 0, 0] }\nnew sphere { mass = 1, radius = 0.5, position = [2, 0, 0], velocity = [-1, 0, 0] }\nenergy\nrun 2 steps 2\nenergy\nget contact0.t"
+ ],
+ "CUBOID": [
+  "new cuboid { mass = 3, half_extents = [0.5, 1, 2] }\nget obj0.inertia_tensor\n3 / 3 * (1 * 1 + 2 * 2)",
+  "new cuboid { mass = 3, half_extents = [0.5, 1, 2], angular_velocity = [0.01, 3, 0.01] }\nangmom\nrun 40 steps 4\nget obj0.angular_velocity\nangmom"
+ ],
+ "TORUS": [
+  "new torus { mass = 1, inner_radius = 1, outer_radius = 2 }\nget obj0.inertia_tensor\n1 * (1.5 * 1.5 + 0.75 * 0.5 * 0.5)\n1 * (0.5 * 1.5 * 1.5 + 0.625 * 0.5 * 0.5)",
+  "new torus { mass = 1, inner_radius = 0, outer_radius = 2 }\nget obj0.ring_radius\nget obj0.tube_radius\nget obj0.inner_radius"
+ ],
+ "DISK": [
+  "new disk { mass = 1, radius = 1 }\nget obj0.inertia_tensor\n0.5 * 1 * 1 * 1\n0.25 * 1 * 1 * 1",
+  "new disk { mass = 1, radius = 1 }\nset obj0.radius = 2\nget obj0.boundary\nget obj0.inertia_tensor\n0.5 * 1 * 2 * 2"
+ ],
+ "CYLINDER": [
+  "new cylinder { mass = 2, radius = 0.5, height = 1.5 }\nget obj0.inertia_tensor\n0.5 * 2 * 0.5 * 0.5",
+  "new cylinder { mass = 2, radius = 0.5, height = 1.5 }\nget obj0.half_height\nget obj0.inertia_tensor\n2 * (3 * 0.5 * 0.5 + 4 * 0.75 * 0.75) / 12"
+ ],
+ "DUMBBELL": [
+  "new dumbbell { m1 = 1, m2 = 2, m_rod = 0.5 }\nget obj0.mass\nget obj0.m1\nget obj0.m2\nget obj0.position",
+  "set system.g_constant = 0\nnew dumbbell { m1 = 1, m2 = 2, m_rod = 0.5, position = [-2, 0.15, 0], velocity = [1.5, 0, 0], angular_velocity = [0, 0, 0.6] }\nnew dumbbell { m1 = 2, m2 = 1, m_rod = 0.4, r1 = 0.3, r2 = 0.2, rod_radius = 0.08, length = 1.2, position = [2, -0.15, 0], velocity = [-1.5, 0, 0], angular_velocity = [0.4, 0, 0] }\nenergy\nangmom\nrun 3 steps 60\nenergy\nangmom"
+ ]
+}
+
+
 def build_types():
     out = []
     for name, defn, rungs in TYPES:
@@ -777,7 +834,9 @@ def build_types():
             locations=[{"file": "physical_object/src/boundary.rs", "line": 1,
                         "role": "Boundary enum"},
                        {"file": "posim/src/lexer.rs", "line": 1, "role": "shape keyword"}],
-            examples=[ex("trivial", f"new {shape.lower()}"), ex("intermediate", code)],
+            examples=[ex("trivial", f"new {shape.lower()}"), ex("intermediate", code)]
+                     + [ex(l, c) for l, c in zip(["advanced", "expert"],
+                                                 SHAPE_LADDER.get(shape, []))],
             seeAlso=["cmd.new", f"kw.{shape.lower()}"],
         ))
     return out

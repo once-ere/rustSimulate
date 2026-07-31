@@ -58,18 +58,20 @@
   "tier_A": 452,
   "tier_B": 491,
   "tier_C": 3887,
-  "examples_total": 2871,
-  "examples_runnable": 1261,
-  "examples_verified": 1261,
-  "posim_executed": 1084,
+  "examples_total": 2922,
+  "examples_runnable": 1312,
+  "examples_verified": 1312,
+  "posim_executed": 1111,
   "rust_compiled": 177,
-  "stubs_A_B": 390,
+  "stubs_A_B": 384,
   "tier_C_reference": 3887,
   "see_also_links": 872,
-  "acceptance_criteria": "30/31 (the gap: 230/254 Tier-A entries carry a full four-rung ladder)",
+  "acceptance_criteria": "31/31",
   "app": {
    "index_of_entities.html": "1.2 MB",
    "catalog-c.js": "4.0 MB, lazy"
-  }
+  },
+  "machine_executed": 24,
+  "tier_A_four_rung": "254/254"
  }
 }

@@ -665,6 +665,13 @@
   "reasons": []
  },
  {
+  "id": "prop.obj.m1",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.obj.m2",
   "kind": "property",
   "level": "trivial",
@@ -854,6 +861,13 @@
   "reasons": []
  },
  {
+  "id": "prop.obj.mass",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.obj.inverse_mass",
   "kind": "property",
   "level": "trivial",
@@ -871,6 +885,13 @@
   "id": "prop.obj.inverse_mass",
   "kind": "property",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.inverse_mass",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -1092,6 +1113,13 @@
   "reasons": []
  },
  {
+  "id": "prop.obj.inertia_tensor",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.obj.inverse_inertia_tensor",
   "kind": "property",
   "level": "trivial",
@@ -1197,6 +1225,13 @@
   "reasons": []
  },
  {
+  "id": "prop.obj.boundary",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.obj.radius",
   "kind": "property",
   "level": "trivial",
@@ -1214,6 +1249,13 @@
   "id": "prop.obj.radius",
   "kind": "property",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.radius",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -1323,6 +1365,13 @@
   "reasons": []
  },
  {
+  "id": "prop.obj.inner_radius",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.obj.outer_radius",
   "kind": "property",
   "level": "trivial",
@@ -1344,6 +1393,13 @@
   "reasons": []
  },
  {
+  "id": "prop.obj.outer_radius",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.obj.height",
   "kind": "property",
   "level": "trivial",
@@ -1361,6 +1417,13 @@
   "id": "prop.obj.height",
   "kind": "property",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.height",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -1466,6 +1529,13 @@
   "id": "prop.obj.restitution",
   "kind": "property",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.restitution",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -4445,6 +4515,20 @@
   "reasons": []
  },
  {
+  "id": "type.shape.point",
+  "kind": "type",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "type.shape.point",
+  "kind": "type",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "type.shape.sphere",
   "kind": "type",
   "level": "trivial",
@@ -4455,6 +4539,20 @@
   "id": "type.shape.sphere",
   "kind": "type",
   "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "type.shape.sphere",
+  "kind": "type",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "type.shape.sphere",
+  "kind": "type",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -4473,6 +4571,20 @@
   "reasons": []
  },
  {
+  "id": "type.shape.cuboid",
+  "kind": "type",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "type.shape.cuboid",
+  "kind": "type",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "type.shape.torus",
   "kind": "type",
   "level": "trivial",
@@ -4483,6 +4595,20 @@
   "id": "type.shape.torus",
   "kind": "type",
   "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "type.shape.torus",
+  "kind": "type",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "type.shape.torus",
+  "kind": "type",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -4501,6 +4627,20 @@
   "reasons": []
  },
  {
+  "id": "type.shape.disk",
+  "kind": "type",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "type.shape.disk",
+  "kind": "type",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "type.shape.cylinder",
   "kind": "type",
   "level": "trivial",
@@ -4515,6 +4655,20 @@
   "reasons": []
  },
  {
+  "id": "type.shape.cylinder",
+  "kind": "type",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "type.shape.cylinder",
+  "kind": "type",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "type.shape.dumbbell",
   "kind": "type",
   "level": "trivial",
@@ -4525,6 +4679,20 @@
   "id": "type.shape.dumbbell",
   "kind": "type",
   "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "type.shape.dumbbell",
+  "kind": "type",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "type.shape.dumbbell",
+  "kind": "type",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -5292,6 +5460,27 @@
   "reasons": []
  },
  {
+  "id": "cmd.help",
+  "kind": "command",
+  "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.help",
+  "kind": "command",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.help",
+  "kind": "command",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "cmd.collide",
   "kind": "command",
   "level": "trivial",
@@ -7582,6 +7771,174 @@
  },
  {
   "id": "cmd.qm3.reset",
+  "kind": "command",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.exec",
+  "kind": "command",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.exec",
+  "kind": "command",
+  "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.exec",
+  "kind": "command",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.exec",
+  "kind": "command",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.get",
+  "kind": "command",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.get",
+  "kind": "command",
+  "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.get",
+  "kind": "command",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.get",
+  "kind": "command",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.set",
+  "kind": "command",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.set",
+  "kind": "command",
+  "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.set",
+  "kind": "command",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.set",
+  "kind": "command",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.state",
+  "kind": "command",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.state",
+  "kind": "command",
+  "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.state",
+  "kind": "command",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.state",
+  "kind": "command",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.help",
+  "kind": "command",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.help",
+  "kind": "command",
+  "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.help",
+  "kind": "command",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.help",
+  "kind": "command",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.quit",
+  "kind": "command",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.quit",
+  "kind": "command",
+  "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.quit",
+  "kind": "command",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "cmd.machine.quit",
   "kind": "command",
   "level": "expert",
   "ok": true,

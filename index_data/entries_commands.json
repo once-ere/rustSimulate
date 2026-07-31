@@ -1151,6 +1151,30 @@
     "expected": null,
     "verified": null,
     "runner": "posim --script"
+   },
+   {
+    "level": "intermediate",
+    "medium": "posim",
+    "code": "help\nfuncs",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --script"
+   },
+   {
+    "level": "advanced",
+    "medium": "posim",
+    "code": "def probe(m = 2) { new sphere { mass = m } }\nfuncs\nshow probe",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --script"
+   },
+   {
+    "level": "expert",
+    "medium": "posim",
+    "code": "box 4\ncollide\nbox\nget system.method\nget system.count",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --script"
    }
   ],
   "seeAlso": [
@@ -7523,7 +7547,8 @@
   "summary": "Execute one or more command lines.",
   "definition": "Execute one or more command lines. Multi-line cells run one line at a time, stopping at the first error. This is what the JupyterLab kernel sends for every shift-entered cell, and a multi-line DEF arrives intact as embedded newlines.  Machine mode (posim --machine) speaks one JSON document per line over stdin/stdout and replies with one per line: {\"display\": ..., \"ok\": true, \"result\": ...}. When a scene window is open, posim also pushes asynchronous {\"event\": ...} lines that are NOT replies to any request; the JupyterLab kernel has a reader thread that streams them into your notebook as [scene] ... lines the moment they happen.",
   "syntax": [
-   "{\"op\":\"exec\",\"code\":\"<one or more command lines>\"}"
+   "{\"op\":\"exec\",\"code\":\"<one or more command lines>\"}",
+   "printf '%s\\n' '{\"op\":\"exec\",\"code\":\"<one or more command lines>\"}' | posim --machine"
   ],
   "parameters": [],
   "returns": null,
@@ -7540,12 +7565,45 @@
     "role": "spec"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "machine",
+    "code": "{\"op\":\"exec\",\"code\":\"new sphere { mass = 2, radius = 0.5 }\"}\n{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   },
+   {
+    "level": "intermediate",
+    "medium": "machine",
+    "code": "{\"op\":\"exec\",\"code\":\"new point { mass = 1, velocity = [0, 1, 0] }\"}\n{\"op\":\"exec\",\"code\":\"energy\"}\n{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   },
+   {
+    "level": "advanced",
+    "medium": "machine",
+    "code": "{\"op\":\"exec\",\"code\":\"def mk(m = 3) {\\n  new sphere as pip { mass = m }\\n}\"}\n{\"op\":\"exec\",\"code\":\"mk()\"}\n{\"op\":\"get\",\"path\":\"pip.mass\"}\n{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   },
+   {
+    "level": "expert",
+    "medium": "machine",
+    "code": "{\"op\":\"exec\",\"code\":\"set system.g_constant = 0\"}\n{\"op\":\"exec\",\"code\":\"new sphere { mass = 1, radius = 0.5, position = [-2, 0, 0], velocity = [1, 0, 0] }\"}\n{\"op\":\"exec\",\"code\":\"new sphere { mass = 1, radius = 0.5, position = [2, 0, 0], velocity = [-1, 0, 0] }\"}\n{\"op\":\"exec\",\"code\":\"run 2 steps 2\"}\n{\"op\":\"get\",\"path\":\"contact0.normal\"}\n{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   }
+  ],
   "seeAlso": [
    "cmd.machine.get"
   ],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "cmd.machine.get",
@@ -7559,7 +7617,8 @@
   "summary": "Read a field by path, returning a typed JSON result.",
   "definition": "Read a field by path, returning a typed JSON result.  Machine mode (posim --machine) speaks one JSON document per line over stdin/stdout and replies with one per line: {\"display\": ..., \"ok\": true, \"result\": ...}. When a scene window is open, posim also pushes asynchronous {\"event\": ...} lines that are NOT replies to any request; the JupyterLab kernel has a reader thread that streams them into your notebook as [scene] ... lines the moment they happen.",
   "syntax": [
-   "{\"op\":\"get\",\"path\":\"obj0.position\"}"
+   "{\"op\":\"get\",\"path\":\"obj0.position\"}",
+   "printf '%s\\n' '{\"op\":\"get\",\"path\":\"obj0.position\"}' | posim --machine"
   ],
   "parameters": [],
   "returns": null,
@@ -7576,12 +7635,45 @@
     "role": "spec"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "machine",
+    "code": "{\"op\":\"exec\",\"code\":\"new point { mass = 2, velocity = [3, 0, 0] }\"}\n{\"op\":\"get\",\"path\":\"obj0.momentum\"}\n{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   },
+   {
+    "level": "intermediate",
+    "medium": "machine",
+    "code": "{\"op\":\"exec\",\"code\":\"new point { mass = 2 }\"}\n{\"op\":\"get\",\"path\":\"obj0.mass\"}\n{\"op\":\"get\",\"path\":\"obj0.inverse_mass\"}\n{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   },
+   {
+    "level": "advanced",
+    "medium": "machine",
+    "code": "{\"op\":\"exec\",\"code\":\"new sphere as ball { mass = 2, radius = 0.5 }\"}\n{\"op\":\"get\",\"path\":\"ball.inertia_tensor\"}\n{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   },
+   {
+    "level": "expert",
+    "medium": "machine",
+    "code": "{\"op\":\"exec\",\"code\":\"new point { mass = 1, position = [1, 2, 3] }\"}\n{\"op\":\"get\",\"path\":\"obj0.position\"}\n{\"op\":\"get\",\"path\":\"obj0.position.y\"}\n{\"op\":\"get\",\"path\":\"system.count\"}\n{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   }
+  ],
   "seeAlso": [
    "cmd.machine.exec"
   ],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "cmd.machine.set",
@@ -7595,7 +7687,8 @@
   "summary": "Write a field by path from a JSON value.",
   "definition": "Write a field by path from a JSON value.  Machine mode (posim --machine) speaks one JSON document per line over stdin/stdout and replies with one per line: {\"display\": ..., \"ok\": true, \"result\": ...}. When a scene window is open, posim also pushes asynchronous {\"event\": ...} lines that are NOT replies to any request; the JupyterLab kernel has a reader thread that streams them into your notebook as [scene] ... lines the moment they happen.",
   "syntax": [
-   "{\"op\":\"set\",\"path\":\"obj0.mass\",\"value\":2.5}"
+   "{\"op\":\"set\",\"path\":\"obj0.mass\",\"value\":2.5}",
+   "printf '%s\\n' '{\"op\":\"set\",\"path\":\"obj0.mass\",\"value\":2.5}' | posim --machine"
   ],
   "parameters": [],
   "returns": null,
@@ -7612,12 +7705,45 @@
     "role": "spec"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "machine",
+    "code": "{\"op\":\"exec\",\"code\":\"new point { mass = 1 }\"}\n{\"op\":\"set\",\"path\":\"obj0.mass\",\"value\":5}\n{\"op\":\"get\",\"path\":\"obj0.mass\"}\n{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   },
+   {
+    "level": "intermediate",
+    "medium": "machine",
+    "code": "{\"op\":\"exec\",\"code\":\"new point { mass = 1 }\"}\n{\"op\":\"set\",\"path\":\"obj0.velocity\",\"value\":[1,2,3]}\n{\"op\":\"get\",\"path\":\"obj0.momentum\"}\n{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   },
+   {
+    "level": "advanced",
+    "medium": "machine",
+    "code": "{\"op\":\"exec\",\"code\":\"new sphere { mass = 4, radius = 0.5 }\"}\n{\"op\":\"set\",\"path\":\"obj0.inverse_mass\",\"value\":0}\n{\"op\":\"get\",\"path\":\"obj0.mass\"}\n{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   },
+   {
+    "level": "expert",
+    "medium": "machine",
+    "code": "{\"op\":\"exec\",\"code\":\"new point { mass = 1, velocity = [0, 1, 0] }\"}\n{\"op\":\"get\",\"path\":\"obj0.momentum\"}\n{\"op\":\"set\",\"path\":\"obj0.mass\",\"value\":5}\n{\"op\":\"get\",\"path\":\"obj0.momentum\"}\n{\"op\":\"get\",\"path\":\"obj0.velocity\"}\n{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   }
+  ],
   "seeAlso": [
    "cmd.machine.exec"
   ],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "cmd.machine.state",
@@ -7631,7 +7757,8 @@
   "summary": "Dump the whole system as JSON -- objects, shapes, box, wall flags, inverse_mass.",
   "definition": "Dump the whole system as JSON -- objects, shapes, box, wall flags, inverse_mass.  Machine mode (posim --machine) speaks one JSON document per line over stdin/stdout and replies with one per line: {\"display\": ..., \"ok\": true, \"result\": ...}. When a scene window is open, posim also pushes asynchronous {\"event\": ...} lines that are NOT replies to any request; the JupyterLab kernel has a reader thread that streams them into your notebook as [scene] ... lines the moment they happen.",
   "syntax": [
-   "{\"op\":\"state\"}"
+   "{\"op\":\"state\"}",
+   "printf '%s\\n' '{\"op\":\"state\"}' | posim --machine"
   ],
   "parameters": [],
   "returns": null,
@@ -7648,12 +7775,45 @@
     "role": "spec"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "machine",
+    "code": "{\"op\":\"state\"}\n{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   },
+   {
+    "level": "intermediate",
+    "medium": "machine",
+    "code": "{\"op\":\"exec\",\"code\":\"new sphere { mass = 2, radius = 0.5 }\"}\n{\"op\":\"state\"}\n{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   },
+   {
+    "level": "advanced",
+    "medium": "machine",
+    "code": "{\"op\":\"exec\",\"code\":\"box 4\"}\n{\"op\":\"state\"}\n{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   },
+   {
+    "level": "expert",
+    "medium": "machine",
+    "code": "{\"op\":\"exec\",\"code\":\"set system.g_constant = 0\"}\n{\"op\":\"exec\",\"code\":\"new dumbbell { m1 = 1, m2 = 2, m_rod = 0.5 }\"}\n{\"op\":\"exec\",\"code\":\"run 1 steps 2\"}\n{\"op\":\"state\"}\n{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   }
+  ],
   "seeAlso": [
    "cmd.machine.exec"
   ],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "cmd.machine.help",
@@ -7667,7 +7827,8 @@
   "summary": "Return HELP_TEXT.",
   "definition": "Return HELP_TEXT.  Machine mode (posim --machine) speaks one JSON document per line over stdin/stdout and replies with one per line: {\"display\": ..., \"ok\": true, \"result\": ...}. When a scene window is open, posim also pushes asynchronous {\"event\": ...} lines that are NOT replies to any request; the JupyterLab kernel has a reader thread that streams them into your notebook as [scene] ... lines the moment they happen.",
   "syntax": [
-   "{\"op\":\"help\"}"
+   "{\"op\":\"help\"}",
+   "printf '%s\\n' '{\"op\":\"help\"}' | posim --machine"
   ],
   "parameters": [],
   "returns": null,
@@ -7684,12 +7845,45 @@
     "role": "spec"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "machine",
+    "code": "{\"op\":\"help\"}\n{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   },
+   {
+    "level": "intermediate",
+    "medium": "machine",
+    "code": "{\"op\":\"help\"}\n{\"op\":\"exec\",\"code\":\"funcs\"}\n{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   },
+   {
+    "level": "advanced",
+    "medium": "machine",
+    "code": "{\"op\":\"exec\",\"code\":\"def probe(m = 2) { new sphere { mass = m } }\"}\n{\"op\":\"help\"}\n{\"op\":\"exec\",\"code\":\"funcs\"}\n{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   },
+   {
+    "level": "expert",
+    "medium": "machine",
+    "code": "{\"op\":\"help\"}\n{\"op\":\"exec\",\"code\":\"collide\"}\n{\"op\":\"exec\",\"code\":\"box\"}\n{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   }
+  ],
   "seeAlso": [
    "cmd.machine.exec"
   ],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "cmd.machine.quit",
@@ -7703,7 +7897,8 @@
   "summary": "End the session.",
   "definition": "End the session.  Machine mode (posim --machine) speaks one JSON document per line over stdin/stdout and replies with one per line: {\"display\": ..., \"ok\": true, \"result\": ...}. When a scene window is open, posim also pushes asynchronous {\"event\": ...} lines that are NOT replies to any request; the JupyterLab kernel has a reader thread that streams them into your notebook as [scene] ... lines the moment they happen.",
   "syntax": [
-   "{\"op\":\"quit\"}"
+   "{\"op\":\"quit\"}",
+   "printf '%s\\n' '{\"op\":\"quit\"}' | posim --machine"
   ],
   "parameters": [],
   "returns": null,
@@ -7720,11 +7915,44 @@
     "role": "spec"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "machine",
+    "code": "{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   },
+   {
+    "level": "intermediate",
+    "medium": "machine",
+    "code": "{\"op\":\"exec\",\"code\":\"new point { mass = 1 }\"}\n{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   },
+   {
+    "level": "advanced",
+    "medium": "machine",
+    "code": "{\"op\":\"exec\",\"code\":\"new point { mass = 1 }\"}\n{\"op\":\"get\",\"path\":\"obj0.mass\"}\n{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   },
+   {
+    "level": "expert",
+    "medium": "machine",
+    "code": "{\"op\":\"exec\",\"code\":\"energy\"}\n{\"op\":\"state\"}\n{\"op\":\"quit\"}",
+    "expected": null,
+    "verified": null,
+    "runner": "posim --machine"
+   }
+  ],
   "seeAlso": [
    "cmd.machine.exec"
   ],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  }
 ]
