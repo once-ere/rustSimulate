@@ -24,6 +24,7 @@ Stdlib only.
 
 import argparse
 import concurrent.futures
+import datetime
 import json
 import os
 import re
@@ -36,7 +37,14 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CATALOG = os.path.join(ROOT, "index_data", "catalog.json")
 REPORT = os.path.join(ROOT, "index_data", "verification_report.json")
 BIN = os.path.join(ROOT, "target", "release", "posim")
-TODAY = "2026-07-30"
+# The day this actually ran. Hardcoding it is how the per-example
+# dates drifted away from the catalog's own verified_date: a stamp
+# that does not move is a stamp that stops being true.
+TODAY = datetime.date.today().isoformat()
+
+# The media this project EXECUTES, as opposed to quotes or points at.
+# One definition, used for both the pass and the total.
+EXECUTED_MEDIA = ("posim", "rust", "machine")
 
 MAGIC_FAILED = re.compile(r"^%\w+ .* failed:")
 ERR_LINE = re.compile(r"^Err\[\d+\]:")
@@ -208,8 +216,17 @@ def main():
         meta["verified_date"] = TODAY
         meta["verified_pass"] = sum(1 for e in entries for x in e["examples"]
                                     if x["verified"])
+        # EVERY executed medium. This runs after build_catalog and overwrites
+        # what it wrote, so a fix applied only there does not hold — which is
+        # exactly how "1435 of 1411" reached the home screen twice.
         meta["verified_total"] = sum(1 for e in entries for x in e["examples"]
-                                     if x["medium"] in ("posim", "rust"))
+                                     if x["medium"] in EXECUTED_MEDIA)
+    # A pass count cannot exceed its total. Assert it rather than trusting the
+    # two sums to agree, because they have now disagreed twice.
+    if meta and meta["verified_pass"] > meta["verified_total"]:
+        sys.exit("BUG: verified_pass %d > verified_total %d — the media sets "
+                 "have drifted apart again"
+                 % (meta["verified_pass"], meta["verified_total"]))
     json.dump(catalog, open(CATALOG, "w", encoding="utf-8"), indent=1)
     json.dump(report, open(REPORT, "w", encoding="utf-8"), indent=1)
     print("\nwrote %s\nwrote %s" % (CATALOG, REPORT))

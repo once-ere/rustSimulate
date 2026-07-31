@@ -13,6 +13,7 @@ it must never be left in the tree to be committed or to break
 Usage: python3 tools/verify_tierb_examples.py [--keep]
 """
 
+import datetime
 import json
 import os
 import re
@@ -22,7 +23,10 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(ROOT, "posim", "examples", "_tierb_compile_check.rs")
 ENTRIES = os.path.join(ROOT, "index_data", "entries_tierb.json")
-TODAY = "2026-07-30"
+# The day this actually ran. Hardcoding it is how the per-example
+# dates drifted away from the catalog's own verified_date: a stamp
+# that does not move is a stamp that stops being true.
+TODAY = datetime.date.today().isoformat()
 
 
 def build_file(entries):
