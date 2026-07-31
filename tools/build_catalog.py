@@ -955,6 +955,28 @@ def build_notebooks():
     return out
 
 
+DEMO_SECTIONS = {
+ "ex.specfn.4": [
+  "assoc_legendre_p(2, 2, 0.5)\nnorm_assoc_legendre_p(2, 2, 0.5)",
+  "assoc_legendre_p(100, 50, 0.3)\nnorm_assoc_legendre_p(100, 50, 0.3)",
+  "norm_assoc_legendre_p(170, 170, 0.3)",
+  "assoc_legendre_p(2, 0, 0.5)\nlegendre_p(2, 0.5)\nassoc_legendre_p(2, 0, 0.5) - legendre_p(2, 0.5)"
+ ],
+ "ex.specfn.8": [
+  "eigenvalues([[2, 1], [1, 2]])",
+  "eigenvalues([[2, -1, 0], [-1, 2, -1], [0, -1, 2]])",
+  "let n = 3\n4 * sin(pi / (2 * (n + 1))) * sin(pi / (2 * (n + 1)))\n4 * sin(2 * pi / (2 * (n + 1))) * sin(2 * pi / (2 * (n + 1)))\n4 * sin(3 * pi / (2 * (n + 1))) * sin(3 * pi / (2 * (n + 1)))",
+  "jacobi_eigen([[2, -1, 0], [-1, 2, -1], [0, -1, 2]])"
+ ],
+ "ex.specfn.10": [
+  "gauss_legendre(3)",
+  "gauss_legendre(2)\ngauss_legendre(8)",
+  "let t = 0.7\nchebyshev_t(5, cos(t)) - cos(5 * t)",
+  "sph_j(0, 1.3) - sin(1.3) / 1.3\nlegendre_p(3, 0.4) - 0.5 * (5 * 0.4 * 0.4 * 0.4 - 3 * 0.4)"
+ ]
+}
+
+
 def build_doc_examples():
     dx = json.load(open(f"{D}/doc_examples.json"))
     try:
@@ -992,6 +1014,13 @@ def build_doc_examples():
                          "fragment — it is " + ("Rust, Python or shell"
                          if t["kind"] == "rust" else "a captured session or table")
                          + " — so this page does not claim to have run it.")
+            elif eid in DEMO_SECTIONS:
+                # no code block in the source, but the section's CLAIM is
+                # demonstrable — showing it beats quoting prose at the reader
+                exs = [ex(l, c) for l, c in zip(LEVELS, DEMO_SECTIONS[eid])]
+                defn += ("  The source section is prose and a table, with no code "
+                         "block to quote. The examples below demonstrate the claim it "
+                         "makes, and are executed like any other fragment.")
             else:
                 defn += ("  This section carries no code block: it is the prose or "
                          "table half of its example, and the index says so rather "

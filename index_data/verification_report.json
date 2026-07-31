@@ -5243,6 +5243,90 @@
   "reasons": []
  },
  {
+  "id": "ex.specfn.4",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.specfn.4",
+  "kind": "example",
+  "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.specfn.4",
+  "kind": "example",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.specfn.4",
+  "kind": "example",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.specfn.8",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.specfn.8",
+  "kind": "example",
+  "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.specfn.8",
+  "kind": "example",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.specfn.8",
+  "kind": "example",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.specfn.10",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.specfn.10",
+  "kind": "example",
+  "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.specfn.10",
+  "kind": "example",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.specfn.10",
+  "kind": "example",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "cmd.new",
   "kind": "command",
   "level": "trivial",

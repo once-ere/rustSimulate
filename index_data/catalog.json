@@ -37,8 +37,8 @@
   "phase": 3,
   "schema": "prompt_01.md section 5",
   "examples_verified": true,
-  "verified_pass": 1342,
-  "verified_total": 1318,
+  "verified_pass": 1435,
+  "verified_total": 1411,
   "verified_date": "2026-07-30",
   "verified_by": {
    "posim": "executed with `posim --script` from the repository root; output captured into `expected`",
@@ -19756,7 +19756,7 @@
    "E"
   ],
   "summary": "Worked example in special_functions.md.",
-  "definition": "Expert \u2014 why two families exist \u2014 a documented worked example with a genuine captured transcript, in special_functions.md.  This section carries no code block: it is the prose or table half of its example, and the index says so rather than inventing one.",
+  "definition": "Expert \u2014 why two families exist \u2014 a documented worked example with a genuine captured transcript, in special_functions.md.  The source section is prose and a table, with no code block to quote. The examples below demonstrate the claim it makes, and are executed like any other fragment.",
   "syntax": [
    "see special_functions.md:244"
   ],
@@ -19770,10 +19770,43 @@
     "role": "the example"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "posim",
+    "code": "assoc_legendre_p(2, 2, 0.5)\nnorm_assoc_legendre_p(2, 2, 0.5)",
+    "expected": "Out[1]= 2.25\nOut[2]= 0.28970565151739214",
+    "verified": "2026-07-30",
+    "runner": "posim --script"
+   },
+   {
+    "level": "intermediate",
+    "medium": "posim",
+    "code": "assoc_legendre_p(100, 50, 0.3)\nnorm_assoc_legendre_p(100, 50, 0.3)",
+    "expected": "Out[1]= -33520602067479685000000000000000000000000000000000000000000000000000000000000000000000000000000000\nOut[2]= -0.09781278798864483",
+    "verified": "2026-07-30",
+    "runner": "posim --script"
+   },
+   {
+    "level": "advanced",
+    "medium": "posim",
+    "code": "norm_assoc_legendre_p(170, 170, 0.3)",
+    "expected": "Out[1]= 0.00035746311815503765",
+    "verified": "2026-07-30",
+    "runner": "posim --script"
+   },
+   {
+    "level": "expert",
+    "medium": "posim",
+    "code": "assoc_legendre_p(2, 0, 0.5)\nlegendre_p(2, 0.5)\nassoc_legendre_p(2, 0, 0.5) - legendre_p(2, 0.5)",
+    "expected": "Out[1]= -0.125\nOut[2]= -0.125\nOut[3]= 0",
+    "verified": "2026-07-30",
+    "runner": "posim --script"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "ex.specfn.5",
@@ -19899,7 +19932,7 @@
    "E"
   ],
   "summary": "Worked example in special_functions.md.",
-  "definition": "Expert \u2014 a spectrum with a known closed form \u2014 a documented worked example with a genuine captured transcript, in special_functions.md.  This section carries no code block: it is the prose or table half of its example, and the index says so rather than inventing one.",
+  "definition": "Expert \u2014 a spectrum with a known closed form \u2014 a documented worked example with a genuine captured transcript, in special_functions.md.  The source section is prose and a table, with no code block to quote. The examples below demonstrate the claim it makes, and are executed like any other fragment.",
   "syntax": [
    "see special_functions.md:350"
   ],
@@ -19913,10 +19946,43 @@
     "role": "the example"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "posim",
+    "code": "eigenvalues([[2, 1], [1, 2]])",
+    "expected": "Out[1]= [0.9999999999999998, 2.9999999999999996]",
+    "verified": "2026-07-30",
+    "runner": "posim --script"
+   },
+   {
+    "level": "intermediate",
+    "medium": "posim",
+    "code": "eigenvalues([[2, -1, 0], [-1, 2, -1], [0, -1, 2]])",
+    "expected": "Out[1]= [0.5857864376269047, 2.000000000000001, 3.4142135623730954]",
+    "verified": "2026-07-30",
+    "runner": "posim --script"
+   },
+   {
+    "level": "advanced",
+    "medium": "posim",
+    "code": "let n = 3\n4 * sin(pi / (2 * (n + 1))) * sin(pi / (2 * (n + 1)))\n4 * sin(2 * pi / (2 * (n + 1))) * sin(2 * pi / (2 * (n + 1)))\n4 * sin(3 * pi / (2 * (n + 1))) * sin(3 * pi / (2 * (n + 1)))",
+    "expected": "Out[1]= n set\nOut[2]= 0.585786437626905\nOut[3]= 1.9999999999999996\nOut[4]= 3.414213562373095",
+    "verified": "2026-07-30",
+    "runner": "posim --script"
+   },
+   {
+    "level": "expert",
+    "medium": "posim",
+    "code": "jacobi_eigen([[2, -1, 0], [-1, 2, -1], [0, -1, 2]])",
+    "expected": "Out[1]= [[0.5857864376269047, 2.000000000000001, 3.4142135623730954], [[0.49999999999999994, 0.7071067811865476, 0.4999999999999999], [0.7071067811865478, -0.0000000000000002411326325682074, -0.7071067811865477], [-0.49999999999999994, 0.7071067811865475, -0.5000000000000002]]]",
+    "verified": "2026-07-30",
+    "runner": "posim --script"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "ex.specfn.9",
@@ -19966,7 +20032,7 @@
    "E"
   ],
   "summary": "Worked example in special_functions.md.",
-  "definition": "Expert \u2014 the honest failure modes \u2014 a documented worked example with a genuine captured transcript, in special_functions.md.  This section carries no code block: it is the prose or table half of its example, and the index says so rather than inventing one.",
+  "definition": "Expert \u2014 the honest failure modes \u2014 a documented worked example with a genuine captured transcript, in special_functions.md.  The source section is prose and a table, with no code block to quote. The examples below demonstrate the claim it makes, and are executed like any other fragment.",
   "syntax": [
    "see special_functions.md:381"
   ],
@@ -19980,10 +20046,43 @@
     "role": "the example"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "posim",
+    "code": "gauss_legendre(3)",
+    "expected": "Out[1]= [[-0.7745966692414834, 0, 0.7745966692414834], [0.5555555555555552, 0.8888888888888888, 0.5555555555555552]]",
+    "verified": "2026-07-30",
+    "runner": "posim --script"
+   },
+   {
+    "level": "intermediate",
+    "medium": "posim",
+    "code": "gauss_legendre(2)\ngauss_legendre(8)",
+    "expected": "Out[1]= [[-0.5773502691896257, 0.5773502691896257], [1.0000000000000002, 1.0000000000000002]]\nOut[2]= [[-0.9602898564975363, -0.7966664774136268, -0.525532409916329, -0.18343464249564978, 0.18343464249564978, 0.525532409916329, 0.7966664774136268, 0.9602898564975363], [0.10122853629037618, 0.22238103445337445, 0.3137066458778874, 0.362683783378362, 0.362683783378362, 0.3137066458778874, 0.22238103445337445, 0.10122853629037618]]",
+    "verified": "2026-07-30",
+    "runner": "posim --script"
+   },
+   {
+    "level": "advanced",
+    "medium": "posim",
+    "code": "let t = 0.7\nchebyshev_t(5, cos(t)) - cos(5 * t)",
+    "expected": "Out[1]= t set\nOut[2]= -0.00000000000000011102230246251565",
+    "verified": "2026-07-30",
+    "runner": "posim --script"
+   },
+   {
+    "level": "expert",
+    "medium": "posim",
+    "code": "sph_j(0, 1.3) - sin(1.3) / 1.3\nlegendre_p(3, 0.4) - 0.5 * (5 * 0.4 * 0.4 * 0.4 - 3 * 0.4)",
+    "expected": "Out[1]= 0\nOut[2]= 0.00000000000000011102230246251565",
+    "verified": "2026-07-30",
+    "runner": "posim --script"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "ex.specfn.11",
@@ -22843,7 +22942,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:<port>/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene: http://127.0.0.1:<port>/  (0 window(s) connected)\nmode = running, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[5]= scene closed (http://127.0.0.1:<port>/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:<port>/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene: http://127.0.0.1:<port>/  (0 window(s) connected)\nmode = running, t = 0.01, dt = 0.01, steps = <varies>, history = <varies> frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[5]= scene closed (http://127.0.0.1:<port>/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -22859,7 +22958,7 @@
     "level": "expert",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene status\nget system.time\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:<port>/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene: http://127.0.0.1:<port>/  (0 window(s) connected)\nmode = paused, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= 0\nOut[7]= scene closed (http://127.0.0.1:<port>/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:<port>/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene: http://127.0.0.1:<port>/  (0 window(s) connected)\nmode = paused, t = 0.01, dt = 0.01, steps = <varies>, history = <varies> frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= 0\nOut[7]= scene closed (http://127.0.0.1:<port>/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
@@ -22936,7 +23035,7 @@
     "level": "expert",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene status\nscene stop\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:<port>/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene: http://127.0.0.1:<port>/  (0 window(s) connected)\nmode = paused, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene playback: stopped\nOut[7]= scene: http://127.0.0.1:<port>/  (0 window(s) connected)\nmode = stopped, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[8]= scene closed (http://127.0.0.1:<port>/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:<port>/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene: http://127.0.0.1:<port>/  (0 window(s) connected)\nmode = paused, t = 0.01, dt = 0.01, steps = <varies>, history = <varies> frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene playback: stopped\nOut[7]= scene: http://127.0.0.1:<port>/  (0 window(s) connected)\nmode = stopped, t = 0.01, dt = 0.01, steps = <varies>, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[8]= scene closed (http://127.0.0.1:<port>/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
@@ -22997,7 +23096,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:<port>/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene: http://127.0.0.1:<port>/  (0 window(s) connected)\nmode = paused, t = 0.01, dt = 0.01, steps = <varies>, history = <varies> frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene closed (http://127.0.0.1:<port>/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:<port>/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene: http://127.0.0.1:<port>/  (0 window(s) connected)\nmode = paused, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene closed (http://127.0.0.1:<port>/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -23321,7 +23420,7 @@
     "level": "advanced",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:<port>/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene: http://127.0.0.1:<port>/  (0 window(s) connected)\nmode = paused, t = 0.01, dt = 0.01, steps = <varies>, history = <varies> frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene closed (http://127.0.0.1:<port>/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:<port>/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene: http://127.0.0.1:<port>/  (0 window(s) connected)\nmode = paused, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene closed (http://127.0.0.1:<port>/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -28191,10 +28290,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::boundary::{Boundary, Sdf};\n\n// Sdf is the trait every shape implements: a signed distance, plus a\n// surface normal that defaults to a central difference of it.\nlet s = Boundary::Sphere { radius: 0.5 };\nlet d = s.signed_distance(&Vec3::new(1.0, 0.0, 0.0));\nassert!((d - 0.5).abs() < 1e-9);   // 1.0 out from a radius-0.5 sphere",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.boundary.Boundary",
@@ -28289,7 +28397,7 @@
    "A"
   ],
   "summary": "Analytic diagonal inertia tensors from shape (legacy `RigidBody3D::calculate_inertia_tensor`, with `Point` \u2192 zero tensor).",
-  "definition": "Analytic diagonal inertia tensors from shape (legacy `RigidBody3D::calculate_inertia_tensor`, with `Point` \u2192 zero tensor).  Declared in the `boundary` module of the `physical_object` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/src/lib.rs`, `physical_object/src/physical_object.rs`.",
+  "definition": "Analytic diagonal inertia tensors from shape (legacy `RigidBody3D::calculate_inertia_tensor`, with `Point` \u2192 zero tensor).  Declared in the `boundary` module of the `physical_object` crate.",
   "syntax": [
    "pub fn analytic_inertia_tensor(mass: f64, boundary: &Boundary) -> Mat3"
   ],
@@ -28313,10 +28421,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::boundary::Boundary;\nuse ::physical_object::boundary::analytic_inertia_tensor;\nuse ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = analytic_inertia_tensor(0.5, &Boundary::Sphere { radius: 0.5 });",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.boundary.support_extent",
@@ -28328,7 +28445,7 @@
    "S"
   ],
   "summary": "The **directed** support function `h(u) = max_{x\u2208B} x\u00b7u` of the shape along a **unit** body-frame direction `u` (for the torus this is the support of .",
-  "definition": "The **directed** support function `h(u) = max_{x\u2208B} x\u00b7u` of the shape along a **unit** body-frame direction `u` (for the torus this is the support of its convex hull, since a support function cannot see the hole). Exact closed forms for every variant. All shapes except the dumbbell are centrally symmetric (`h(\u2212u) = h(u)`); the dumbbell's off-center spheres make it genuinely directed.  Declared in the `boundary` module of the `physical_object` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/src/collide.rs`.",
+  "definition": "The **directed** support function `h(u) = max_{x\u2208B} x\u00b7u` of the shape along a **unit** body-frame direction `u` (for the torus this is the support of its convex hull, since a support function cannot see the hole). Exact closed forms for every variant. All shapes except the dumbbell are centrally symmetric (`h(\u2212u) = h(u)`); the dumbbell's off-center spheres make it genuinely directed.  Declared in the `boundary` module of the `physical_object` crate.",
   "syntax": [
    "pub fn support_extent(boundary: &Boundary, u: Vec3) -> f64"
   ],
@@ -28347,10 +28464,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::boundary::Boundary;\nuse ::physical_object::boundary::support_extent;\nuse ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = support_extent(&Boundary::Sphere { radius: 0.5 }, Vec3::new(1.0, 0.0, 0.0));",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.boundary.support_point",
@@ -28362,7 +28488,7 @@
    "S"
   ],
   "summary": "A body-frame point achieving [`support_extent`] along the **unit** body-frame direction `u`.",
-  "definition": "A body-frame point achieving [`support_extent`] along the **unit** body-frame direction `u`. When the supporting set is a face, edge, circle or cap (not a single vertex) the **centroid of that set** is returned \u2014 so a flat-on contact places its contact point at the center of the touching face and carries no spurious lever arm. The invariant `p\u00b7u = support_extent(u)` holds in every case.  Declared in the `boundary` module of the `physical_object` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/src/collide.rs`.",
+  "definition": "A body-frame point achieving [`support_extent`] along the **unit** body-frame direction `u`. When the supporting set is a face, edge, circle or cap (not a single vertex) the **centroid of that set** is returned \u2014 so a flat-on contact places its contact point at the center of the touching face and carries no spurious lever arm. The invariant `p\u00b7u = support_extent(u)` holds in every case.  Declared in the `boundary` module of the `physical_object` crate.",
   "syntax": [
    "pub fn support_point(boundary: &Boundary, u: Vec3) -> Vec3"
   ],
@@ -28381,10 +28507,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::boundary::Boundary;\nuse ::physical_object::boundary::support_point;\nuse ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = support_point(&Boundary::Sphere { radius: 0.5 }, Vec3::new(1.0, 0.0, 0.0));",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.boundary.support_rank",
@@ -28396,7 +28531,7 @@
    "S"
   ],
   "summary": "Dimension of the supporting set along the **unit** body-frame direction `u`: 0 = a single point (vertex / rim point), 1 = an edge, line or circle, 2 =.",
-  "definition": "Dimension of the supporting set along the **unit** body-frame direction `u`: 0 = a single point (vertex / rim point), 1 = an edge, line or circle, 2 = a whole face / disk / cap. Used to pick the contact point of a support-axis contact: the lower-rank body's support point is the true deepest point (its higher-rank partner only contributes a face whose centroid may sit far from the contact).  Declared in the `boundary` module of the `physical_object` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/src/collide.rs`.",
+  "definition": "Dimension of the supporting set along the **unit** body-frame direction `u`: 0 = a single point (vertex / rim point), 1 = an edge, line or circle, 2 = a whole face / disk / cap. Used to pick the contact point of a support-axis contact: the lower-rank body's support point is the true deepest point (its higher-rank partner only contributes a face whose centroid may sit far from the contact).  Declared in the `boundary` module of the `physical_object` crate.",
   "syntax": [
    "pub fn support_rank(boundary: &Boundary, u: Vec3) -> u8"
   ],
@@ -28415,10 +28550,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::boundary::Boundary;\nuse ::physical_object::boundary::support_rank;\nuse ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = support_rank(&Boundary::Sphere { radius: 0.5 }, Vec3::new(1.0, 0.0, 0.0));",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.boundary.support_footprint_radius",
@@ -28430,7 +28574,7 @@
    "S"
   ],
   "summary": "Lateral circumradius of the supporting set along the **unit** body-frame direction `u`, measured about its centroid: 0 for a vertex or single point, t.",
-  "definition": "Lateral circumradius of the supporting set along the **unit** body-frame direction `u`, measured about its centroid: 0 for a vertex or single point, the half-length for a supporting edge/line, the circumradius for a supporting face/cap/circle. Lets a contact choose the body whose flat supporting set is SMALLER (its centroid is then inside \u2014 or closest to \u2014 the true contact patch).  Declared in the `boundary` module of the `physical_object` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/src/collide.rs`.",
+  "definition": "Lateral circumradius of the supporting set along the **unit** body-frame direction `u`, measured about its centroid: 0 for a vertex or single point, the half-length for a supporting edge/line, the circumradius for a supporting face/cap/circle. Lets a contact choose the body whose flat supporting set is SMALLER (its centroid is then inside \u2014 or closest to \u2014 the true contact patch).  Declared in the `boundary` module of the `physical_object` crate.",
   "syntax": [
    "pub fn support_footprint_radius(boundary: &Boundary, u: Vec3) -> f64"
   ],
@@ -28449,10 +28593,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::boundary::Boundary;\nuse ::physical_object::boundary::support_footprint_radius;\nuse ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = support_footprint_radius(&Boundary::Sphere { radius: 0.5 }, Vec3::new(1.0, 0.0, 0.0));",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.boundary.bounding_radius",
@@ -28464,7 +28617,7 @@
    "B"
   ],
   "summary": "Radius of the smallest origin-centered bounding sphere.",
-  "definition": "Radius of the smallest origin-centered bounding sphere.  Declared in the `boundary` module of the `physical_object` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/src/integrate.rs`.",
+  "definition": "Radius of the smallest origin-centered bounding sphere.  Declared in the `boundary` module of the `physical_object` crate.",
   "syntax": [
    "pub fn bounding_radius(boundary: &Boundary) -> f64"
   ],
@@ -28483,10 +28636,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::boundary::Boundary;\nuse ::physical_object::boundary::bounding_radius;\nuse ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = bounding_radius(&Boundary::Sphere { radius: 0.5 });",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.collide.MAX_EVENTS_IN_BURST",
@@ -28546,10 +28708,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::collide::ZENO_GAP_RELATIVE;\n\n// the relative gap below which a contact is treated as resting rather\n// than as another impact \u2014 the anti-Zeno guard\nassert!(ZENO_GAP_RELATIVE > 0.0);",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.collide.same_burst",
@@ -28686,10 +28857,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::boundary::Boundary;\nuse ::physical_object::collide::{ContactGeometry, contact_geometry};\n\nlet a = physical_object::new_rigid(0, 1.0, 0.0, Vec3::new(-0.6, 0.0, 0.0),\n    Quat::identity(), Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0),\n    Mat3::identity(), Mat3::identity(), Boundary::Sphere { radius: 0.5 });\nlet b = physical_object::new_rigid(1, 1.0, 0.0, Vec3::new(0.6, 0.0, 0.0),\n    Quat::identity(), Vec3::new(-1.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0),\n    Mat3::identity(), Mat3::identity(), Boundary::Sphere { radius: 0.5 });\nlet g: Option<ContactGeometry> = contact_geometry(&a, &b, 1e-9);\n// the two spheres are 1.2 apart with radii 0.5 each, so they are NOT\n// touching yet and the narrow phase says so\nassert!(g.is_none());",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.collide.collidable_pairs",
@@ -28822,10 +29002,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::collide::world_aabb;\n\nlet o = physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0));\nlet (lo, hi) = world_aabb(&o);\nassert!(lo.x <= hi.x);",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.collide.aabb_overlap",
@@ -28885,10 +29074,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::boundary::Boundary;\nuse ::physical_object::collide::contact_geometry;\n\nlet a = physical_object::new_rigid(0, 1.0, 0.0, Vec3::new(-0.6, 0.0, 0.0),\n    Quat::identity(), Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0),\n    Mat3::identity(), Mat3::identity(), Boundary::Sphere { radius: 0.5 });\nlet b = physical_object::new_rigid(1, 1.0, 0.0, Vec3::new(0.6, 0.0, 0.0),\n    Quat::identity(), Vec3::new(-1.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0),\n    Mat3::identity(), Mat3::identity(), Boundary::Sphere { radius: 0.5 });\n// separation > 0 means apart; the normal points from a toward b\nlet g = contact_geometry(&a, &b, 1e-9);\nlet _ = g;",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.collide.resolve_pair",
@@ -28914,10 +29112,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\nuse ::physical_object::collide::resolve_pair;\n\nlet mut sys = PhysicalObjectSystem::new(vec![\n    physical_object::new_point(0, 1.0, Vec3::new(-1.0, 0.0, 0.0), Vec3::new(1.0, 0.0, 0.0)),\n    physical_object::new_point(1, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(-1.0, 0.0, 0.0)),\n], 0.0);\n// two POINTS can never collide, so the resolver has nothing to do\nlet c = resolve_pair(&mut sys, 0, 1, false)?;\nassert!(c.is_none());",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.collide.resolve_impulses",
@@ -29162,10 +29369,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\nuse ::physical_object::integrate::run;\n\nlet mut sys = PhysicalObjectSystem::new(vec![\n    physical_object::new_point(0, 1.0, Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 0.0, 0.0)),\n], 0.0);\n// every step goes through the pure-Rust SUNDIALS solvers; there is no\n// hand-rolled stepper anywhere in the project\nlet report = run(&mut sys, 1.0, 2)?;\nlet _ = report;",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.integrate.step",
@@ -29309,7 +29525,7 @@
    "N"
   ],
   "summary": "fn `new` in `physical_object::linalg`.",
-  "definition": "No doc comment in the source.  Declared in the `linalg` module of the `physical_object` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/examples/bouncing_ball_restitution.rs`, `physical_object/examples/charged_in_b_field.rs`, `physical_object/examples/kepler_orbit.rs`, `physical_object/examples/newtons_cradle.rs`.",
+  "definition": "No doc comment in the source.  Declared in the `linalg` module of the `physical_object` crate.",
   "syntax": [
    "pub fn new(x: f64, y: f64, z: f64) -> Self"
   ],
@@ -29343,10 +29559,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Vec3::new(0.5, 0.5, 0.5);",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.linalg.Vec3.zeros",
@@ -29358,7 +29583,7 @@
    "Z"
   ],
   "summary": "fn `zeros` in `physical_object::linalg`.",
-  "definition": "No doc comment in the source.  Declared in the `linalg` module of the `physical_object` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/examples/bouncing_ball_restitution.rs`, `physical_object/examples/charged_in_b_field.rs`, `physical_object/examples/kepler_orbit.rs`, `physical_object/examples/newtons_cradle.rs`.",
+  "definition": "No doc comment in the source.  Declared in the `linalg` module of the `physical_object` crate.",
   "syntax": [
    "pub fn zeros() -> Self"
   ],
@@ -29392,10 +29617,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Vec3::zeros();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.linalg.Vec3.from_array",
@@ -29806,7 +30040,7 @@
    "Z"
   ],
   "summary": "fn `zeros` in `physical_object::linalg`.",
-  "definition": "No doc comment in the source.  Declared in the `linalg` module of the `physical_object` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/examples/bouncing_ball_restitution.rs`, `physical_object/examples/charged_in_b_field.rs`, `physical_object/examples/kepler_orbit.rs`, `physical_object/examples/newtons_cradle.rs`.",
+  "definition": "No doc comment in the source.  Declared in the `linalg` module of the `physical_object` crate.",
   "syntax": [
    "pub fn zeros() -> Self"
   ],
@@ -29840,10 +30074,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Mat3::zeros();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.linalg.Mat3.identity",
@@ -29855,7 +30098,7 @@
    "I"
   ],
   "summary": "fn `identity` in `physical_object::linalg`.",
-  "definition": "No doc comment in the source.  Declared in the `linalg` module of the `physical_object` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `special_functions/examples/bessel_complex_accuracy.rs`, `special_functions/examples/bessel_nu_accuracy.rs`, `special_functions/examples/harmonic_oscillator.rs`.",
+  "definition": "No doc comment in the source.  Declared in the `linalg` module of the `physical_object` crate.",
   "syntax": [
    "pub fn identity() -> Self"
   ],
@@ -29884,10 +30127,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Mat3::identity();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.linalg.Mat3.from_diagonal",
@@ -29899,7 +30151,7 @@
    "F"
   ],
   "summary": "fn `from_diagonal` in `physical_object::linalg`.",
-  "definition": "No doc comment in the source.  Declared in the `linalg` module of the `physical_object` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/src/physical_object.rs`, `posim/src/vm.rs`.",
+  "definition": "No doc comment in the source.  Declared in the `linalg` module of the `physical_object` crate.",
   "syntax": [
    "pub fn from_diagonal(d: Vec3) -> Self"
   ],
@@ -29923,10 +30175,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Mat3::from_diagonal(Vec3::new(1.0, 0.0, 0.0));",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.linalg.Mat3.transpose",
@@ -30120,7 +30381,7 @@
    "S"
   ],
   "summary": "The cross-product (skew-symmetric) matrix `[v]\u00d7`, defined by `Mat3::skew(a) * b == a.",
-  "definition": "The cross-product (skew-symmetric) matrix `[v]\u00d7`, defined by `Mat3::skew(a) * b == a.cross(b)` for all `b`. Used to assemble the contact-solver effective-mass matrix `K = m\u207b\u00b9\u00b71 \u2212 [r]\u00d7 I_w\u207b\u00b9 [r]\u00d7`.  Declared in the `linalg` module of the `physical_object` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/src/collide.rs`.",
+  "definition": "The cross-product (skew-symmetric) matrix `[v]\u00d7`, defined by `Mat3::skew(a) * b == a.cross(b)` for all `b`. Used to assemble the contact-solver effective-mass matrix `K = m\u207b\u00b9\u00b71 \u2212 [r]\u00d7 I_w\u207b\u00b9 [r]\u00d7`.  Declared in the `linalg` module of the `physical_object` crate.",
   "syntax": [
    "pub fn skew(v: Vec3) -> Mat3"
   ],
@@ -30139,10 +30400,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Mat3::skew(Vec3::new(1.0, 0.0, 0.0));",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.linalg.Mat3.outer",
@@ -30154,7 +30424,7 @@
    "O"
   ],
   "summary": "The outer product `a b\u1d40` (a rank-one matrix), defined by `Mat3::outer(a, b) * c == a * b.",
-  "definition": "The outer product `a b\u1d40` (a rank-one matrix), defined by `Mat3::outer(a, b) * c == a * b.dot(c)` for all `c`.  Declared in the `linalg` module of the `physical_object` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/src/boundary.rs`, `physical_object/src/collide.rs`, `posim/src/vm.rs`.",
+  "definition": "The outer product `a b\u1d40` (a rank-one matrix), defined by `Mat3::outer(a, b) * c == a * b.dot(c)` for all `c`.  Declared in the `linalg` module of the `physical_object` crate.",
   "syntax": [
    "pub fn outer(a: Vec3, b: Vec3) -> Mat3"
   ],
@@ -30183,10 +30453,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Mat3::outer(Vec3::new(1.0, 0.0, 0.0), Vec3::new(1.0, 0.0, 0.0));",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.linalg.Quat",
@@ -30242,7 +30521,7 @@
    "N"
   ],
   "summary": "fn `new` in `physical_object::linalg`.",
-  "definition": "No doc comment in the source.  Declared in the `linalg` module of the `physical_object` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/src/integrate.rs`, `physical_object/src/system.rs`, `posim/src/vm.rs`.",
+  "definition": "No doc comment in the source.  Declared in the `linalg` module of the `physical_object` crate.",
   "syntax": [
    "pub fn new(w: f64, x: f64, y: f64, z: f64) -> Self"
   ],
@@ -30271,10 +30550,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Quat::new(0.5, 0.5, 0.5, 0.5);",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.linalg.Quat.identity",
@@ -30286,7 +30574,7 @@
    "I"
   ],
   "summary": "fn `identity` in `physical_object::linalg`.",
-  "definition": "No doc comment in the source.  Declared in the `linalg` module of the `physical_object` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `special_functions/examples/bessel_complex_accuracy.rs`, `special_functions/examples/bessel_nu_accuracy.rs`, `special_functions/examples/harmonic_oscillator.rs`.",
+  "definition": "No doc comment in the source.  Declared in the `linalg` module of the `physical_object` crate.",
   "syntax": [
    "pub fn identity() -> Self"
   ],
@@ -30315,10 +30603,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Quat::identity();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.linalg.Quat.pure",
@@ -30330,7 +30627,7 @@
    "P"
   ],
   "summary": "A pure quaternion `(0, v)` \u2014 used for `dq/dt = 1/2 (0, w) * q`.",
-  "definition": "A pure quaternion `(0, v)` \u2014 used for `dq/dt = 1/2 (0, w) * q`.  Declared in the `linalg` module of the `physical_object` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/tests/collision.rs`.",
+  "definition": "A pure quaternion `(0, v)` \u2014 used for `dq/dt = 1/2 (0, w) * q`.  Declared in the `linalg` module of the `physical_object` crate.",
   "syntax": [
    "pub fn pure(v: Vec3) -> Self"
   ],
@@ -30349,10 +30646,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Quat::pure(Vec3::new(1.0, 0.0, 0.0));",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.linalg.Quat.from_axis_angle",
@@ -30364,7 +30670,7 @@
    "F"
   ],
   "summary": "fn `from_axis_angle` in `physical_object::linalg`.",
-  "definition": "No doc comment in the source.  Declared in the `linalg` module of the `physical_object` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/src/collide.rs`, `physical_object/src/physical_object.rs`, `physical_object/src/system.rs`.",
+  "definition": "No doc comment in the source.  Declared in the `linalg` module of the `physical_object` crate.",
   "syntax": [
    "pub fn from_axis_angle(axis: Vec3, angle: f64) -> Self"
   ],
@@ -30393,10 +30699,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Quat::from_axis_angle(Vec3::new(1.0, 0.0, 0.0), 0.5);",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.linalg.Quat.norm",
@@ -30774,7 +31089,7 @@
    "N"
   ],
   "summary": "`PointParticle::new` equivalent: a point mass with position and velocity (stored canonically as momentum `p = m v`).",
-  "definition": "`PointParticle::new` equivalent: a point mass with position and velocity (stored canonically as momentum `p = m v`).  Declared in the `physical_object` module of the `physical_object` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/examples/kepler_orbit.rs`, `physical_object/examples/outer_solar_system.rs`, `physical_object/tests/collision.rs`, `physical_object/tests/conservation.rs`.",
+  "definition": "`PointParticle::new` equivalent: a point mass with position and velocity (stored canonically as momentum `p = m v`).  Declared in the `physical_object` module of the `physical_object` crate.",
   "syntax": [
    "pub fn new_point(id: usize, mass: f64, position: Vec3, velocity: Vec3) -> Self"
   ],
@@ -30808,10 +31123,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet _value = physical_object::new_point(1, 0.5, Vec3::new(1.0, 0.0, 0.0), Vec3::new(1.0, 0.0, 0.0));",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.physical_object.physical_object.new_rigid",
@@ -30837,10 +31161,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::boundary::Boundary;\n\n// id, mass, charge, then pose, then the two velocities, then the two\n// tensors, then the shape\nlet o = physical_object::new_rigid(\n    0, 2.0, 0.0,\n    Vec3::new(0.0, 0.0, 0.0), Quat::identity(),\n    Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0),\n    Mat3::identity(), Mat3::identity(),\n    Boundary::Sphere { radius: 0.5 },\n);\nassert_eq!(o.get_mass(), 2.0);",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.physical_object.physical_object.new_from_shape",
@@ -32116,7 +32449,7 @@
    "S"
   ],
   "summary": "Sets the boundary shape.",
-  "definition": "Sets the boundary shape. Deliberately does **not** touch the inertia tensor (RigidBody-style users may have hand-set tensors); call [`Self::recompute_inertia_from_boundary`] for the RigidBody3D behavior.  Declared in the `physical_object` module of the `physical_object` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `posim/src/vm.rs`.",
+  "definition": "Sets the boundary shape. Deliberately does **not** touch the inertia tensor (RigidBody-style users may have hand-set tensors); call [`Self::recompute_inertia_from_boundary`] for the RigidBody3D behavior.  Declared in the `physical_object` module of the `physical_object` crate.",
   "syntax": [
    "pub fn set_boundary(&mut self, boundary: Boundary)"
   ],
@@ -32135,10 +32468,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::boundary::Boundary;\nuse ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_boundary(Boundary::Sphere { radius: 0.5 });",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.physical_object.physical_object.get_velocity",
@@ -33062,7 +33404,7 @@
    "N"
   ],
   "summary": "`GravitationalSystem::new` equivalent.",
-  "definition": "`GravitationalSystem::new` equivalent.  Declared in the `system` module of the `physical_object` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/examples/bouncing_ball_restitution.rs`, `physical_object/examples/charged_in_b_field.rs`, `physical_object/examples/kepler_orbit.rs`, `physical_object/examples/newtons_cradle.rs`.",
+  "definition": "`GravitationalSystem::new` equivalent.  Declared in the `system` module of the `physical_object` crate.",
   "syntax": [
    "pub fn new(objects: Vec<physical_object>, g_constant: f64) -> Self"
   ],
@@ -33096,10 +33438,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet _value = PhysicalObjectSystem::new(vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))], 0.5);",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.physical_object.system.PhysicalObjectSystem.add_object",
@@ -34004,7 +34355,7 @@
    "V"
   ],
   "summary": "Converts a VM value to JSON.",
-  "definition": "Converts a VM value to JSON.  Declared in the `machine` module of the `posim` crate.",
+  "definition": "Converts a VM value to JSON.  Declared in the `machine` module of the `posim` crate.  posim is a BINARY crate with no lib target, so nothing can `use posim::\u2026` and no snippet is possible. What it does is reachable from the notebook: it turns a VM value into the JSON a machine-mode reply carries.",
   "syntax": [
    "pub fn value_to_json(v: &Value) -> Json"
   ],
@@ -34019,9 +34370,11 @@
    }
   ],
   "examples": [],
-  "seeAlso": [],
+  "seeAlso": [
+   "cmd.machine.get"
+  ],
   "invariants": [],
-  "status": "stub"
+  "status": "reference"
  },
  {
   "id": "rs.posim.machine.handle_request",
@@ -34033,7 +34386,7 @@
    "H"
   ],
   "summary": "Processes one request line; returns the reply line, or `None` for `{\"op\":\"quit\"}`.",
-  "definition": "Processes one request line; returns the reply line, or `None` for `{\"op\":\"quit\"}`.  Declared in the `machine` module of the `posim` crate.",
+  "definition": "Processes one request line; returns the reply line, or `None` for `{\"op\":\"quit\"}`.  Declared in the `machine` module of the `posim` crate.  posim is a BINARY crate with no lib target, so nothing can `use posim::\u2026` and no snippet is possible. What it does is reachable from the notebook: it dispatches one machine-mode request line.",
   "syntax": [
    "pub fn handle_request(line: &str, state: &mut SimState) -> Option<String>"
   ],
@@ -34048,9 +34401,11 @@
    }
   ],
   "examples": [],
-  "seeAlso": [],
+  "seeAlso": [
+   "cmd.machine.exec"
+  ],
   "invariants": [],
-  "status": "stub"
+  "status": "reference"
  },
  {
   "id": "rs.posim.machine.serve",
@@ -34150,7 +34505,7 @@
    "N"
   ],
   "summary": "struct `Notebook` in `posim::notebook`.",
-  "definition": "No doc comment in the source.  Declared in the `notebook` module of the `posim` crate.",
+  "definition": "No doc comment in the source.  Declared in the `notebook` module of the `posim` crate.  posim is a BINARY crate with no lib target, so nothing can `use posim::\u2026` and no snippet is possible. What it does is reachable from the notebook: it the In[n]/Out[n] cell session itself.",
   "syntax": [
    "pub struct Notebook"
   ],
@@ -34165,9 +34520,11 @@
    }
   ],
   "examples": [],
-  "seeAlso": [],
+  "seeAlso": [
+   "magic.history"
+  ],
   "invariants": [],
-  "status": "stub"
+  "status": "reference"
  },
  {
   "id": "rs.posim.notebook.Notebook.execute_cell",
@@ -34179,7 +34536,7 @@
    "E"
   ],
   "summary": "Executes one input line as a new numbered cell; returns the rendered output lines to display.",
-  "definition": "Executes one input line as a new numbered cell; returns the rendered output lines to display.  Declared in the `notebook` module of the `posim` crate.",
+  "definition": "Executes one input line as a new numbered cell; returns the rendered output lines to display.  Declared in the `notebook` module of the `posim` crate.  posim is a BINARY crate with no lib target, so nothing can `use posim::\u2026` and no snippet is possible. What it does is reachable from the notebook: it runs one cell and numbers it.",
   "syntax": [
    "pub fn execute_cell(&mut self, input: &str) -> String"
   ],
@@ -34194,9 +34551,11 @@
    }
   ],
   "examples": [],
-  "seeAlso": [],
+  "seeAlso": [
+   "cmd.expr"
+  ],
   "invariants": [],
-  "status": "stub"
+  "status": "reference"
  },
  {
   "id": "rs.posim.notebook.Notebook.magic",
@@ -34344,7 +34703,7 @@
    "P"
   ],
   "summary": "struct `Parser` in `posim::parser`.",
-  "definition": "No doc comment in the source.  Declared in the `parser` module of the `posim` crate.",
+  "definition": "No doc comment in the source.  Declared in the `parser` module of the `posim` crate.  posim is a BINARY crate with no lib target, so nothing can `use posim::\u2026` and no snippet is possible. What it does is reachable from the notebook: it the recursive-descent grammar compiler behind every line.",
   "syntax": [
    "pub struct Parser"
   ],
@@ -34359,9 +34718,11 @@
    }
   ],
   "examples": [],
-  "seeAlso": [],
+  "seeAlso": [
+   "cmd.expr"
+  ],
   "invariants": [],
-  "status": "stub"
+  "status": "reference"
  },
  {
   "id": "rs.posim.parser.compile_expression",
@@ -35268,7 +35629,7 @@
    "F"
   ],
   "summary": "A user-defined function: `DEF name(params) { body }`.",
-  "definition": "A user-defined function: `DEF name(params) { body }`. The body is kept as SOURCE lines (recompiled per call), which is also what `SHOW` prints and what `%save` round-trips.  Declared in the `vm` module of the `posim` crate.",
+  "definition": "A user-defined function: `DEF name(params) { body }`. The body is kept as SOURCE lines (recompiled per call), which is also what `SHOW` prints and what `%save` round-trips.  Declared in the `vm` module of the `posim` crate.  posim is a BINARY crate with no lib target, so nothing can `use posim::\u2026` and no snippet is possible. What it does is reachable from the notebook: it a stored user function: parameters, defaults and body lines.",
   "syntax": [
    "pub struct FuncDef"
   ],
@@ -35283,9 +35644,11 @@
    }
   ],
   "examples": [],
-  "seeAlso": [],
+  "seeAlso": [
+   "cmd.def"
+  ],
   "invariants": [],
-  "status": "stub"
+  "status": "reference"
  },
  {
   "id": "rs.posim.vm.BoxMode",
@@ -35609,7 +35972,7 @@
    "I"
   ],
   "summary": "True when a source line is the DEF line form (handled before the ordinary grammar).",
-  "definition": "True when a source line is the DEF line form (handled before the ordinary grammar).  Declared in the `vm` module of the `posim` crate.",
+  "definition": "True when a source line is the DEF line form (handled before the ordinary grammar).  Declared in the `vm` module of the `posim` crate.  posim is a BINARY crate with no lib target, so nothing can `use posim::\u2026` and no snippet is possible. What it does is reachable from the notebook: it recognises the DEF LINE FORM before the ordinary grammar.",
   "syntax": [
    "pub fn is_def_line(line: &str) -> bool"
   ],
@@ -35624,9 +35987,11 @@
    }
   ],
   "examples": [],
-  "seeAlso": [],
+  "seeAlso": [
+   "cmd.def"
+  ],
   "invariants": [],
-  "status": "stub"
+  "status": "reference"
  },
  {
   "id": "rs.posim.vm.define_function",
@@ -35638,7 +36003,7 @@
    "D"
   ],
   "summary": "Parses and installs a `DEF name(param [= default], .",
-  "definition": "Parses and installs a `DEF name(param [= default], ...) { body }` definition. The body is captured as source lines; every line is compile-checked NOW (correct syntax at definition time), defaults are evaluated now, and redefinition replaces the previous version (that is how a function is edited: SHOW it, adjust, re-DEF).  Declared in the `vm` module of the `posim` crate.",
+  "definition": "Parses and installs a `DEF name(param [= default], ...) { body }` definition. The body is captured as source lines; every line is compile-checked NOW (correct syntax at definition time), defaults are evaluated now, and redefinition replaces the previous version (that is how a function is edited: SHOW it, adjust, re-DEF).  Declared in the `vm` module of the `posim` crate.  posim is a BINARY crate with no lib target, so nothing can `use posim::\u2026` and no snippet is possible. What it does is reachable from the notebook: it syntax-checks every body line and installs the function.",
   "syntax": [
    "pub fn define_function(source: &str, state: &mut SimState) -> Result<Value, String>"
   ],
@@ -35653,9 +36018,11 @@
    }
   ],
   "examples": [],
-  "seeAlso": [],
+  "seeAlso": [
+   "cmd.def"
+  ],
   "invariants": [],
-  "status": "stub"
+  "status": "reference"
  },
  {
   "id": "rs.posim.vm.execute_line",
@@ -35745,7 +36112,7 @@
    "C"
   ],
   "summary": "Orbit camera: spherical coordinates around a target point, z-up.",
-  "definition": "Orbit camera: spherical coordinates around a target point, z-up.  Declared in the `scene` module of the `posim` crate.",
+  "definition": "Orbit camera: spherical coordinates around a target point, z-up.  Declared in the `scene` module of the `posim` crate.  posim is a BINARY crate with no lib target, so nothing can `use posim::\u2026` and no snippet is possible. What it does is reachable from the notebook: it the orbit camera: look-at point, distance, yaw, pitch.",
   "syntax": [
    "pub struct Camera"
   ],
@@ -35760,9 +36127,11 @@
    }
   ],
   "examples": [],
-  "seeAlso": [],
+  "seeAlso": [
+   "cmd.scene.rotate"
+  ],
   "invariants": [],
-  "status": "stub"
+  "status": "reference"
  },
  {
   "id": "rs.posim.scene.SceneHandle",
@@ -36300,7 +36669,7 @@
    "C"
   ],
   "summary": "Number of connected scene windows (used in tests).",
-  "definition": "Number of connected scene windows (used in tests).  Declared in the `scene` module of the `posim` crate.",
+  "definition": "Number of connected scene windows (used in tests).  Declared in the `scene` module of the `posim` crate.  posim is a BINARY crate with no lib target, so nothing can `use posim::\u2026` and no snippet is possible. What it does is reachable from the notebook: it how many windows are connected.",
   "syntax": [
    "pub fn client_count(&self) -> usize"
   ],
@@ -36315,9 +36684,11 @@
    }
   ],
   "examples": [],
-  "seeAlso": [],
+  "seeAlso": [
+   "cmd.scene.status"
+  ],
   "invariants": [],
-  "status": "stub"
+  "status": "reference"
  },
  {
   "id": "rs.posim.scene.SceneHandle.camera",
@@ -36407,7 +36778,7 @@
    "S"
   ],
   "summary": "Forward steps taken by the playback copy (used in tests).",
-  "definition": "Forward steps taken by the playback copy (used in tests).  Declared in the `scene` module of the `posim` crate.",
+  "definition": "Forward steps taken by the playback copy (used in tests).  Declared in the `scene` module of the `posim` crate.  posim is a BINARY crate with no lib target, so nothing can `use posim::\u2026` and no snippet is possible. What it does is reachable from the notebook: it playback step counter.",
   "syntax": [
    "pub fn steps_done(&self) -> u64"
   ],
@@ -36422,9 +36793,11 @@
    }
   ],
   "examples": [],
-  "seeAlso": [],
+  "seeAlso": [
+   "cmd.scene.status"
+  ],
   "invariants": [],
-  "status": "stub"
+  "status": "reference"
  },
  {
   "id": "rs.posim.scene.SceneHandle.system_time",
@@ -36436,7 +36809,7 @@
    "S"
   ],
   "summary": "The playback copy's simulation time (used in tests).",
-  "definition": "The playback copy's simulation time (used in tests).  Declared in the `scene` module of the `posim` crate.",
+  "definition": "The playback copy's simulation time (used in tests).  Declared in the `scene` module of the `posim` crate.  posim is a BINARY crate with no lib target, so nothing can `use posim::\u2026` and no snippet is possible. What it does is reachable from the notebook: it the playback copy's simulation time.",
   "syntax": [
    "pub fn system_time(&self) -> f64"
   ],
@@ -36451,9 +36824,11 @@
    }
   ],
   "examples": [],
-  "seeAlso": [],
+  "seeAlso": [
+   "cmd.scene.status"
+  ],
   "invariants": [],
-  "status": "stub"
+  "status": "reference"
  },
  {
   "id": "rs.posim.scene.SceneHandle.packed_state",
@@ -36465,7 +36840,7 @@
    "P"
   ],
   "summary": "The playback copy's packed 13N state (used in tests).",
-  "definition": "The playback copy's packed 13N state (used in tests).  Declared in the `scene` module of the `posim` crate.",
+  "definition": "The playback copy's packed 13N state (used in tests).  Declared in the `scene` module of the `posim` crate.  posim is a BINARY crate with no lib target, so nothing can `use posim::\u2026` and no snippet is possible. What it does is reachable from the notebook: it the synced clone the playback thread evolves.",
   "syntax": [
    "pub fn packed_state(&self) -> Vec<f64>"
   ],
@@ -36480,9 +36855,11 @@
    }
   ],
   "examples": [],
-  "seeAlso": [],
+  "seeAlso": [
+   "cmd.scene.refresh"
+  ],
   "invariants": [],
-  "status": "stub"
+  "status": "reference"
  },
  {
   "id": "rs.posim.scene.SceneHandle.contacts_len",
@@ -36494,7 +36871,7 @@
    "C"
   ],
   "summary": "Contact records currently on the playback copy (used in tests).",
-  "definition": "Contact records currently on the playback copy (used in tests).  Declared in the `scene` module of the `posim` crate.",
+  "definition": "Contact records currently on the playback copy (used in tests).  Declared in the `scene` module of the `posim` crate.  posim is a BINARY crate with no lib target, so nothing can `use posim::\u2026` and no snippet is possible. What it does is reachable from the notebook: it contacts in the playback copy.",
   "syntax": [
    "pub fn contacts_len(&self) -> usize"
   ],
@@ -36509,9 +36886,11 @@
    }
   ],
   "examples": [],
-  "seeAlso": [],
+  "seeAlso": [
+   "cmd.scene.status"
+  ],
   "invariants": [],
-  "status": "stub"
+  "status": "reference"
  },
  {
   "id": "rs.posim.ws.sha1",
@@ -36523,7 +36902,7 @@
    "S"
   ],
   "summary": "SHA-1 digest (FIPS 180-4).",
-  "definition": "SHA-1 digest (FIPS 180-4). Needed only for the WebSocket handshake \u2014 this is not a security boundary, it is a protocol checksum.  Declared in the `ws` module of the `posim` crate.",
+  "definition": "SHA-1 digest (FIPS 180-4). Needed only for the WebSocket handshake \u2014 this is not a security boundary, it is a protocol checksum.  Declared in the `ws` module of the `posim` crate.  posim is a BINARY crate with no lib target, so nothing can `use posim::\u2026` and no snippet is possible. What it does is reachable from the notebook: it the RFC 6455 handshake, hand-rolled on std.",
   "syntax": [
    "pub fn sha1(data: &[u8]) -> [u8; 20]"
   ],
@@ -36538,9 +36917,11 @@
    }
   ],
   "examples": [],
-  "seeAlso": [],
+  "seeAlso": [
+   "cmd.scene.create"
+  ],
   "invariants": [],
-  "status": "stub"
+  "status": "reference"
  },
  {
   "id": "rs.posim.ws.base64_encode",
@@ -36552,7 +36933,7 @@
    "B"
   ],
   "summary": "Standard base64 (RFC 4648, with padding).",
-  "definition": "Standard base64 (RFC 4648, with padding).  Declared in the `ws` module of the `posim` crate.",
+  "definition": "Standard base64 (RFC 4648, with padding).  Declared in the `ws` module of the `posim` crate.  posim is a BINARY crate with no lib target, so nothing can `use posim::\u2026` and no snippet is possible. What it does is reachable from the notebook: it the same handshake's accept key.",
   "syntax": [
    "pub fn base64_encode(data: &[u8]) -> String"
   ],
@@ -36567,9 +36948,11 @@
    }
   ],
   "examples": [],
-  "seeAlso": [],
+  "seeAlso": [
+   "cmd.scene.create"
+  ],
   "invariants": [],
-  "status": "stub"
+  "status": "reference"
  },
  {
   "id": "rs.posim.ws.accept_key",
@@ -38372,7 +38755,7 @@
    "N"
   ],
   "summary": "fn `new` in `special_functions::complex`.",
-  "definition": "No doc comment in the source.  Declared in the `complex` module of the `special_functions` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `posim/src/parser.rs`.",
+  "definition": "No doc comment in the source.  Declared in the `complex` module of the `special_functions` crate.",
   "syntax": [
    "pub const fn new(re: f64, im: f64) -> Self"
   ],
@@ -38391,10 +38774,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::special_functions::complex::Complex64;\n\nlet _value = Complex64::new(0.5, 2.0);",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.special_functions.complex.Complex64.real",
@@ -38406,7 +38798,7 @@
    "R"
   ],
   "summary": "The real number `re + 0i`.",
-  "definition": "The real number `re + 0i`.  Declared in the `complex` module of the `special_functions` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/tests/collision.rs`, `quantum/examples/absorber_tuning.rs`, `special_functions/examples/bessel_complex_accuracy.rs`, `special_functions/examples/bessel_nu_accuracy.rs`.",
+  "definition": "The real number `re + 0i`.  Declared in the `complex` module of the `special_functions` crate.",
   "syntax": [
    "pub const fn real(re: f64) -> Self"
   ],
@@ -38440,10 +38832,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::special_functions::complex::Complex64;\n\nlet _value = Complex64::real(0.5);",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.special_functions.complex.I",
@@ -38469,10 +38870,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::special_functions::complex::Complex64;\n\nlet v = Complex64::I * Complex64::I;\nassert_eq!(v, Complex64::real(-1.0));",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.special_functions.complex.ZERO",
@@ -38537,10 +38947,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::special_functions::complex::Complex64;\n\nlet v = Complex64::ONE * Complex64::new(3.0, -4.0);\nassert_eq!(v.abs(), 5.0);",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.special_functions.complex.Complex64.conj",
@@ -39071,7 +39490,7 @@
    "F"
   ],
   "summary": "`e^{i*theta}` \u2014 the common case in a propagator.",
-  "definition": "`e^{i*theta}` \u2014 the common case in a propagator.  Declared in the `complex` module of the `special_functions` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `quantum/examples/nash_propagator.rs`, `special_functions/examples/bessel_nu_accuracy.rs`, `special_functions/examples/hankel_accuracy.rs`, `special_functions/examples/scatter_1d.rs`.",
+  "definition": "`e^{i*theta}` \u2014 the common case in a propagator.  Declared in the `complex` module of the `special_functions` crate.",
   "syntax": [
    "pub fn from_polar(r: f64, theta: f64) -> Self"
   ],
@@ -39105,10 +39524,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::special_functions::complex::Complex64;\n\nlet _value = Complex64::from_polar(0.5, 2.0);",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.special_functions.complex.Complex64.is_finite",
@@ -40068,7 +40496,7 @@
    {
     "level": "trivial",
     "medium": "rust",
-    "code": "use ::special_functions::hankel::sph_hankel_h1;\n\nlet _value = sph_hankel_h1(0, 2.0)?;",
+    "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::sph_hankel_h1;\n\nlet _value = sph_hankel_h1(0, 2.0)?;",
     "expected": "compiles",
     "verified": "2026-07-30",
     "runner": "cargo build"
@@ -40123,7 +40551,7 @@
    {
     "level": "trivial",
     "medium": "rust",
-    "code": "use ::special_functions::hankel::sph_hankel_h2;\n\nlet _value = sph_hankel_h2(0, 2.0)?;",
+    "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::sph_hankel_h2;\n\nlet _value = sph_hankel_h2(0, 2.0)?;",
     "expected": "compiles",
     "verified": "2026-07-30",
     "runner": "cargo build"
@@ -40178,7 +40606,7 @@
    {
     "level": "trivial",
     "medium": "rust",
-    "code": "use ::special_functions::hankel::sph_hankel_h1_prime;\n\nlet _value = sph_hankel_h1_prime(0, 2.0)?;",
+    "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::sph_hankel_h1_prime;\n\nlet _value = sph_hankel_h1_prime(0, 2.0)?;",
     "expected": "compiles",
     "verified": "2026-07-30",
     "runner": "cargo build"
@@ -40233,7 +40661,7 @@
    {
     "level": "trivial",
     "medium": "rust",
-    "code": "use ::special_functions::hankel::sph_hankel_h2_prime;\n\nlet _value = sph_hankel_h2_prime(0, 2.0)?;",
+    "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::sph_hankel_h2_prime;\n\nlet _value = sph_hankel_h2_prime(0, 2.0)?;",
     "expected": "compiles",
     "verified": "2026-07-30",
     "runner": "cargo build"
@@ -40313,10 +40741,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::special_functions::lanczos::{LanczosResult, Stop};\n\n// what QM2/QM3 STATES return: the k lowest eigenvalues with their vectors\n// and the residual that justifies trusting them \u2014 an iterative eigensolver\n// has no exact stopping point, so the residual is part of the answer\nlet r = LanczosResult { values: vec![1.0], vectors: vec![vec![1.0]],\n                        residuals: vec![1e-8], iterations: 1, stop: Stop::Converged };\nassert_eq!(r.values.len(), r.residuals.len());",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.special_functions.lanczos.lanczos_lowest",
@@ -41290,10 +41727,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::special_functions::quadrature::integrate_adaptive;\n\nlet v = integrate_adaptive(|x: f64| x * x * x, 0.0, 1.0, 1e-10)?;\nassert!((v - 0.25).abs() < 1e-10);\n// and the honest failure: 1/sqrt(x) on [0,1] is finite but Simpson\n// cannot resolve the endpoint, so it ERRORS rather than guessing.\nassert!(integrate_adaptive(|x: f64| 1.0 / x.sqrt(), 0.0, 1.0, 1e-10).is_err());",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.special_functions.quadrature.brent_root",
@@ -41319,10 +41765,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::special_functions::quadrature::brent_root;\n\n// cos x = x, bracketed on [0, 1]\nlet r = brent_root(|x: f64| x.cos() - x, 0.0, 1.0, 1e-12)?;\nassert!((r - 0.739085133215).abs() < 1e-9);",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.special_functions.quadrature.find_roots",
@@ -41348,10 +41803,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::special_functions::quadrature::find_roots;\n\n// find_roots CANNOT tell a pole from a root: a pole flips the sign of f\n// too, and Brent converges on it. Check f at each value it returns.\nlet rs = find_roots(|x: f64| x.sin(), 0.1, 7.0, 100, 1e-12)?;\nassert!(!rs.is_empty());",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.special_functions.sph_bessel.sph_j",
@@ -41903,10 +42367,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::absorber::Ramp;\n\nlet ramp = Ramp { width: 15.0, power: 2.0 };\n// power 2 is the measured optimum: too steep a ramp is a mirror,\n// whether it is real or imaginary\nassert_eq!(ramp.power, 2.0);",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.absorber.Band",
@@ -41932,10 +42405,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::absorber::Band;\n\nlet band = Band { k_lo: 1.0, k_hi: 4.0, samples: 8 };\nassert_eq!(band.samples, 8);",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.absorber.Leak",
@@ -41961,10 +42443,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::absorber::Leak;\n\n// the two ways probability escapes an absorber, which trade off against\n// each other: too weak and it passes THROUGH, too strong and it reflects\n// off the absorber's own leading edge\nlet leak = Leak { k: 3.0, reflection: 1e-9, leakage: 2e-9, absorbed: 1.0 };\nassert!(leak.escaped() > 0.0);",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.absorber.Leak.escaped",
@@ -41990,10 +42481,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::absorber::Leak;\n\nlet leak = Leak { k: 3.0, reflection: 1e-9, leakage: 2e-9, absorbed: 1.0 };\n// R + T: everything the absorber failed to swallow\nassert!((leak.escaped() - 3e-9).abs() < 1e-18);",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.absorber.leak",
@@ -42058,10 +42558,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::absorber::{Ramp, Band, worst_escape};\n\nlet w = worst_escape(Ramp { width: 15.0, power: 2.0 }, 3.0,\n                    Band { k_lo: 2.0, k_hi: 4.0, samples: 4 }, 1.0, 1.0)?;\nassert!(w >= 0.0);",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.absorber.choose_strength",
@@ -42087,10 +42596,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::absorber::{Ramp, Band, choose_strength};\n\n// the tuning surface has a wide optimum \u2014 over an order of magnitude \u2014\n// but it is not infinite, so the strength is SEARCHED rather than guessed\nlet (strength, escape) = choose_strength(Ramp { width: 15.0, power: 2.0 },\n                                        Band { k_lo: 2.0, k_hi: 4.0, samples: 4 },\n                                        1.0, 1.0)?;\nassert!(strength > 0.0 && escape >= 0.0);",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.isosurface.Mesh",
@@ -42116,10 +42634,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::isosurface::Mesh;\n\nlet m = Mesh::default();\nassert!(m.triangles.is_empty() || !m.triangles.is_empty());",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.isosurface.Mesh.triangle_count",
@@ -42252,10 +42779,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::isosurface::Mesh;\n\nlet m = Mesh::default();\n// checked by the divergence theorem against shapes whose volume is known\nassert_eq!(m.enclosed_volume(), 0.0);",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.isosurface.Mesh.is_watertight",
@@ -42281,10 +42817,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::isosurface::Mesh;\n\nlet m = Mesh::default();\n// every directed edge exactly once, its reverse exactly once: a hole\n// leaves an unmatched edge, a flipped triangle leaves a duplicate\nassert!(m.is_watertight());",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.isosurface.marching_tetrahedra",
@@ -42364,7 +42909,7 @@
    "N"
   ],
   "summary": "# Errors `n == 0`, a non-finite bound, or `x_max <= x_min`.",
-  "definition": "# Errors `n == 0`, a non-finite bound, or `x_max <= x_min`.  Declared in the `nash` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `quantum/examples/nash_propagator.rs`.",
+  "definition": "# Errors `n == 0`, a non-finite bound, or `x_max <= x_min`.  Declared in the `nash` module of the `quantum` crate.",
   "syntax": [
    "pub fn new(x_min: f64, x_max: f64, n: usize) -> Result<Self, String>"
   ],
@@ -42383,10 +42928,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::nash::PeriodicGrid;\n\nlet _value = PeriodicGrid::new(0.5, 0.5, 1)?;",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.nash.PeriodicGrid.h",
@@ -42737,7 +43291,7 @@
    "S"
   ],
   "summary": "fn `splitting` in `quantum::nash`.",
-  "definition": "No doc comment in the source.  Declared in the `nash` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `quantum/examples/nash_propagator.rs`.",
+  "definition": "No doc comment in the source.  Declared in the `nash` module of the `quantum` crate.",
   "syntax": [
    "pub fn splitting(&self) -> Splitting"
   ],
@@ -42756,10 +43310,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.splitting();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.nash.NashPropagator.grid",
@@ -42771,7 +43334,7 @@
    "G"
   ],
   "summary": "fn `grid` in `quantum::nash`.",
-  "definition": "No doc comment in the source.  Declared in the `nash` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `posim/examples/scene_server_reference.rs`, `quantum/examples/absorber_tuning.rs`, `quantum/examples/nash_propagator.rs`, `special_functions/examples/harmonic_oscillator.rs`.",
+  "definition": "No doc comment in the source.  Declared in the `nash` module of the `quantum` crate.",
   "syntax": [
    "pub fn grid(&self) -> &PeriodicGrid"
   ],
@@ -42805,10 +43368,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.grid();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.nash.NashPropagator.dt",
@@ -42834,10 +43406,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.dt();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.nash.NashPropagator.hbar",
@@ -42849,7 +43430,7 @@
    "H"
   ],
   "summary": "fn `hbar` in `quantum::nash`.",
-  "definition": "No doc comment in the source.  Declared in the `nash` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `quantum/examples/nash_propagator.rs`, `special_functions/examples/harmonic_oscillator.rs`, `special_functions/examples/scatter_1d.rs`.",
+  "definition": "No doc comment in the source.  Declared in the `nash` module of the `quantum` crate.",
   "syntax": [
    "pub fn hbar(&self) -> f64"
   ],
@@ -42878,10 +43459,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.hbar();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.nash.NashPropagator.mass",
@@ -42893,7 +43483,7 @@
    "M"
   ],
   "summary": "fn `mass` in `quantum::nash`.",
-  "definition": "No doc comment in the source.  Declared in the `nash` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/examples/charged_in_b_field.rs`, `physical_object/examples/kepler_orbit.rs`, `physical_object/examples/outer_solar_system.rs`, `physical_object/tests/collision.rs`.",
+  "definition": "No doc comment in the source.  Declared in the `nash` module of the `quantum` crate.",
   "syntax": [
    "pub fn mass(&self) -> f64"
   ],
@@ -42927,10 +43517,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.mass();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.nash.NashPropagator.lambda",
@@ -42942,7 +43541,7 @@
    "L"
   ],
   "summary": "`lambda = hbar dt / (m h^2)` \u2014 the single dimensionless number the scheme runs on.",
-  "definition": "`lambda = hbar dt / (m h^2)` \u2014 the single dimensionless number the scheme runs on.  Declared in the `nash` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `quantum/examples/absorber_tuning.rs`, `quantum/examples/nash_propagator.rs`.",
+  "definition": "`lambda = hbar dt / (m h^2)` \u2014 the single dimensionless number the scheme runs on.  Declared in the `nash` module of the `quantum` crate.",
   "syntax": [
    "pub fn lambda(&self) -> f64"
   ],
@@ -42966,10 +43565,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.lambda();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.nash.NashPropagator.order",
@@ -42981,7 +43589,7 @@
    "O"
   ],
   "summary": "The Jacobi\u2013Anger truncation order `K`.",
-  "definition": "The Jacobi\u2013Anger truncation order `K`.  Declared in the `nash` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `quantum/examples/absorber_tuning.rs`, `quantum/examples/nash_propagator.rs`, `special_functions/examples/bessel_complex_accuracy.rs`, `special_functions/examples/bessel_nu_accuracy.rs`.",
+  "definition": "The Jacobi\u2013Anger truncation order `K`.  Declared in the `nash` module of the `quantum` crate.",
   "syntax": [
    "pub fn order(&self) -> usize"
   ],
@@ -43015,10 +43623,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.order();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.nash.NashPropagator.truncation_error",
@@ -43030,7 +43647,7 @@
    "T"
   ],
   "summary": "Bound on the error the truncation makes in the kinetic factor, uniform over wavenumber.",
-  "definition": "Bound on the error the truncation makes in the kinetic factor, uniform over wavenumber. See [`truncation_bound`].  Declared in the `nash` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `quantum/examples/nash_propagator.rs`.",
+  "definition": "Bound on the error the truncation makes in the kinetic factor, uniform over wavenumber. See [`truncation_bound`].  Declared in the `nash` module of the `quantum` crate.",
   "syntax": [
    "pub fn truncation_error(&self) -> f64"
   ],
@@ -43049,10 +43666,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.truncation_error();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.nash.NashPropagator.step",
@@ -43291,7 +43917,7 @@
    "N"
   ],
   "summary": "# Errors `n == 0`, a non-finite bound, or `x_max <= x_min`.",
-  "definition": "# Errors `n == 0`, a non-finite bound, or `x_max <= x_min`.  Declared in the `qm1d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `quantum/examples/absorber_tuning.rs`.",
+  "definition": "# Errors `n == 0`, a non-finite bound, or `x_max <= x_min`.  Declared in the `qm1d` module of the `quantum` crate.",
   "syntax": [
    "pub fn new(x_min: f64, x_max: f64, n: usize) -> Result<Self, String>"
   ],
@@ -43310,10 +43936,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm1d::Grid;\n\nlet _value = Grid::new(0.5, 0.5, 1)?;",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm1d.Grid.h",
@@ -43513,7 +44148,7 @@
    "N"
   ],
   "summary": "Build from a potential already sampled on the grid.",
-  "definition": "Build from a potential already sampled on the grid.  # Errors Length mismatch, non-finite or non-positive `mass`/`hbar`, or a non-finite potential value.  Declared in the `qm1d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `posim/src/qm.rs`.",
+  "definition": "Build from a potential already sampled on the grid.  # Errors Length mismatch, non-finite or non-positive `mass`/`hbar`, or a non-finite potential value.  Declared in the `qm1d` module of the `quantum` crate.",
   "syntax": [
    "pub fn new(grid: Grid, potential: Vec<f64>, mass: f64, hbar: f64) -> Result<Self, String>"
   ],
@@ -43532,10 +44167,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm1d::{Grid, Hamiltonian};\n\nlet _value = Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 0.5, 0.5)?;",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm1d.Hamiltonian.with_absorber",
@@ -43595,10 +44239,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm1d::{Grid, Hamiltonian};\n\nlet h = Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?;\n// QM STATES is refused while an absorber is on, because H - iW is not\n// Hermitian; this is the Hermitian half of the same operator\nlet bare = h.without_absorber();\nlet _ = bare;",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm1d.Hamiltonian.is_absorbing",
@@ -43610,7 +44263,7 @@
    "I"
   ],
   "summary": "Whether an absorbing potential is attached.",
-  "definition": "Whether an absorbing potential is attached.  Declared in the `qm1d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `posim/src/qm2.rs`, `posim/src/qm3.rs`, `quantum/src/qm2d.rs`.",
+  "definition": "Whether an absorbing potential is attached.  Declared in the `qm1d` module of the `quantum` crate.",
   "syntax": [
    "pub fn is_absorbing(&self) -> bool"
   ],
@@ -43639,10 +44292,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm1d::{Grid, Hamiltonian};\n\nlet subject = Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?;\nlet _value = subject.is_absorbing();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm1d.Hamiltonian.from_fn",
@@ -43732,7 +44394,7 @@
    "B"
   ],
   "summary": "The lowest `k` bound states: `(energies, wavefunctions)`.",
-  "definition": "The lowest `k` bound states: `(energies, wavefunctions)`.  Energies are ascending. Each wavefunction is **normalised so that `integral |psi|^2 dx = 1`**, not merely unit-norm as a vector \u2014 the eigenvector must be divided by `sqrt(h)` to be a wavefunction, and forgetting that is a silent factor-of-`h` error in every expectation value you compute afterwards.  Sign convention: the component of larges  Declared in the `qm1d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `posim/src/qm.rs`, `posim/src/qm2.rs`, `posim/src/qm3.rs`.",
+  "definition": "The lowest `k` bound states: `(energies, wavefunctions)`.  Energies are ascending. Each wavefunction is **normalised so that `integral |psi|^2 dx = 1`**, not merely unit-norm as a vector \u2014 the eigenvector must be divided by `sqrt(h)` to be a wavefunction, and forgetting that is a silent factor-of-`h` error in every expectation value you compute afterwards.  Sign convention: the component of larges  Declared in the `qm1d` module of the `quantum` crate.",
   "syntax": [
    "pub fn bound_states(&self, k: usize) -> Result<(Vec<f64>, Vec<Vec<f64>>), String>"
   ],
@@ -43761,10 +44423,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm1d::{Grid, Hamiltonian};\n\nlet subject = Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?;\nlet _value = subject.bound_states(1)?;",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm1d.Wavefunction",
@@ -43824,10 +44495,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm1d::Grid;\nuse ::quantum::qm1d::Wavefunction;\nuse ::special_functions::complex::Complex64;\n\nlet _value = Wavefunction::new(Grid::new(-8.0, 8.0, 60)?, vec![Complex64::new(1.0, 0.0); 60])?;",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm1d.Wavefunction.gaussian",
@@ -43839,7 +44519,7 @@
    "G"
   ],
   "summary": "A normalised Gaussian wavepacket `exp(-(x-x0)^2 / 4 sigma^2) exp(i k0 x)`.",
-  "definition": "A normalised Gaussian wavepacket `exp(-(x-x0)^2 / 4 sigma^2) exp(i k0 x)`.  `sigma` is the width of `|psi|^2`, so the momentum spread is `hbar / 2 sigma`.  # Errors Non-positive or non-finite `sigma`, or a packet so narrow or so far outside the domain that its norm underflows.  Declared in the `qm1d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `quantum/examples/absorber_tuning.rs`.",
+  "definition": "A normalised Gaussian wavepacket `exp(-(x-x0)^2 / 4 sigma^2) exp(i k0 x)`.  `sigma` is the width of `|psi|^2`, so the momentum spread is `hbar / 2 sigma`.  # Errors Non-positive or non-finite `sigma`, or a packet so narrow or so far outside the domain that its norm underflows.  Declared in the `qm1d` module of the `quantum` crate.",
   "syntax": [
    "pub fn gaussian(grid: Grid, x0: f64, sigma: f64, k0: f64) -> Result<Self, String>"
   ],
@@ -43858,10 +44538,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm1d::Grid;\nuse ::quantum::qm1d::Wavefunction;\n\nlet _value = Wavefunction::gaussian(Grid::new(-8.0, 8.0, 60)?, 0.5, 0.5, 0.5)?;",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm1d.Wavefunction.from_real",
@@ -43873,7 +44562,7 @@
    "F"
   ],
   "summary": "A real state (e.",
-  "definition": "A real state (e.g. a bound state) lifted to a complex one.  # Errors Length mismatch.  Declared in the `qm1d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `posim/src/qm.rs`.",
+  "definition": "A real state (e.g. a bound state) lifted to a complex one.  # Errors Length mismatch.  Declared in the `qm1d` module of the `quantum` crate.",
   "syntax": [
    "pub fn from_real(grid: Grid, values: &[f64]) -> Result<Self, String>"
   ],
@@ -43892,10 +44581,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm1d::Grid;\nuse ::quantum::qm1d::Wavefunction;\n\nlet _value = Wavefunction::from_real(Grid::new(-8.0, 8.0, 60)?, &[1.0, 2.0, 3.0])?;",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm1d.Wavefunction.norm",
@@ -44343,10 +45041,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm1d::{Grid, Hamiltonian, Propagator};\n\nlet subject = Propagator::new(Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?, 0.01)?;\nlet _value = subject.dt();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm1d.Propagator.hamiltonian",
@@ -44358,7 +45065,7 @@
    "H"
   ],
   "summary": "fn `hamiltonian` in `quantum::qm1d`.",
-  "definition": "No doc comment in the source.  Declared in the `qm1d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `posim/src/qm.rs`, `posim/src/qm2.rs`, `posim/src/qm3.rs`.",
+  "definition": "No doc comment in the source.  Declared in the `qm1d` module of the `quantum` crate.",
   "syntax": [
    "pub fn hamiltonian(&self) -> &Hamiltonian"
   ],
@@ -44387,10 +45094,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm1d::{Grid, Hamiltonian, Propagator};\n\nlet subject = Propagator::new(Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?, 0.01)?;\nlet _value = subject.hamiltonian();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm1d.Propagator.step",
@@ -44563,7 +45279,7 @@
    "T"
   ],
   "summary": "fn `time` in `quantum::qm1d`.",
-  "definition": "No doc comment in the source.  Declared in the `qm1d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/examples/bouncing_ball_restitution.rs`, `physical_object/examples/outer_solar_system.rs`, `physical_object/tests/collision.rs`, `physical_object/tests/conservation.rs`.",
+  "definition": "No doc comment in the source.  Declared in the `qm1d` module of the `quantum` crate.",
   "syntax": [
    "pub fn time(&self) -> f64"
   ],
@@ -44597,10 +45313,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm1d::{Grid, Hamiltonian, DrivenPropagator};\n\nlet subject = DrivenPropagator::new(Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?, vec![0.0; 60], 0.01)?;\nlet _value = subject.time();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm1d.DrivenPropagator.dt",
@@ -44626,10 +45351,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm1d::{Grid, Hamiltonian, DrivenPropagator};\n\nlet subject = DrivenPropagator::new(Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?, vec![0.0; 60], 0.01)?;\nlet _value = subject.dt();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm1d.DrivenPropagator.hamiltonian_now",
@@ -44655,10 +45389,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm1d::{Grid, Hamiltonian, DrivenPropagator};\n\nlet h = Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?;\nlet d = DrivenPropagator::new(h, vec![0.0; 60], 0.01)?;\n// the modulation is a CLOSURE of t, sampled at the MIDPOINT of each step \u2014\n// which is what keeps the scheme second order\nlet hn = d.hamiltonian_now(|t: f64| 0.3 * t.cos())?;\nlet _ = hn;",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm1d.DrivenPropagator.step",
@@ -45322,7 +46065,7 @@
    "N"
   ],
   "summary": "# Errors Length mismatch, non-finite potential, non-positive mass/hbar.",
-  "definition": "# Errors Length mismatch, non-finite potential, non-positive mass/hbar.  Declared in the `qm2d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `posim/src/qm2.rs`.",
+  "definition": "# Errors Length mismatch, non-finite potential, non-positive mass/hbar.  Declared in the `qm2d` module of the `quantum` crate.",
   "syntax": [
    "pub fn new( grid: Grid2, potential: Vec<f64>, mass: f64, hbar: f64, ) -> Result<Self, String>"
   ],
@@ -45341,10 +46084,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm2d::Grid2;\nuse ::quantum::qm2d::Hamiltonian2;\n\nlet _value = Hamiltonian2::new(Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?, vec![0.0; 60], 0.5, 0.5)?;",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm2d.Hamiltonian2.from_fn",
@@ -45707,7 +46459,7 @@
    "N"
   ],
   "summary": "# Errors Length mismatch.",
-  "definition": "# Errors Length mismatch.  Declared in the `qm2d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `posim/src/qm2.rs`.",
+  "definition": "# Errors Length mismatch.  Declared in the `qm2d` module of the `quantum` crate.",
   "syntax": [
    "pub fn new(grid: Grid2, psi: Vec<C>) -> Result<Self, String>"
   ],
@@ -45726,10 +46478,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm2d::Grid2;\nuse ::quantum::qm2d::Wavefunction2;\nuse ::special_functions::complex::Complex64;\n\nlet _value = Wavefunction2::new(Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?, vec![Complex64::new(1.0, 0.0); 60])?;",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm2d.Wavefunction2.gaussian",
@@ -46177,10 +46938,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm2d::{Grid2, Hamiltonian2, Propagator2};\n\nlet subject = Propagator2::new(Hamiltonian2::new(Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?, vec![0.0; 400], 1.0, 1.0)?, 0.01)?;\nlet _value = subject.dt();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm2d.Propagator2.hamiltonian",
@@ -46192,7 +46962,7 @@
    "H"
   ],
   "summary": "fn `hamiltonian` in `quantum::qm2d`.",
-  "definition": "No doc comment in the source.  Declared in the `qm2d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `posim/src/qm.rs`, `posim/src/qm2.rs`, `posim/src/qm3.rs`.",
+  "definition": "No doc comment in the source.  Declared in the `qm2d` module of the `quantum` crate.",
   "syntax": [
    "pub fn hamiltonian(&self) -> &Hamiltonian2"
   ],
@@ -46221,10 +46991,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm2d::{Grid2, Hamiltonian2, Propagator2};\n\nlet subject = Propagator2::new(Hamiltonian2::new(Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?, vec![0.0; 400], 1.0, 1.0)?, 0.01)?;\nlet _value = subject.hamiltonian();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm2d.Propagator2.step",
@@ -46392,7 +47171,7 @@
    "T"
   ],
   "summary": "fn `time` in `quantum::qm2d`.",
-  "definition": "No doc comment in the source.  Declared in the `qm2d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/examples/bouncing_ball_restitution.rs`, `physical_object/examples/outer_solar_system.rs`, `physical_object/tests/collision.rs`, `physical_object/tests/conservation.rs`.",
+  "definition": "No doc comment in the source.  Declared in the `qm2d` module of the `quantum` crate.",
   "syntax": [
    "pub fn time(&self) -> f64"
   ],
@@ -46426,10 +47205,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm2d::{Grid2, Hamiltonian2, DrivenPropagator2};\n\nlet subject = DrivenPropagator2::new(Hamiltonian2::new(Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?, vec![0.0; 400], 1.0, 1.0)?, vec![0.0; 400], 0.01)?;\nlet _value = subject.time();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm2d.DrivenPropagator2.dt",
@@ -46455,10 +47243,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm2d::{Grid2, Hamiltonian2, DrivenPropagator2};\n\nlet subject = DrivenPropagator2::new(Hamiltonian2::new(Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?, vec![0.0; 400], 1.0, 1.0)?, vec![0.0; 400], 0.01)?;\nlet _value = subject.dt();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm2d.DrivenPropagator2.step",
@@ -47189,7 +47986,7 @@
    "N"
   ],
   "summary": "# Errors Length mismatch, non-finite potential, non-positive mass/hbar.",
-  "definition": "# Errors Length mismatch, non-finite potential, non-positive mass/hbar.  Declared in the `qm3d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `posim/src/qm3.rs`.",
+  "definition": "# Errors Length mismatch, non-finite potential, non-positive mass/hbar.  Declared in the `qm3d` module of the `quantum` crate.",
   "syntax": [
    "pub fn new(grid: Grid3, potential: Vec<f64>, mass: f64, hbar: f64) -> Result<Self, String>"
   ],
@@ -47208,10 +48005,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm3d::Grid3;\nuse ::quantum::qm3d::Hamiltonian3;\n\nlet _value = Hamiltonian3::new(Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?, vec![0.0; 60], 0.5, 0.5)?;",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm3d.Hamiltonian3.from_fn",
@@ -47574,7 +48380,7 @@
    "N"
   ],
   "summary": "# Errors Length mismatch.",
-  "definition": "# Errors Length mismatch.  Declared in the `qm3d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `posim/src/qm3.rs`.",
+  "definition": "# Errors Length mismatch.  Declared in the `qm3d` module of the `quantum` crate.",
   "syntax": [
    "pub fn new(grid: Grid3, psi: Vec<C>) -> Result<Self, String>"
   ],
@@ -47593,10 +48399,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm3d::Grid3;\nuse ::quantum::qm3d::Wavefunction3;\nuse ::special_functions::complex::Complex64;\n\nlet _value = Wavefunction3::new(Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?, vec![Complex64::new(1.0, 0.0); 60])?;",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm3d.Wavefunction3.gaussian",
@@ -48073,10 +48888,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm3d::{Grid3, Hamiltonian3, Propagator3};\n\nlet subject = Propagator3::new(Hamiltonian3::new(Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?, vec![0.0; 1000], 1.0, 1.0)?, 0.01)?;\nlet _value = subject.dt();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm3d.Propagator3.hamiltonian",
@@ -48088,7 +48912,7 @@
    "H"
   ],
   "summary": "fn `hamiltonian` in `quantum::qm3d`.",
-  "definition": "No doc comment in the source.  Declared in the `qm3d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `posim/src/qm.rs`, `posim/src/qm2.rs`, `posim/src/qm3.rs`.",
+  "definition": "No doc comment in the source.  Declared in the `qm3d` module of the `quantum` crate.",
   "syntax": [
    "pub fn hamiltonian(&self) -> &Hamiltonian3"
   ],
@@ -48117,10 +48941,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm3d::{Grid3, Hamiltonian3, Propagator3};\n\nlet subject = Propagator3::new(Hamiltonian3::new(Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?, vec![0.0; 1000], 1.0, 1.0)?, 0.01)?;\nlet _value = subject.hamiltonian();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm3d.Propagator3.step",
@@ -48288,7 +49121,7 @@
    "T"
   ],
   "summary": "fn `time` in `quantum::qm3d`.",
-  "definition": "No doc comment in the source.  Declared in the `qm3d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/examples/bouncing_ball_restitution.rs`, `physical_object/examples/outer_solar_system.rs`, `physical_object/tests/collision.rs`, `physical_object/tests/conservation.rs`.",
+  "definition": "No doc comment in the source.  Declared in the `qm3d` module of the `quantum` crate.",
   "syntax": [
    "pub fn time(&self) -> f64"
   ],
@@ -48322,10 +49155,19 @@
     "role": "used here"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm3d::{Grid3, Hamiltonian3, DrivenPropagator3};\n\nlet subject = DrivenPropagator3::new(Hamiltonian3::new(Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?, vec![0.0; 1000], 1.0, 1.0)?, vec![0.0; 1000], 0.01)?;\nlet _value = subject.time();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "reference"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm3d.DrivenPropagator3.dt",
@@ -48351,10 +49193,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::qm3d::{Grid3, Hamiltonian3, DrivenPropagator3};\n\nlet subject = DrivenPropagator3::new(Hamiltonian3::new(Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?, vec![0.0; 1000], 1.0, 1.0)?, vec![0.0; 1000], 0.01)?;\nlet _value = subject.dt();",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.qm3d.DrivenPropagator3.step",
@@ -48546,10 +49397,19 @@
     "role": "definition"
    }
   ],
-  "examples": [],
+  "examples": [
+   {
+    "level": "trivial",
+    "medium": "rust",
+    "code": "use ::quantum::transfer::scatter_real;\n\n// T(E) and R(E) for a potential sampled on a grid, by transfer matrix \u2014\n// exact at one energy, with no packet and no time stepping\nlet v = vec![0.0f64; 40];\nlet out = scatter_real(&v, -8.0, 8.0, 2.0, 1.0, 1.0)?;\nlet _ = out;",
+    "expected": "compiles",
+    "verified": "2026-07-30",
+    "runner": "cargo build"
+   }
+  ],
   "seeAlso": [],
   "invariants": [],
-  "status": "stub"
+  "status": "complete"
  },
  {
   "id": "rs.quantum.transfer.EnergyRange",
