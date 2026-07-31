@@ -74,6 +74,10 @@ and, for rigid-body collisions (§5.7):
 
 `COLLIDE CONTACTS ON OFF`
 
+and, for the quantum families (§5.10, §5.11, §5.12):
+
+`QM QM2 QM3`
+
 and, for named objects, session variables and user functions
 (§5.1, §5.9):
 
@@ -85,7 +89,15 @@ the spellings `CUBE` and `DISC` are lexer aliases for `CUBOID` and
 for `DUMBBELL`. `collisions` is deliberately **not** a keyword so that
 the field path `system.collisions` keeps its own spelling. `DEF` is
 not a keyword either: a line starting `DEF ` is a **line form**
-recognized before the ordinary grammar — see §3 and §5.9.)
+recognized before the ordinary grammar — see §3 and §5.9.
+
+`QM`, `QM2` and `QM3` are the *only* words those three families
+reserve: every sub-command word after them — `grid`, `run`, `state`,
+`energy`, `reset` — is read as an identifier-or-keyword and matched on
+its lowercased text, precisely so the whole quantum vocabulary stays
+out of the global keyword namespace. Several of those words are
+already keywords in their own right, and making the rest reserved too
+would have cost you `system.energy` and `obj0.state` for nothing.)
 
 Keywords are reserved *at the start of paths*, but **field names may
 reuse keyword spellings** — `obj0.momentum` and `system.method` work
@@ -170,10 +182,22 @@ path     := IDENT { "." IDENT } ;             (* objN.field[.x|y|z|w],
                                                  contactK.field,
                                                  name.field for
                                                  AS-registered names *)
-expr     := term { ("+" | "-") term } ;
+expr     := sum { ("<" | "<=" | ">" | ">=" | "==" | "!=") sum } ;
+                                    (* comparisons yield 1 or 0 and sit at
+                                       the LOWEST precedence, so `x + 1 > 2`
+                                       groups as `(x + 1) > 2`. There is no
+                                       boolean type, and that is the point:
+                                       1/0 makes `(x > a) * (x < b)` an
+                                       indicator function, which is how a
+                                       piecewise potential is written — see
+                                       §4.2, §5.10 and Examples 17 and 18.
+                                       `=` remains assignment; `==` is
+                                       equality. *)
+sum      := term { ("+" | "-") term } ;
 term     := unary { ("*" | "/") unary } ;
 unary    := "-" unary | atom ;
-atom     := NUMBER | STRING | "[" expr { "," expr } "]" | "(" expr ")"
+atom     := NUMBER | IMAGINARY | STRING
+          | "[" expr { "," expr } "]" | "(" expr ")"
           | IDENT "(" [ expr { "," expr } ] ")"   (* builtin or user
                                                      function call   *)
           | path
@@ -1394,12 +1418,12 @@ rest of the simulation through read-only `contactK` paths:
 | field | type | meaning |
 |---|---|---|
 | `contactK.i`, `contactK.j` | number | the colliding pair (indices, `i < j`) |
-| `contactK.t` | number | the event time (the root the solver landed on) |
+| `contactK.t` (alias `time`) | number | the event time (the root the solver landed on) |
 | `contactK.point` | vec3 | world-space contact point |
 | `contactK.normal` | vec3 | **unit normal, pointing from `obji` toward `objj`** — the action–reaction line; `objj` receives `+J·n̂`, `obji` receives `−J·n̂` |
 | `contactK.depth` | number | penetration depth at the event (≈ 0 — the root lands on the touch) |
-| `contactK.rel_vel_n` | number | approach speed along the normal (negative = approaching) |
-| `contactK.impulse` | number | scalar impulse magnitude `J` that was applied |
+| `contactK.rel_vel_n` (alias `approach`) | number | approach speed along the normal (negative = approaching) |
+| `contactK.impulse` (alias `impulse_n`) | number | scalar impulse magnitude `J` that was applied |
 
 ```
 In [5]: get contact0.normal
@@ -1762,8 +1786,8 @@ your commands. A second word is cheaper than either.
 | `QM2 STATES <k>` | the `k` lowest bound-state energies |
 | `QM2 STATE <n>` | load bound state `n` as psi |
 | `QM2 STEP <dt>` / `QM2 RUN <t> [STEPS <n>]` | ADI propagation |
-| `QM2 NORM`, `QM2 ENERGY`, `QM2 CENTROID` | observables |
-| `QM2 PROB <xa> <xb>, <ya> <yb>` | probability in a rectangle |
+| `QM2 NORM`, `QM2 ENERGY`, `QM2 CENTROID` | observables (`CENTROID` also spells `POSITION`) |
+| `QM2 PROB <xa> <xb>, <ya> <yb>` | probability in a rectangle (alias `PROBABILITY`) |
 | `QM2 DRIVE <shape> <modulation>` / `OFF` | time-dependent `V(x,y,t)`, as in 1-D |
 | `QM2 ABSORB <width> <strength> [<power>]` / `OFF` | absorbing edges on all four walls |
 | `QM2 ANIMATE "<file>" <t> [FRAMES <n>]` | heat-map animation |
@@ -1886,12 +1910,12 @@ be worse than a third word.
 | `QM3 PACKET <x0> <y0> <z0>, <sx> <sy> <sz>, <kx> <ky> <kz>` | 3-D Gaussian packet |
 | `QM3 STATES <k>` / `QM3 STATE <n>` | bound states |
 | `QM3 STEP <dt>` / `QM3 RUN <t> [STEPS <n>]` | ADI propagation |
-| `QM3 NORM`, `QM3 ENERGY`, `QM3 CENTROID` | observables |
-| `QM3 PROB <xa> <xb>, <ya> <yb>, <za> <zb>` | probability in a box |
+| `QM3 NORM`, `QM3 ENERGY`, `QM3 CENTROID` | observables (`CENTROID` also spells `POSITION`) |
+| `QM3 PROB <xa> <xb>, <ya> <yb>, <za> <zb>` | probability in a box (alias `PROBABILITY`) |
 | `QM3 DRIVE <shape> <modulation>` / `OFF` | time-dependent `V(x,y,z,t)` |
 | `QM3 ABSORB <width> <strength> [<power>]` / `OFF` | absorbing faces on all six sides |
 | `QM3 ANIMATE "<file>" <t> [FRAMES <n>]` | three marginal densities, animated |
-| `QM3 ISO "<file>" <t> [FRAMES <n>] [LEVEL <frac>]` | rotatable isosurface at `frac` of peak density |
+| `QM3 ISO "<file>" <t> [FRAMES <n>] [LEVEL <frac>]` | rotatable isosurface at `frac` of peak density (alias `ISOSURFACE`; **`QM2` has no `ISO`** — a 2-D density is already drawable flat, as a heat map) |
 | `QM3 RESET` | forget the 3-D problem |
 
 The scheme is the 2-D one with a third direction, Strang-composed so
