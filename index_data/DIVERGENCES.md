@@ -54,6 +54,10 @@ In[3]:= qm2 iso "x.html" 0.1
 Err[3]: QM2: unknown subcommand `iso` (grid, potential, packet, states, state, step, run, norm, energy, centroid, prob, absorb, animate, status, reset)
 ```
 
+(That reply is the **pre-fix** text, captured before this was repaired; the
+message is now generated from `QM2_SUBCOMMANDS`, so its wording and order
+follow the constant. The transcript is left as it was observed.)
+
 **Who is right.** `HELP_TEXT` (`vm.rs`) and `grammar.md` §5.11 are both
 correct — neither documents `QM2 ISO`. The defect is confined to the EBNF
 comment in `parser.rs`, which is the one place a reader would trust most.
