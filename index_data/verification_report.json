@@ -462,6 +462,20 @@
   "reasons": []
  },
  {
+  "id": "prop.obj.id",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.id",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.obj.x",
   "kind": "property",
   "level": "trivial",
@@ -472,6 +486,20 @@
   "id": "prop.obj.x",
   "kind": "property",
   "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.x",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.x",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -490,6 +518,20 @@
   "reasons": []
  },
  {
+  "id": "prop.obj.y",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.y",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.obj.z",
   "kind": "property",
   "level": "trivial",
@@ -500,6 +542,20 @@
   "id": "prop.obj.z",
   "kind": "property",
   "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.z",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.z",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -518,6 +574,20 @@
   "reasons": []
  },
  {
+  "id": "prop.obj.vx",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.vx",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.obj.vy",
   "kind": "property",
   "level": "trivial",
@@ -532,6 +602,20 @@
   "reasons": []
  },
  {
+  "id": "prop.obj.vy",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.vy",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.obj.vz",
   "kind": "property",
   "level": "trivial",
@@ -542,6 +626,20 @@
   "id": "prop.obj.vz",
   "kind": "property",
   "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.vz",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.vz",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -581,6 +679,20 @@
   "reasons": []
  },
  {
+  "id": "prop.obj.m2",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.m2",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.obj.m_rod",
   "kind": "property",
   "level": "trivial",
@@ -591,6 +703,20 @@
   "id": "prop.obj.m_rod",
   "kind": "property",
   "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.m_rod",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.m_rod",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -609,6 +735,20 @@
   "reasons": []
  },
  {
+  "id": "prop.obj.r1",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.r1",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.obj.r2",
   "kind": "property",
   "level": "trivial",
@@ -619,6 +759,20 @@
   "id": "prop.obj.r2",
   "kind": "property",
   "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.r2",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.r2",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -644,6 +798,13 @@
   "reasons": []
  },
  {
+  "id": "prop.obj.rod_radius",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.obj.length",
   "kind": "property",
   "level": "trivial",
@@ -661,6 +822,13 @@
   "id": "prop.obj.length",
   "kind": "property",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.length",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -721,6 +889,20 @@
   "reasons": []
  },
  {
+  "id": "prop.obj.charge",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.charge",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.obj.position",
   "kind": "property",
   "level": "trivial",
@@ -738,6 +920,13 @@
   "id": "prop.obj.position",
   "kind": "property",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.position",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -871,6 +1060,13 @@
   "id": "prop.obj.angular_momentum",
   "kind": "property",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.angular_momentum",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -910,6 +1106,20 @@
   "reasons": []
  },
  {
+  "id": "prop.obj.inverse_inertia_tensor",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.inverse_inertia_tensor",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.obj.magnetic_moment_tensor",
   "kind": "property",
   "level": "trivial",
@@ -924,6 +1134,20 @@
   "reasons": []
  },
  {
+  "id": "prop.obj.magnetic_moment_tensor",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.magnetic_moment_tensor",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.obj.kinetic_energy",
   "kind": "property",
   "level": "trivial",
@@ -941,6 +1165,13 @@
   "id": "prop.obj.kinetic_energy",
   "kind": "property",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.kinetic_energy",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -1004,6 +1235,13 @@
   "id": "prop.obj.half_extents",
   "kind": "property",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.half_extents",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -1022,6 +1260,20 @@
   "reasons": []
  },
  {
+  "id": "prop.obj.ring_radius",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.ring_radius",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.obj.tube_radius",
   "kind": "property",
   "level": "trivial",
@@ -1032,6 +1284,20 @@
   "id": "prop.obj.tube_radius",
   "kind": "property",
   "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.tube_radius",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.tube_radius",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -1113,6 +1379,20 @@
   "reasons": []
  },
  {
+  "id": "prop.obj.half_height",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.half_height",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.obj.force",
   "kind": "property",
   "level": "trivial",
@@ -1134,6 +1414,13 @@
   "reasons": []
  },
  {
+  "id": "prop.obj.force",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.obj.torque",
   "kind": "property",
   "level": "trivial",
@@ -1151,6 +1438,13 @@
   "id": "prop.obj.torque",
   "kind": "property",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.obj.torque",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -1193,6 +1487,13 @@
   "id": "prop.system.g_constant",
   "kind": "property",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.system.g_constant",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -1211,6 +1512,20 @@
   "reasons": []
  },
  {
+  "id": "prop.system.softening",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.system.softening",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.system.uniform_gravity",
   "kind": "property",
   "level": "trivial",
@@ -1228,6 +1543,13 @@
   "id": "prop.system.uniform_gravity",
   "kind": "property",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.system.uniform_gravity",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -1246,6 +1568,20 @@
   "reasons": []
  },
  {
+  "id": "prop.system.e_field",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.system.e_field",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.system.b_field",
   "kind": "property",
   "level": "trivial",
@@ -1256,6 +1592,20 @@
   "id": "prop.system.b_field",
   "kind": "property",
   "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.system.b_field",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.system.b_field",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -1274,6 +1624,20 @@
   "reasons": []
  },
  {
+  "id": "prop.system.rtol",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.system.rtol",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.system.atol",
   "kind": "property",
   "level": "trivial",
@@ -1284,6 +1648,20 @@
   "id": "prop.system.atol",
   "kind": "property",
   "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.system.atol",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.system.atol",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -1305,6 +1683,13 @@
   "id": "prop.system.time",
   "kind": "property",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.system.time",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -1323,6 +1708,20 @@
   "reasons": []
  },
  {
+  "id": "prop.system.method",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.system.method",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.system.count",
   "kind": "property",
   "level": "trivial",
@@ -1340,6 +1739,13 @@
   "id": "prop.system.count",
   "kind": "property",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.system.count",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -1358,6 +1764,20 @@
   "reasons": []
  },
  {
+  "id": "prop.system.collide",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.system.collide",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.system.contacts",
   "kind": "property",
   "level": "trivial",
@@ -1368,6 +1788,20 @@
   "id": "prop.system.contacts",
   "kind": "property",
   "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.system.contacts",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.system.contacts",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -1386,6 +1820,20 @@
   "reasons": []
  },
  {
+  "id": "prop.system.collisions",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.system.collisions",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.system.restitution_threshold",
   "kind": "property",
   "level": "trivial",
@@ -1396,6 +1844,20 @@
   "id": "prop.system.restitution_threshold",
   "kind": "property",
   "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.system.restitution_threshold",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.system.restitution_threshold",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -1414,6 +1876,20 @@
   "reasons": []
  },
  {
+  "id": "prop.system.contact_slop",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.system.contact_slop",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.system.box",
   "kind": "property",
   "level": "trivial",
@@ -1424,6 +1900,20 @@
   "id": "prop.system.box",
   "kind": "property",
   "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.system.box",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.system.box",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -1442,6 +1932,20 @@
   "reasons": []
  },
  {
+  "id": "prop.contact.i",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.contact.i",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.contact.j",
   "kind": "property",
   "level": "trivial",
@@ -1456,6 +1960,20 @@
   "reasons": []
  },
  {
+  "id": "prop.contact.j",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.contact.j",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.contact.t",
   "kind": "property",
   "level": "trivial",
@@ -1473,6 +1991,13 @@
   "id": "prop.contact.t",
   "kind": "property",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.contact.t",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -1498,6 +2023,13 @@
   "reasons": []
  },
  {
+  "id": "prop.contact.point",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.contact.normal",
   "kind": "property",
   "level": "trivial",
@@ -1515,6 +2047,13 @@
   "id": "prop.contact.normal",
   "kind": "property",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.contact.normal",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -1533,6 +2072,20 @@
   "reasons": []
  },
  {
+  "id": "prop.contact.depth",
+  "kind": "property",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.contact.depth",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.contact.rel_vel_n",
   "kind": "property",
   "level": "trivial",
@@ -1554,6 +2107,13 @@
   "reasons": []
  },
  {
+  "id": "prop.contact.rel_vel_n",
+  "kind": "property",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "prop.contact.impulse",
   "kind": "property",
   "level": "trivial",
@@ -1571,6 +2131,13 @@
   "id": "prop.contact.impulse",
   "kind": "property",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "prop.contact.impulse",
+  "kind": "property",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -1932,6 +2499,13 @@
   "reasons": []
  },
  {
+  "id": "fn.rel_err",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.sph_j",
   "kind": "builtin",
   "level": "trivial",
@@ -1949,6 +2523,13 @@
   "id": "fn.sph_j",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.sph_j",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -1974,6 +2555,13 @@
   "reasons": []
  },
  {
+  "id": "fn.assoc_legendre_p",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.sph_harm",
   "kind": "builtin",
   "level": "trivial",
@@ -1991,6 +2579,13 @@
   "id": "fn.sph_harm",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.sph_harm",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2016,6 +2611,13 @@
   "reasons": []
  },
  {
+  "id": "fn.gauss_legendre",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.wigner_3j",
   "kind": "builtin",
   "level": "trivial",
@@ -2033,6 +2635,13 @@
   "id": "fn.wigner_3j",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.wigner_3j",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2058,6 +2667,13 @@
   "reasons": []
  },
  {
+  "id": "fn.wigner_9j",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.eigenvalues",
   "kind": "builtin",
   "level": "trivial",
@@ -2075,6 +2691,13 @@
   "id": "fn.eigenvalues",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.eigenvalues",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2100,6 +2723,13 @@
   "reasons": []
  },
  {
+  "id": "fn.solve_tridiag",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.bessel_j_z",
   "kind": "builtin",
   "level": "trivial",
@@ -2117,6 +2747,13 @@
   "id": "fn.bessel_j_z",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.bessel_j_z",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2142,6 +2779,13 @@
   "reasons": []
  },
  {
+  "id": "fn.bessel_j_nu",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.gamma_z",
   "kind": "builtin",
   "level": "trivial",
@@ -2159,6 +2803,13 @@
   "id": "fn.gamma_z",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.gamma_z",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2184,6 +2835,13 @@
   "reasons": []
  },
  {
+  "id": "fn.airy_z",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.hankel_h1_z",
   "kind": "builtin",
   "level": "trivial",
@@ -2201,6 +2859,13 @@
   "id": "fn.hankel_h1_z",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.hankel_h1_z",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2226,6 +2891,13 @@
   "reasons": []
  },
  {
+  "id": "fn.hankel_h1_prime_z",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.hankel_h1_prime_nu",
   "kind": "builtin",
   "level": "trivial",
@@ -2243,6 +2915,13 @@
   "id": "fn.hankel_h1_prime_nu",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.hankel_h1_prime_nu",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2268,6 +2947,13 @@
   "reasons": []
  },
  {
+  "id": "fn.sph_hankel_h1",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.sph_hankel_h1_prime",
   "kind": "builtin",
   "level": "trivial",
@@ -2285,6 +2971,13 @@
   "id": "fn.sph_hankel_h1_prime",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.sph_hankel_h1_prime",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2310,6 +3003,13 @@
   "reasons": []
  },
  {
+  "id": "fn.bessel_j_scaled",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.hankel_h1_scaled",
   "kind": "builtin",
   "level": "trivial",
@@ -2327,6 +3027,13 @@
   "id": "fn.hankel_h1_scaled",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.hankel_h1_scaled",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2352,6 +3059,13 @@
   "reasons": []
  },
  {
+  "id": "fn.solve_cyclic_tridiag_c",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.sph_y",
   "kind": "builtin",
   "level": "trivial",
@@ -2369,6 +3083,13 @@
   "id": "fn.sph_y",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.sph_y",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2394,6 +3115,13 @@
   "reasons": []
  },
  {
+  "id": "fn.sph_j_prime",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.sph_y_prime",
   "kind": "builtin",
   "level": "trivial",
@@ -2411,6 +3139,13 @@
   "id": "fn.sph_y_prime",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.sph_y_prime",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2436,6 +3171,13 @@
   "reasons": []
  },
  {
+  "id": "fn.legendre_p",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.legendre_p_prime",
   "kind": "builtin",
   "level": "trivial",
@@ -2453,6 +3195,13 @@
   "id": "fn.legendre_p_prime",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.legendre_p_prime",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2478,6 +3227,13 @@
   "reasons": []
  },
  {
+  "id": "fn.norm_assoc_legendre_p",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.sph_harm_real",
   "kind": "builtin",
   "level": "trivial",
@@ -2495,6 +3251,13 @@
   "id": "fn.sph_harm_real",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.sph_harm_real",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2520,6 +3283,13 @@
   "reasons": []
  },
  {
+  "id": "fn.hermite_h",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.hermite_he",
   "kind": "builtin",
   "level": "trivial",
@@ -2537,6 +3307,13 @@
   "id": "fn.hermite_he",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.hermite_he",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2562,6 +3339,13 @@
   "reasons": []
  },
  {
+  "id": "fn.laguerre_l",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.chebyshev_t",
   "kind": "builtin",
   "level": "trivial",
@@ -2579,6 +3363,13 @@
   "id": "fn.chebyshev_t",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.chebyshev_t",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2604,6 +3395,13 @@
   "reasons": []
  },
  {
+  "id": "fn.chebyshev_u",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.laguerre_l_assoc",
   "kind": "builtin",
   "level": "trivial",
@@ -2621,6 +3419,13 @@
   "id": "fn.laguerre_l_assoc",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.laguerre_l_assoc",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2646,6 +3451,13 @@
   "reasons": []
  },
  {
+  "id": "fn.gegenbauer_c",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.jacobi_p",
   "kind": "builtin",
   "level": "trivial",
@@ -2663,6 +3475,13 @@
   "id": "fn.jacobi_p",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.jacobi_p",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2688,6 +3507,13 @@
   "reasons": []
  },
  {
+  "id": "fn.bessel_j",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.bessel_j_array",
   "kind": "builtin",
   "level": "trivial",
@@ -2705,6 +3531,13 @@
   "id": "fn.bessel_j_array",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.bessel_j_array",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2730,6 +3563,13 @@
   "reasons": []
  },
  {
+  "id": "fn.bessel_i_z",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.bessel_y_z",
   "kind": "builtin",
   "level": "trivial",
@@ -2747,6 +3587,13 @@
   "id": "fn.bessel_y_z",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.bessel_y_z",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2772,6 +3619,13 @@
   "reasons": []
  },
  {
+  "id": "fn.bessel_k_z",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.bessel_i_nu",
   "kind": "builtin",
   "level": "trivial",
@@ -2789,6 +3643,13 @@
   "id": "fn.bessel_i_nu",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.bessel_i_nu",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2814,6 +3675,13 @@
   "reasons": []
  },
  {
+  "id": "fn.bessel_y_nu",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.bessel_k_nu",
   "kind": "builtin",
   "level": "trivial",
@@ -2831,6 +3699,13 @@
   "id": "fn.bessel_k_nu",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.bessel_k_nu",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2856,6 +3731,13 @@
   "reasons": []
  },
  {
+  "id": "fn.ln_gamma_z",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.rgamma_z",
   "kind": "builtin",
   "level": "trivial",
@@ -2873,6 +3755,13 @@
   "id": "fn.rgamma_z",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.rgamma_z",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2898,6 +3787,13 @@
   "reasons": []
  },
  {
+  "id": "fn.hankel_h2_z",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.hankel_h1_nu",
   "kind": "builtin",
   "level": "trivial",
@@ -2915,6 +3811,13 @@
   "id": "fn.hankel_h1_nu",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.hankel_h1_nu",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2940,6 +3843,13 @@
   "reasons": []
  },
  {
+  "id": "fn.hankel_h2_nu",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.hankel_h2_prime_z",
   "kind": "builtin",
   "level": "trivial",
@@ -2957,6 +3867,13 @@
   "id": "fn.hankel_h2_prime_z",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.hankel_h2_prime_z",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -2982,6 +3899,13 @@
   "reasons": []
  },
  {
+  "id": "fn.hankel_h2_prime_nu",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.sph_hankel_h2",
   "kind": "builtin",
   "level": "trivial",
@@ -2999,6 +3923,13 @@
   "id": "fn.sph_hankel_h2",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.sph_hankel_h2",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -3024,6 +3955,13 @@
   "reasons": []
  },
  {
+  "id": "fn.sph_hankel_h2_prime",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.bessel_y_scaled",
   "kind": "builtin",
   "level": "trivial",
@@ -3041,6 +3979,13 @@
   "id": "fn.bessel_y_scaled",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.bessel_y_scaled",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -3066,6 +4011,13 @@
   "reasons": []
  },
  {
+  "id": "fn.bessel_i_scaled",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.bessel_k_scaled",
   "kind": "builtin",
   "level": "trivial",
@@ -3083,6 +4035,13 @@
   "id": "fn.bessel_k_scaled",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.bessel_k_scaled",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -3108,6 +4067,13 @@
   "reasons": []
  },
  {
+  "id": "fn.hankel_h2_scaled",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.jacobi_eigen",
   "kind": "builtin",
   "level": "trivial",
@@ -3125,6 +4091,13 @@
   "id": "fn.jacobi_eigen",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.jacobi_eigen",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },
@@ -3150,6 +4123,13 @@
   "reasons": []
  },
  {
+  "id": "fn.solve_tridiag_c",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.wigner_6j",
   "kind": "builtin",
   "level": "trivial",
@@ -3171,6 +4151,13 @@
   "reasons": []
  },
  {
+  "id": "fn.wigner_6j",
+  "kind": "builtin",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "fn.clebsch_gordan",
   "kind": "builtin",
   "level": "trivial",
@@ -3188,6 +4175,13 @@
   "id": "fn.clebsch_gordan",
   "kind": "builtin",
   "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "fn.clebsch_gordan",
+  "kind": "builtin",
+  "level": "expert",
   "ok": true,
   "reasons": []
  },

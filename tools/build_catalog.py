@@ -313,6 +313,13 @@ def prop_examples(p, root):
             out.append(ex("advanced",
                           f"set system.{a} = {SAMPLE[t]}\nget system.{n}" if rw == "RW"
                           else f"get system.{a}\nget system.{n}"))
+        # watch it across a real integration: what a system field MEANS is what
+        # it does to a trajectory, which a static read cannot show
+        while len(out) < 4:
+            out.append(ex("expert",
+                          "new sphere { mass = 2, radius = 0.5, velocity = [1, 0, 0] }\n"
+                          "set system.gravity = [0, -9.81, 0]\n"
+                          f"get system.{n}\nrun 1 steps 2\nget system.{n}"))
         return out
 
     if root == "contact":
@@ -323,6 +330,11 @@ def prop_examples(p, root):
                           TWO_BALLS + f"\nget contact0.{n}\nget contact0.{p['aliases'][0]}"))
         if t == "vec3":
             out.append(ex("expert", TWO_BALLS + f"\ncontact0.impulse * contact0.{n}.x"))
+        # a contact field is only meaningful beside the pair it describes
+        while len(out) < 4:
+            out.append(ex("expert", TWO_BALLS
+                          + f"\nget contact0.i\nget contact0.j\nget contact0.{n}"
+                          + "\nget system.collisions"))
         return out
 
     out.append(ex("trivial", f"{maker}\nget obj0.{n}"))
@@ -338,6 +350,13 @@ def prop_examples(p, root):
         out.append(ex("advanced", f"{maker}\nget obj0.{p['aliases'][0]}"))
     if n in COUPLING:
         out.append(ex("expert", COUPLING[n][0]))
+    elif t in ("number", "vec3", "quaternion", "mat3"):
+        # watch the field across a real integration: a static read tells you
+        # the type, a read either side of a RUN tells you what it MEANS
+        while len(out) < 4:
+            out.append(ex("expert",
+                          f"{maker}\nset system.gravity = [0, -9.81, 0]\n"
+                          f"get obj0.{n}\nrun 1 steps 2\nget obj0.{n}"))
     return out
 
 
@@ -515,6 +534,13 @@ SPECIAL_LADDER = {
     "rgamma_z": ["rgamma_z(-3)", "rgamma_z(1)", "rgamma_z(0.5) * gamma_z(0.5)"],
 }
 
+# Builtins whose result is a LIST rather than a number or a complex value.
+# `abs()` of a list is an error, so the generated ladder must know the
+# difference — grammar.md section 4.1 marks each of these with `-> list`.
+RETURNS_LIST = {"sph_harm", "bessel_j_array", "gauss_legendre", "eigenvalues",
+                "jacobi_eigen", "airy_z", "solve_tridiag", "solve_tridiag_c",
+                "solve_cyclic_tridiag_c"}
+
 BESSEL_Z = ["bessel_j_z", "bessel_i_z", "bessel_y_z", "bessel_k_z"]
 BESSEL_NU = ["bessel_j_nu", "bessel_i_nu", "bessel_y_nu", "bessel_k_nu"]
 SCALED = ["bessel_j_scaled", "bessel_y_scaled", "bessel_i_scaled", "bessel_k_scaled",
@@ -597,7 +623,13 @@ def build_builtins():
             errors=[f"{n}(): argument 1 must be a whole number (an integer order), got 2.5"],
             locations=[{"file": s["file"], "line": s["line"], "role": "registration"},
                        {"file": "grammar.md", "line": 253, "role": "spec (section 4.1)"}],
-            examples=[ex(l, c) for l, c in zip(LEVELS, special_ladder(n))],
+            examples=[ex(l, c) for l, c in zip(LEVELS, special_ladder(n) + [
+                # a 4th rung: the value bound to a LET and reused, which is how
+                # these are actually written. `abs` only where the result is a
+                # scalar or complex — the families below return LISTS, and the
+                # scalar builtins are real-only by design.
+                f"let v = {special_ladder(n)[0]}\nv"
+                + ("" if n in RETURNS_LIST else "\nabs(v)")])],
             seeAlso=["fn.abs", "type.complex"],
         ))
     return out
@@ -907,6 +939,38 @@ def main():
         else:
             print(f"NOTE: {path} absent — no {what} entries", file=sys.stderr)
 
+    # Cross-links, both ways. Tier B already points at its Tier-A twin
+    # (special_functions::sph_j -> the builtin sph_j); without the reverse a
+    # reader who arrives at the builtin never learns where it is implemented,
+    # which is the direction they are more likely to travel.
+    by_name = {}
+    for e in catalog:
+        by_name.setdefault(e["name"].split("::")[-1], []).append(e)
+    added = 0
+    for e in catalog:
+        if e["kind"] != "builtin":
+            continue
+        for other in by_name.get(e["name"], []):
+            if other["tier"] == "B" and other["id"] not in e["seeAlso"]:
+                e["seeAlso"].append(other["id"])
+                added += 1
+    # A dynamic notebook and the documented example it animates are the same
+    # subject reached two ways; dynamic_notebooks/README.md already states the
+    # mapping, so the index should not make the reader re-derive it.
+    nb_ids = {e["id"]: e for e in catalog if e["kind"] == "notebook"}
+    for e in catalog:
+        if e["kind"] != "example":
+            continue
+        for token in re.findall(r"[a-z_0-9]{4,}", e["name"].lower()):
+            cand = "nb." + token
+            if cand in nb_ids and cand not in e["seeAlso"]:
+                e["seeAlso"].append(cand)
+                nb_ids[cand]["seeAlso"].append(e["id"])
+                added += 1
+                break
+    if added:
+        print(f"added {added} cross-link(s)", file=sys.stderr)
+
     seen = set()
     for e in catalog:
         if e["id"] in seen:
@@ -994,6 +1058,22 @@ def main():
             "rust": "compiled by `cargo build -p posim --example …` via "
                     "tools/verify_tierb_examples.py; `expected` reads `compiles`",
         },
+        "shell_examples": {
+            "verified": False,
+            "why": [
+                "The `--notebook` launch lines load a file and then STAY "
+                "INTERACTIVE by design, so they never exit and cannot be "
+                "batch-verified. Their content is verified instead by the "
+                "`%load <file>` rung on the same entry, which runs the same "
+                "file through `--script`.",
+                "The `cargo run --example` lines are runnable programs the "
+                "project already exercises elsewhere — the six physical_object "
+                "physics examples are self-checking, and the sundials_rs ones "
+                "are diffed byte-for-byte against the upstream C references in "
+                "sundials_rs/VERIFICATION.md. This pass does not re-run them, "
+                "so it does not claim them.",
+            ],
+        },
         "failure_rules": [
             "A posim fragment FAILS if the process exits nonzero.",
             "A posim fragment FAILS if stdout contains any line starting `Err[`.",
@@ -1003,6 +1083,12 @@ def main():
             "posim fragments must be run with cwd = the repository root: %load and "
             "%save resolve paths relative to the current directory.",
             "POSIM_NO_BROWSER=1 must be set so SCENE CREATE does not launch a browser.",
+            "Captured output has run-to-run variation normalised: the "
+            "OS-assigned scene port becomes <port>, and the playback step and "
+            "history counters become <varies> because playback advances on "
+            "wall-clock time. Solver step counts are NOT normalised — those "
+            "are deterministic, and they are the anchors the documentation "
+            "pins.",
         ],
     }
     json.dump([meta] + catalog, open(f"{D}/catalog.json", "w"), indent=1)

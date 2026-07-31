@@ -75,11 +75,26 @@ def run_posim(code):
         return (not reasons), r.stdout, reasons
 
 
+# Values that genuinely differ between runs. Showing the captured literal
+# would be a small lie: the reader re-runs the fragment and gets a different
+# number, and then has no way to tell which of the other numbers to trust.
+# Solver step counts are NOT in this list — those are deterministic, and they
+# are exactly the anchors the documentation pins.
+VARIES = [
+    (re.compile(r"(127\.0\.0\.1:)\d+"), r"\1<port>"),   # OS-assigned each CREATE
+    (re.compile(r"steps = [1-9]\d*"), "steps = <varies>"),  # playback is wall-clock
+    (re.compile(r"history = [1-9]\d* frame"), "history = <varies> frame"),
+]
+
+
 def transcript(stdout):
     """What a reader sees: the Out[]/Err[] lines and any bare replies."""
     keep = [l for l in stdout.splitlines()
             if not l.startswith("In[") or "Out[" in l or "Err[" in l]
-    return "\n".join(keep).strip()
+    text = "\n".join(keep).strip()
+    for pat, sub in VARIES:
+        text = pat.sub(sub, text)
+    return text
 
 
 def main():
@@ -161,10 +176,15 @@ def main():
         return 1 if fails else 0
 
     if meta:
+        # count BOTH media: this pass only executes posim fragments, but the
+        # Rust snippets were compiled by tools/verify_tierb_examples.py and
+        # overwriting the total with the posim count alone would erase them.
         meta["examples_verified"] = True
         meta["verified_date"] = TODAY
-        meta["verified_pass"] = passed
-        meta["verified_total"] = n
+        meta["verified_pass"] = sum(1 for e in entries for x in e["examples"]
+                                    if x["verified"])
+        meta["verified_total"] = sum(1 for e in entries for x in e["examples"]
+                                     if x["medium"] in ("posim", "rust"))
     json.dump(catalog, open(CATALOG, "w", encoding="utf-8"), indent=1)
     json.dump(report, open(REPORT, "w", encoding="utf-8"), indent=1)
     print("\nwrote %s\nwrote %s" % (CATALOG, REPORT))
