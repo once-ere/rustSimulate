@@ -16,6 +16,12 @@ target/
 # Runtime artifact produced by running the notebooks/examples
 session.posim
 
+# Python bytecode from the index tooling in tools/. The repo had no
+# committed Python packages until the index landed, so nothing had ever
+# needed this rule — and `git add -A` duly swept a .pyc into the merge.
+__pycache__/
+*.pyc
+
 # Editor / OS clutter
 *.swp
 *~
