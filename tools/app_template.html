@@ -225,6 +225,42 @@ function everything(){       /* including hidden — for the status page */
 }
 rebuild();
 
+/* ---------- Tier C: a second script, loaded on demand -------------
+   Injected as a <script>, not fetched: a file:// page cannot fetch a
+   sibling file (Chrome gives every local file its own opaque origin and
+   blocks it), but it can always load one as a script. The payload
+   assigns window.__TIER_C__ and calls window.__onTierC. */
+const TC = META.tierC || null;
+let TC_STATE = "idle";           /* idle | loading | ready | failed */
+let TC_WAIT = [];
+
+function tierCLoaded(){ return TC_STATE === "ready"; }
+function tierCTotal(){ return TC ? TC.entries : 0; }
+
+function loadTierC(then){
+  if (TC_STATE === "ready")   { if (then) then(); return; }
+  if (!TC)                    { if (then) then(); return; }
+  if (then) TC_WAIT.push(then);
+  if (TC_STATE === "loading") return;
+  TC_STATE = "loading"; render();
+  window.__onTierC = function(){
+    try {
+      BASE.push.apply(BASE, window.__TIER_C__);
+      TC_STATE = "ready";
+    } catch (e) { TC_STATE = "failed"; }
+    rebuild();
+    const q = TC_WAIT; TC_WAIT = [];
+    render(); q.forEach(f => { try { f(); } catch (e) {} });
+  };
+  const el = document.createElement("script");
+  el.src = TC.file;
+  el.onerror = function(){
+    TC_STATE = "failed"; TC_WAIT = [];
+    render();
+  };
+  document.head.appendChild(el);
+}
+
 /* ---------- small helpers ---------------------------------------- */
 const $ = s => document.querySelector(s);
 const view = $("#view");
@@ -245,11 +281,18 @@ function specialBuckets(){
   const s = new Set();
   ALL.forEach(e => (e.indexKeys||[]).forEach(k => {
     if (!LETTERS.includes(k) && !DIGITS.includes(k)) s.add(k); }));
+  if (TC) Object.keys(TC.buckets).forEach(k => {
+    if (!LETTERS.includes(k) && !DIGITS.includes(k)) s.add(k); });
   return [...s].sort();
 }
 function counts(){
   const m = new Map();
   ALL.forEach(e => (e.indexKeys||[]).forEach(k => m.set(k,(m.get(k)||0)+1)));
+  /* add Tier C from the precomputed tally so the home screen shows the true
+     total immediately: a count that jumps when a second script arrives is a
+     count nobody can trust. */
+  if (TC && !tierCLoaded())
+    for (const k in TC.buckets) m.set(k, (m.get(k)||0) + TC.buckets[k]);
   return m;
 }
 
@@ -326,6 +369,13 @@ function render(){
   ROWS = []; SEL = -1;
   $("#b-back").disabled = CUR === 0;
   $("#b-fwd").disabled  = CUR >= STACK.length-1;
+  /* a bucket, a search or an unknown id may live in Tier C — pull it in
+     first rather than reporting "not found" for something that exists */
+  if (TC && !tierCLoaded() && TC_STATE !== "loading" && TC_STATE !== "failed"
+      && (s.v === "bucket" || s.v === "search"
+          || (s.v === "entry" && !BY_ID.has(s.id)))) {
+    loadTierC();
+  }
   if      (s.v === "entry")  renderEntry(s.id);
   else if (s.v === "bucket") renderBucket(s.key);
   else if (s.v === "search") renderSearch(s.q);
@@ -375,6 +425,7 @@ function renderHome(){
   + 'defined, its full syntax, and examples you can paste into a notebook and run. '
   + '<a href="#" data-goto="status">' + (META.verified_pass||0) + " of "
   + (META.verified_total||0) + ' examples verified by running them.</a></p>'
+  + tierCBanner()
   + '<h3>Letters</h3><div class="buckets">' + LETTERS.map(cell).join("") + "</div>"
   + '<h3>Digits</h3><div class="buckets">' + DIGITS.map(cell).join("") + "</div>"
   + (sp.length ? '<h3>Special characters</h3><div class="buckets">'
@@ -388,10 +439,24 @@ function renderHome(){
   + '<kbd>A</kbd>–<kbd>Z</kbd> jump to a bucket &middot; <kbd>?</kbd> all shortcuts</p>';
 }
 
+function tierCBanner(){
+  if (!TC || tierCLoaded()) return "";
+  if (TC_STATE === "loading")
+    return '<div class="note">Loading Tier C — ' + TC.entries
+         + ' sundials_rs entries from <code>' + esc(TC.file) + '</code>…</div>';
+  if (TC_STATE === "failed")
+    return '<div class="note"><strong>Tier C could not be loaded.</strong> '
+         + '<code>' + esc(TC.file) + '</code> must sit beside this page; '
+         + TC.entries + ' sundials_rs entries are missing from the counts below. '
+         + '<button data-act="loadc">Try again</button></div>';
+  return '<div class="note">Tier C (' + TC.entries + ' sundials_rs entries) '
+       + 'is not loaded yet. <button data-act="loadc">Load it</button></div>';
+}
+
 function renderBucket(key){
   const list = ALL.filter(e => (e.indexKeys||[]).includes(key)
                             && (!KINDFILTER.size || KINDFILTER.has(e.kind)));
-  view.innerHTML = '<h1>' + esc(key) + '</h1><p class="lede">'
+  view.innerHTML = tierCBanner() + '<h1>' + esc(key) + '</h1><p class="lede">'
     + list.length + ' entit' + (list.length===1?"y":"ies")
     + (KINDFILTER.size ? " (filtered to " + [...KINDFILTER].join(", ") + ")" : "")
     + '</p>' + rowsHTML(list);
@@ -399,16 +464,25 @@ function renderBucket(key){
 
 function renderSearch(q){
   const list = search(q||"");
-  view.innerHTML = '<h1>Search</h1><p class="lede">' + list.length
+  view.innerHTML = tierCBanner() + '<h1>Search</h1><p class="lede">' + list.length
     + ' match' + (list.length===1?"":"es") + ' for <code>' + esc(q) + "</code></p>"
     + rowsHTML(list);
 }
 
 function exampleHTML(x, i){
+  /* Say precisely what was checked. "not batch-verified" is right for a
+     fragment the verifier could have run and did not — it is wrong for a
+     shell command, which is a pointer to a program that is verified
+     elsewhere (byte-for-byte, in sundials_rs/VERIFICATION.md) or that stays
+     interactive by design and so can never exit. */
   const badge = x.verified
-      ? '<span class="badge ok" title="Executed on ' + esc(x.verified) + '">verified '
-        + esc(x.verified) + "</span>"
-      : '<span class="badge warn" title="Not executed by the verifier">not batch-verified</span>';
+      ? '<span class="badge ok" title="Checked on ' + esc(x.verified) + '">'
+        + (x.medium === "rust" ? "compiles " : "verified ") + esc(x.verified) + "</span>"
+      : x.medium === "shell"
+      ? '<span class="badge" title="A command to run, not a fragment this page '
+        + 'executed">run this yourself</span>'
+      : '<span class="badge warn" title="Not executed by the verifier">'
+        + "not batch-verified</span>";
   let h = '<div class="eg" data-eg="' + i + '">'
         + '<div class="eghead"><span class="egn">' + (i+1) + "</span>"
         + '<span class="eglvl">' + esc(x.level) + "</span>"
@@ -430,9 +504,18 @@ function exampleHTML(x, i){
 
 function renderEntry(id){
   const e = BY_ID.get(id);
-  if (!e) { view.innerHTML = '<h1>Not found</h1><p class="lede">No entry <code>'
-              + esc(id) + '</code>. It may be hidden — see the '
-              + '<a href="#" data-goto="status">status page</a>.</p>'; return; }
+  if (!e) {
+    if (TC && !tierCLoaded() && TC_STATE !== "failed") {
+      view.innerHTML = tierCBanner()
+        + '<h1>Loading…</h1><p class="lede">Looking for <code>' + esc(id)
+        + '</code> in Tier C.</p>';
+      return;
+    }
+    view.innerHTML = '<h1>Not found</h1><p class="lede">No entry <code>'
+      + esc(id) + '</code>. It may be hidden — see the '
+      + '<a href="#" data-goto="status">status page</a>.</p>';
+    return;
+  }
   let h = '<div class="prose">';
   h += '<h2 class="entry">' + esc(e.name) + "</h2>";
   h += '<div class="badges"><span class="badge k">' + esc(e.kind) + "</span>"
@@ -510,12 +593,28 @@ function renderStatus(){
     + '<p class="lede">What this index actually contains, and what it does not. '
     + 'Every number here is counted from the catalog, not asserted.</p>'
     + '<div class="stats">'
-    + stat("entries", all.length) + stat("visible", shown)
+    + stat("entries", all.length + (TC && !tierCLoaded() ? TC.entries : 0))
+    + stat("visible", shown)
     + stat("examples", all.reduce((n,e)=>n+(e.examples||[]).length,0))
     + stat("verified", META.verified_pass||0)
     + stat("stubs", stubs.length) + stat("hidden", hidden.length)
     + stat("edited", edited.length) + stat("added", user.length)
     + "</div>";
+
+  h += "<h3>Tier C — the vendored sundials_rs workspace</h3>";
+  if (!TC) h += '<p class="muted">No Tier C payload is declared.</p>';
+  else {
+    h += "<p>" + TC.entries + " entries, in <code>" + esc(TC.file) + "</code>, loaded "
+       + (tierCLoaded() ? "<strong>and merged in above</strong>"
+          : TC_STATE === "loading" ? "<strong>right now…</strong>"
+          : TC_STATE === "failed" ? "<strong>— FAILED. The counts above exclude them.</strong>"
+          : "on demand — the counts above exclude them until you open a bucket or search")
+       + ". The bucket totals on the home screen include them either way, from a "
+       + "precomputed tally, so no number jumps when the second script arrives.</p>"
+       + "<p>" + md(TC.why_no_snippets) + "</p>";
+    if (!tierCLoaded())
+      h += '<div class="seealso"><button data-act="loadc">Load Tier C now</button></div>';
+  }
 
   h += "<h3>Verification</h3><p>"
      + (META.examples_verified
@@ -677,11 +776,13 @@ document.addEventListener("click", ev => {
 
   const act = hit("[data-act]");
   if (act) {
+    if (act.dataset.act === "loadc") { TC_STATE = "idle"; return loadTierC(); }
     const e = BY_ID.get(STACK[CUR].id);
     switch (act.dataset.act) {
       case "edit":   if (e) editForm(e, false); return;
       case "hide":   if (e) hideEntry(e.id);    return;
       case "revert": if (e) { delete OV.edits[e.id]; saveOverlay(); rebuild(); render(); } return;
+      case "loadc":  TC_STATE = "idle"; return loadTierC();
       case "export": return exportOverlay();
       case "import": return importOverlay();
       case "clear":

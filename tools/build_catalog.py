@@ -889,6 +889,17 @@ def main():
     catalog += build_notebooks()
     catalog += build_doc_examples()
 
+    # Tier C is NOT folded in here: it is emitted as a separate payload that
+    # the app loads on demand (see build_app.py). Its bucket counts ARE
+    # embedded below, so the home screen shows honest totals immediately
+    # rather than numbers that jump when the second script arrives.
+    tierc = []
+    tierc_path = f"{D}/entries_tierc.json"
+    if os.path.exists(tierc_path):
+        tierc = [entry(**c) for c in json.load(open(tierc_path))]
+        json.dump(tierc, open(f"{D}/catalog_c.json", "w"), indent=1)
+        print(f"{len(tierc)} Tier-C entries -> {D}/catalog_c.json", file=sys.stderr)
+
     for path, what in ((f"{D}/entries_commands.json", "command"),
                        (f"{D}/entries_tierb.json", "Tier-B Rust")):
         if os.path.exists(path):
@@ -941,8 +952,31 @@ def main():
     if pruned:
         print(f"pruned {pruned} dead see-also reference(s)", file=sys.stderr)
 
+    tierc_counts = {}
+    for e in tierc:
+        for k in e["indexKeys"]:
+            tierc_counts[k] = tierc_counts.get(k, 0) + 1
+
     meta = {
         "_meta": True,
+        "tierC": {
+            "file": "catalog-c.js",
+            "entries": len(tierc),
+            "buckets": tierc_counts,
+            "kinds": {k: sum(1 for e in tierc if e["kind"] == k)
+                      for k in sorted({e["kind"] for e in tierc})},
+            "why_no_snippets":
+                "sundials_rs is a faithful translation of a C library: its API is "
+                "`&mut CVodeMem` plus a context, a matrix, a linear solver and a set "
+                "of callbacks, so a one-line snippet would misrepresent how any of it "
+                "is reached. The workspace ships 105 runnable example PROGRAMS whose "
+                "stdout is diffed byte-for-byte against the upstream C references "
+                "(sundials_rs/VERIFICATION.md); each entry links to the ones that "
+                "actually call it. Status `reference` means exactly that — a full "
+                "reference whose usage is demonstrated by a verified program "
+                "elsewhere in the tree, as distinct from `stub`, which means nothing "
+                "is there yet.",
+        },
         "phase": 3,
         "schema": "prompt_01.md section 5",
         "examples_verified": True,

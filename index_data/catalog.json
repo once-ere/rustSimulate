@@ -1,6 +1,39 @@
 [
  {
   "_meta": true,
+  "tierC": {
+   "file": "catalog-c.js",
+   "entries": 3887,
+   "buckets": {
+    "N": 71,
+    "F": 24,
+    "L": 57,
+    "I": 615,
+    "S": 670,
+    "A": 700,
+    "P": 53,
+    "D": 18,
+    "M": 690,
+    "G": 9,
+    "C": 687,
+    "R": 19,
+    "Z": 2,
+    "H": 17,
+    "V": 2,
+    "U": 3,
+    "B": 10,
+    "O": 11,
+    "T": 11,
+    "E": 78,
+    "Q": 5,
+    "K": 135
+   },
+   "kinds": {
+    "function": 1917,
+    "type": 1970
+   },
+   "why_no_snippets": "sundials_rs is a faithful translation of a C library: its API is `&mut CVodeMem` plus a context, a matrix, a linear solver and a set of callbacks, so a one-line snippet would misrepresent how any of it is reached. The workspace ships 105 runnable example PROGRAMS whose stdout is diffed byte-for-byte against the upstream C references (sundials_rs/VERIFICATION.md); each entry links to the ones that actually call it. Status `reference` means exactly that \u2014 a full reference whose usage is demonstrated by a verified program elsewhere in the tree, as distinct from `stub`, which means nothing is there yet."
+  },
   "phase": 3,
   "schema": "prompt_01.md section 5",
   "examples_verified": true,
