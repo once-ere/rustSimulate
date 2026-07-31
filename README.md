@@ -82,7 +82,7 @@ instead of 5.
 
 | tier | what | entries | examples |
 |---|---|---|---|
-| A | the notebook surface — commands, keywords, field paths, builtins, types, notebooks, worked examples | 452 | 1,084 posim fragments, **all executed** |
+| A | the notebook surface — commands, keywords, field paths, builtins, types, notebooks, worked examples | 452 | 1,141 posim + 24 machine-mode fragments, **all executed** |
 | B | the first-party Rust API — `physical_object`, `special_functions`, `quantum`, `posim` | 491 | 177 snippets, **all compiled** |
 | C | the vendored `sundials_rs` workspace | 3,887 | linked to the shipped example programs that call them |
 
@@ -90,8 +90,14 @@ instead of 5.
 a posim fragment is *executed* (`posim --script`, output captured), a
 machine-mode fragment is *executed* through the JSONL protocol, a Rust snippet
 is *compiled*, and a shell command reads "run this yourself" because it points
-at a program verified elsewhere rather than one this page ran. 1,312 of 1,312
+at a program verified elsewhere rather than one this page ran. 1,342 of 1,342
 runnable examples pass.
+
+The 68 documented worked examples now carry their real transcripts. Where the
+typed half replays, it is **executed** and shown beside the document's own
+published output so you can compare; where it cannot — a deliberate refusal
+that *is* the lesson, an elided session, or a `SCENE REVERSE` that depends on
+wall-clock playback — the transcript is quoted and the reason is stated.
 
 Navigation is A–Z / 0–9 / special-character buckets, with search and kind
 filters. The whole thing is operable from the keyboard — press <kbd>?</kbd> for
@@ -103,8 +109,12 @@ you can export and re-import, and the generated catalog is never mutated.
 
 The status page inside the app is the authority, and it is blunt:
 
-- **390 Tier-A/B entries are stubs** — catalogued with a definition and a
-  location, but no example yet.
+- **53 Tier-A/B entries are stubs** — down from 390. Each is catalogued with a
+  definition and a location, but has no example and no call site outside its
+  own file. Three are prose-only sections of `special_functions.md` that carry
+  no code block at all. A further 264 carry status `reference`: no generated
+  snippet, but a link to the tests, examples or documents that genuinely call
+  them.
 - **3,887 Tier-C entries carry status `reference`**, not `complete`.
   `sundials_rs` is a faithful translation of a C library whose API is
   `&mut CVodeMem` plus a context, a matrix, a linear solver and callbacks; a

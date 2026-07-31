@@ -670,7 +670,18 @@ MAGIC_LADDER = {
     "%load": ["new sphere { mass = 2, radius = 0.5 }\n%save session.posim\n"
               "%reset\n%load session.posim\nlist"],
     "%reset": ["new point { mass = 1 }\n%reset\nlist"],
-    "%quit": [], "%exit": [],
+    # These end the session — which a script fragment can perfectly well do.
+    # An earlier version left them empty on the assumption that they could not
+    # be demonstrated in batch; running them showed otherwise (exit 0, replay
+    # stops at that line).
+    "%quit": ["%quit",
+              "new point { mass = 1 }\n%quit",
+              "new point { mass = 1 }\nget obj0.mass\n%quit",
+              "new point { mass = 1 }\n%quit\nlist"],
+    "%exit": ["%exit",
+              "new point { mass = 1 }\n%exit",
+              "new point { mass = 1 }\nget obj0.mass\n%exit",
+              "new sphere { mass = 2, radius = 0.5 }\nenergy\n%exit\nlist"],
 }
 
 
@@ -696,6 +707,8 @@ def build_magics():
             seeAlso=["cmd.reset"],
             invariants=["Magics do not consume cell numbers — only executed commands become "
                         "numbered cells.",
+                        "%quit and %exit end a SCRIPT replay too, at that line, with exit 0 — "
+                        "anything after them is not executed.",
                         "%save writes only successful, non-magic inputs.",
                         "%load joins continuation lines by brace depth, so a saved "
                         "multi-line DEF replays as ONE cell."],
@@ -944,6 +957,10 @@ def build_notebooks():
 
 def build_doc_examples():
     dx = json.load(open(f"{D}/doc_examples.json"))
+    try:
+        TRANSCRIPTS = json.load(open(f"{D}/transcripts.json"))
+    except OSError:
+        TRANSCRIPTS = {}
     labels = {"grammar_md": ("ex.grammar", "grammar.md section 9"),
               "user_guide": ("ex.guide", "physical_object_simulator.md section 8"),
               "collision_detection": ("ex.collision", "collision_detection.md section 9"),
@@ -952,15 +969,41 @@ def build_doc_examples():
     out = []
     for key, (prefix, where) in labels.items():
         for i, e in enumerate(dx[key], 1):
+            eid = f"{prefix}.{i}"
+            t = TRANSCRIPTS.get(eid, {})
+            exs, defn = [], (f"{e['title']} — a documented worked example with a genuine "
+                             f"captured transcript, in {where}.")
+            if t.get("kind") == "posim" and t.get("code"):
+                # what you type, pasteable and executed by the verifier
+                exs.append(ex("trivial", t["code"]))
+                # and what the document published, quoted verbatim beside it —
+                # medium `quoted`, so it is never badged as something this page ran
+                exs.append(ex("intermediate", t["transcript"], medium="quoted",
+                              runner="quoted from " + t["file"]))
+                defn += ("  The first example below is the input half, stripped of its "
+                         "prompts so it pastes cleanly, and it is executed by the "
+                         "verifier like any other fragment. The second is the "
+                         "document's own published transcript, quoted verbatim so you "
+                         "can compare.")
+            elif t.get("transcript"):
+                exs.append(ex("trivial", t["transcript"], medium="quoted",
+                              runner="quoted from " + t["file"]))
+                defn += ("  Quoted verbatim from the source below. It is not a posim "
+                         "fragment — it is " + ("Rust, Python or shell"
+                         if t["kind"] == "rust" else "a captured session or table")
+                         + " — so this page does not claim to have run it.")
+            else:
+                defn += ("  This section carries no code block: it is the prose or "
+                         "table half of its example, and the index says so rather "
+                         "than inventing one.")
             out.append(entry(
-                id=f"{prefix}.{i}", name=e["title"], kind="example",
+                id=eid, name=e["title"], kind="example",
                 summary=f"Worked example in {where}.",
-                definition=f"{e['title']} — a documented worked example with a genuine "
-                           f"captured transcript, in {where}.",
+                definition=defn,
                 syntax=[f"see {e['file']}:{e['line']}"],
                 locations=[{"file": e["file"], "line": e["line"], "role": "the example"}],
-                examples=[],
-                status="stub",
+                examples=exs,
+                status="complete" if exs else "stub",
             ))
     return out
 

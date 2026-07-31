@@ -4305,6 +4305,62 @@
   "reasons": []
  },
  {
+  "id": "magic.quit",
+  "kind": "magic",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "magic.quit",
+  "kind": "magic",
+  "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "magic.quit",
+  "kind": "magic",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "magic.quit",
+  "kind": "magic",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "magic.exit",
+  "kind": "magic",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "magic.exit",
+  "kind": "magic",
+  "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "magic.exit",
+  "kind": "magic",
+  "level": "advanced",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "magic.exit",
+  "kind": "magic",
+  "level": "expert",
+  "ok": true,
+  "reasons": []
+ },
+ {
   "id": "type.number",
   "kind": "type",
   "level": "trivial",
@@ -5029,6 +5085,160 @@
   "id": "nb.12_two_dumbbells",
   "kind": "notebook",
   "level": "intermediate",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.grammar.1",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.grammar.2",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.grammar.3",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.grammar.4",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.grammar.5",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.grammar.6",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.grammar.7",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.grammar.8",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.grammar.9",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.grammar.10",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.grammar.12",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.grammar.13",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.grammar.14",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.grammar.16",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.guide.13",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.collision.1",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.collision.11",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.collision.12",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.notebook.1",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.notebook.2",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.notebook.5",
+  "kind": "example",
+  "level": "trivial",
+  "ok": true,
+  "reasons": []
+ },
+ {
+  "id": "ex.notebook.6",
+  "kind": "example",
+  "level": "trivial",
   "ok": true,
   "reasons": []
  },

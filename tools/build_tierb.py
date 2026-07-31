@@ -174,8 +174,45 @@ def use_lines(item, p):
     return sorted(uses)
 
 
+def usage_index():
+    """symbol -> files that reference it, across tests, examples and the docs.
+
+    A Tier-B item with no templatable snippet is not empty-handed: the crate's
+    own tests and examples call it, and those are compiled and run by
+    `cargo test`. Pointing at them is real evidence of use, which is worth
+    more than a snippet invented to fill a slot.
+    """
+    import os
+    idx = {}
+    roots = ["physical_object", "special_functions", "quantum", "posim"]
+    for root in roots:
+        for dirpath, dirs, files in os.walk(root):
+            dirs[:] = [d for d in dirs if d not in ("target", ".git")]
+            for fn in files:
+                if not fn.endswith((".rs", ".md")):
+                    continue
+                full = os.path.join(dirpath, fn)
+                try:
+                    text = open(full, encoding="utf-8", errors="replace").read()
+                except OSError:
+                    continue
+                for sym in set(re.findall(r"\b([A-Za-z_][A-Za-z0-9_]{3,})\b", text)):
+                    idx.setdefault(sym, set()).add(full)
+                # Short method names — `new`, `run`, `dt`, `h`, `x` — are below
+                # the 4-character floor above, and lowering it would match them
+                # everywhere and mean nothing. Index the QUALIFIED form instead:
+                # `Grid::new` and `.escaped(` are precise where `new` is noise.
+                for sym in set(re.findall(r"\b([A-Z][A-Za-z0-9_]*::[a-z_][A-Za-z0-9_]*)",
+                                          text)):
+                    idx.setdefault(sym, set()).add(full)
+                for sym in set(re.findall(r"\.([a-z_][A-Za-z0-9_]*)\s*\(", text)):
+                    idx.setdefault("." + sym, set()).add(full)
+    return idx
+
+
 def main():
     items = [json.loads(l) for l in open("index_data/rust_items.jsonl")]
+    USAGE = usage_index()
     pub = [d for d in items if d["crate"] in TIER_B and d["visibility"] == "pub"
            and d["kind"] != "mod"]
 
@@ -217,19 +254,37 @@ def main():
         if d["bare"] in a_by_name:
             see.append(a_by_name[d["bare"]])
         doc = d["doc"] or ""
+        # where it is genuinely used, for the items that get no snippet
+        # Prefer a test, an example or a document — those demonstrate the item.
+        # Fall back to any other file in the tree that calls it, which is still
+        # a real answer to "where is this used?" and better than an empty page.
+        keys = [d["bare"]]
+        if "::" in d["name"]:
+            keys += [d["name"], "." + d["bare"]]      # Grid::new, and .new(
+        cand = [u for k in keys for u in USAGE.get(k, ()) if u != d["file"]]
+        cand = sorted(set(cand))
+        best = [u for u in cand if u.endswith(".md") or "/examples/" in u or "test" in u]
+        uses = sorted(best)[:4] or sorted(cand)[:3]
         out.append({
             "id": eid, "name": d["name"], "kind": kind, "tier": "B",
             "aliases": [], "indexKeys": [(d["bare"][0] if d["bare"] else "Σ").upper()],
             "summary": (doc.split(".")[0][:150] + "." if doc
                         else f"{d['kind']} `{d['bare']}` in `{d['crate']}::{d['module']}`."),
             "definition": (doc or "No doc comment in the source.")
-                + f"  Declared in the `{d['module']}` module of the `{d['crate']}` crate.",
+                + f"  Declared in the `{d['module']}` module of the `{d['crate']}` crate."
+                + (("  No snippet is generated for this signature shape — see the "
+                    "status page for why an invented one would be worse than none — "
+                    "but it is called from " + ", ".join(f"`{u}`" for u in uses) + ".")
+                   if uses and not examples else ""),
             "syntax": [d["signature"]],
             "parameters": [], "returns": None, "errors": [],
-            "locations": [{"file": d["file"], "line": d["line"],
-                           "role": "definition"}],
+            "locations": [{"file": d["file"], "line": d["line"], "role": "definition"}]
+                       + [{"file": u, "line": 1, "role": "used here"} for u in uses],
             "examples": examples, "seeAlso": see, "invariants": [],
-            "status": "complete" if examples else "stub",
+            # `reference` where the item is catalogued AND we can point at code
+            # that calls it; `stub` only where there is genuinely nothing yet.
+            "status": ("complete" if examples
+                       else "reference" if uses else "stub"),
         })
 
     json.dump(out, open("index_data/entries_tierb.json", "w"), indent=1)

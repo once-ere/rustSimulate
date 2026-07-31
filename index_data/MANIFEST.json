@@ -58,12 +58,12 @@
   "tier_A": 452,
   "tier_B": 491,
   "tier_C": 3887,
-  "examples_total": 2922,
-  "examples_runnable": 1312,
-  "examples_verified": 1312,
-  "posim_executed": 1111,
+  "examples_total": 3017,
+  "examples_runnable": 1342,
+  "examples_verified": 1342,
+  "posim_executed": 1141,
   "rust_compiled": 177,
-  "stubs_A_B": 384,
+  "stubs_A_B": 53,
   "tier_C_reference": 3887,
   "see_also_links": 872,
   "acceptance_criteria": "31/31",
@@ -72,6 +72,8 @@
    "catalog-c.js": "4.0 MB, lazy"
   },
   "machine_executed": 24,
-  "tier_A_four_rung": "254/254"
+  "tier_A_four_rung": "254/254",
+  "quoted_transcripts": 65,
+  "reference_A_B": 264
  }
 }
