@@ -416,9 +416,15 @@ function exampleHTML(x, i){
         + '<span class="sp"></span>' + badge
         + '<button class="copy" data-copy="' + i + '">Copy</button></div>'
         + "<pre><code>" + esc(x.code) + "</code></pre>";
-  if (x.expected)
-    h += '<div class="egout"><div class="lbl">output, captured from a real run</div>'
+  if (x.expected) {
+    /* say which it was: a posim fragment is EXECUTED and its output captured,
+       a Rust snippet is COMPILED. Calling a compile "a real run" would be a
+       small lie in a page whose whole claim is that its examples work. */
+    const lbl = x.medium === "rust"
+      ? "checked by compiling it" : "output, captured from a real run";
+    h += '<div class="egout"><div class="lbl">' + lbl + "</div>"
        + "<pre><code>" + esc(x.expected) + "</code></pre></div>";
+  }
   return h + "</div>";
 }
 

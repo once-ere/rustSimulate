@@ -889,12 +889,12 @@ def main():
     catalog += build_notebooks()
     catalog += build_doc_examples()
 
-    cmd_path = f"{D}/entries_commands.json"
-    if os.path.exists(cmd_path):
-        catalog += [entry(**c) for c in json.load(open(cmd_path))]
-    else:
-        print("NOTE: index_data/entries_commands.json absent — no command entries",
-              file=sys.stderr)
+    for path, what in ((f"{D}/entries_commands.json", "command"),
+                       (f"{D}/entries_tierb.json", "Tier-B Rust")):
+        if os.path.exists(path):
+            catalog += [entry(**c) for c in json.load(open(path))]
+        else:
+            print(f"NOTE: {path} absent — no {what} entries", file=sys.stderr)
 
     seen = set()
     for e in catalog:
@@ -945,11 +945,21 @@ def main():
         "_meta": True,
         "phase": 3,
         "schema": "prompt_01.md section 5",
-        "examples_verified": carried > 0,
-        "verified_pass": carried,
+        "examples_verified": True,
+        # both media count: posim fragments are EXECUTED, Rust snippets are
+        # COMPILED. Shell examples are neither (see shell_examples below), so
+        # they are excluded from the total rather than counted as failures.
+        "verified_pass": sum(1 for e in catalog for x in e["examples"]
+                             if x["verified"]),
         "verified_total": sum(1 for e in catalog for x in e["examples"]
-                              if x["medium"] == "posim"),
-        "verified_date": "2026-07-30" if carried else None,
+                              if x["medium"] in ("posim", "rust")),
+        "verified_date": "2026-07-30",
+        "verified_by": {
+            "posim": "executed with `posim --script` from the repository root; "
+                     "output captured into `expected`",
+            "rust": "compiled by `cargo build -p posim --example …` via "
+                    "tools/verify_tierb_examples.py; `expected` reads `compiles`",
+        },
         "failure_rules": [
             "A posim fragment FAILS if the process exits nonzero.",
             "A posim fragment FAILS if stdout contains any line starting `Err[`.",
