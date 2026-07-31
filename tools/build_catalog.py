@@ -189,12 +189,11 @@ KEYWORD_NOTE = {
     "ON": "Only COLLIDE takes ON; it is the default.",
     "SPRK": "SPRK requires a separable Hamiltonian: no b_field, magnetic tensor, external "
             "torque or spinning rigid body.",
-    "QM": "Reserved in the lexer but ABSENT from grammar.md section 2.2's keyword list "
-          "(see DIVERGENCES.md D1).",
-    "QM2": "Reserved in the lexer but ABSENT from grammar.md section 2.2's keyword list "
-           "(see DIVERGENCES.md D1).",
-    "QM3": "Reserved in the lexer but ABSENT from grammar.md section 2.2's keyword list "
-           "(see DIVERGENCES.md D1).",
+    "QM": "One of only three words the quantum families reserve: every sub-command "
+          "after it is matched on its lowercased text, so the whole quantum vocabulary "
+          "stays out of the global keyword namespace.",
+    "QM2": "See QM — the family head is the only reserved word.",
+    "QM3": "See QM — the family head is the only reserved word.",
 }
 
 
@@ -391,8 +390,8 @@ def build_properties():
             syn.append(f"{prefix}.{n}")
             note = ""
             if p["aliases"] and root == "contact":
-                note = ("  UNDOCUMENTED ALIAS: `%s` works but appears in no manual "
-                        "(DIVERGENCES.md D3)." % p["aliases"][0])
+                note = ("  The spelling `%s` is an accepted alias, documented in "
+                        "grammar.md §5.7 since the D3 fix." % p["aliases"][0])
             out.append(entry(
                 id=f"prop.{'obj' if root == 'object' else root}.{n}",
                 name=n, kind="property", aliases=p["aliases"],

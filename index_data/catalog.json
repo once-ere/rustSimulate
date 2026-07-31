@@ -1323,7 +1323,7 @@
    "Q"
   ],
   "summary": "Reserved word of the posim command language (Keyword::Qm).",
-  "definition": "`QM` is matched case-insensitively by the lexer and mapped to `Keyword::Qm`. Keywords are reserved only at the START of paths: after a `.`, or inside a `NEW { ... }` initializer list, the parser accepts a keyword spelling as an ordinary field name \u2014 which is why `obj0.momentum` and `system.method` both work. Reserved in the lexer but ABSENT from grammar.md section 2.2's keyword list (see DIVERGENCES.md D1).",
+  "definition": "`QM` is matched case-insensitively by the lexer and mapped to `Keyword::Qm`. Keywords are reserved only at the START of paths: after a `.`, or inside a `NEW { ... }` initializer list, the parser accepts a keyword spelling as an ordinary field name \u2014 which is why `obj0.momentum` and `system.method` both work. One of only three words the quantum families reserve: every sub-command after it is matched on its lowercased text, so the whole quantum vocabulary stays out of the global keyword namespace.",
   "syntax": [
    "QM"
   ],
@@ -1369,7 +1369,7 @@
    "Q"
   ],
   "summary": "Reserved word of the posim command language (Keyword::Qm2).",
-  "definition": "`QM2` is matched case-insensitively by the lexer and mapped to `Keyword::Qm2`. Keywords are reserved only at the START of paths: after a `.`, or inside a `NEW { ... }` initializer list, the parser accepts a keyword spelling as an ordinary field name \u2014 which is why `obj0.momentum` and `system.method` both work. Reserved in the lexer but ABSENT from grammar.md section 2.2's keyword list (see DIVERGENCES.md D1).",
+  "definition": "`QM2` is matched case-insensitively by the lexer and mapped to `Keyword::Qm2`. Keywords are reserved only at the START of paths: after a `.`, or inside a `NEW { ... }` initializer list, the parser accepts a keyword spelling as an ordinary field name \u2014 which is why `obj0.momentum` and `system.method` both work. See QM \u2014 the family head is the only reserved word.",
   "syntax": [
    "QM2"
   ],
@@ -1415,7 +1415,7 @@
    "Q"
   ],
   "summary": "Reserved word of the posim command language (Keyword::Qm3).",
-  "definition": "`QM3` is matched case-insensitively by the lexer and mapped to `Keyword::Qm3`. Keywords are reserved only at the START of paths: after a `.`, or inside a `NEW { ... }` initializer list, the parser accepts a keyword spelling as an ordinary field name \u2014 which is why `obj0.momentum` and `system.method` both work. Reserved in the lexer but ABSENT from grammar.md section 2.2's keyword list (see DIVERGENCES.md D1).",
+  "definition": "`QM3` is matched case-insensitively by the lexer and mapped to `Keyword::Qm3`. Keywords are reserved only at the START of paths: after a `.`, or inside a `NEW { ... }` initializer list, the parser accepts a keyword spelling as an ordinary field name \u2014 which is why `obj0.momentum` and `system.method` both work. See QM \u2014 the family head is the only reserved word.",
   "syntax": [
    "QM3"
   ],
@@ -7173,7 +7173,7 @@
    "T"
   ],
   "summary": "contactK.t \u2014 number, R.",
-  "definition": "the event time \u2014 the root the solver landed on  UNDOCUMENTED ALIAS: `time` works but appears in no manual (DIVERGENCES.md D3).",
+  "definition": "the event time \u2014 the root the solver landed on  The spelling `time` is an accepted alias, documented in grammar.md \u00a75.7 since the D3 fix.",
   "syntax": [
    "GET contactK.t",
    "contactK.t"
@@ -7479,7 +7479,7 @@
    "R"
   ],
   "summary": "contactK.rel_vel_n \u2014 number, R.",
-  "definition": "approach speed along the normal (negative = approaching)  UNDOCUMENTED ALIAS: `approach` works but appears in no manual (DIVERGENCES.md D3).",
+  "definition": "approach speed along the normal (negative = approaching)  The spelling `approach` is an accepted alias, documented in grammar.md \u00a75.7 since the D3 fix.",
   "syntax": [
    "GET contactK.rel_vel_n",
    "contactK.rel_vel_n"
@@ -7557,7 +7557,7 @@
    "I"
   ],
   "summary": "contactK.impulse \u2014 number, R.",
-  "definition": "scalar impulse magnitude J that was applied  UNDOCUMENTED ALIAS: `impulse_n` works but appears in no manual (DIVERGENCES.md D3).",
+  "definition": "scalar impulse magnitude J that was applied  The spelling `impulse_n` is an accepted alias, documented in grammar.md \u00a75.7 since the D3 fix.",
   "syntax": [
    "GET contactK.impulse",
    "contactK.impulse"
@@ -15828,7 +15828,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "%load StageNbks/Stage_2H.posim\nscene close",
-    "expected": "Out[1]= system reset\nOut[3]= obj0\nOut[4]= obj1\nOut[5]= obj2\nOut[6]= obj3\nOut[7]= obj4\nOut[8]= 0.5\nOut[9]= [1, 0, 0]\nOut[10]= t = 6 (28 solver steps, 60 snapshots, |dE/E| = 0.000e0, 4 collision(s) \u2014 CONTACTS lists them)\nOut[11]= 0.5\nOut[12]= [1, 0, 0]\nOut[13]= [0, 0, 0]\nOut[14]= [1, 0, 0]\nOut[15]= system reset\nOut[17]= obj0\nOut[19]= obj1\nOut[21]= t = 6 (2281 solver steps, 60 snapshots, |dE/E| = 7.448e-1, 316 collision(s) \u2014 CONTACTS lists them)\nOut[22]= [0, 0.49999999900000003, 0]\nOut[23]= [0, 0.4563136479111678, 0]\nOut[24]= scene window created: http://127.0.0.1:<port>/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[25]= scene time step dt = 0.005\nOut[26]= camera distance = 6\nOut[27]= scene playback: running\nOut[28]= scene: http://127.0.0.1:<port>/  (0 window(s) connected)\nmode = running, t = 6, dt = 0.005, steps = 0, history = 0 frame(s)\nentities = 2 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 6, target = [0, 0, 0]\nOut[29]= scene closed (http://127.0.0.1:<port>/)",
+    "expected": "Out[1]= system reset\nOut[3]= obj0\nOut[4]= obj1\nOut[5]= obj2\nOut[6]= obj3\nOut[7]= obj4\nOut[8]= 0.5\nOut[9]= [1, 0, 0]\nOut[10]= t = 6 (28 solver steps, 60 snapshots, |dE/E| = 0.000e0, 4 collision(s) \u2014 CONTACTS lists them)\nOut[11]= 0.5\nOut[12]= [1, 0, 0]\nOut[13]= [0, 0, 0]\nOut[14]= [1, 0, 0]\nOut[15]= system reset\nOut[17]= obj0\nOut[19]= obj1\nOut[21]= t = 6 (2281 solver steps, 60 snapshots, |dE/E| = 7.448e-1, 316 collision(s) \u2014 CONTACTS lists them)\nOut[22]= [0, 0.49999999900000003, 0]\nOut[23]= [0, 0.4563136479111678, 0]\nOut[24]= scene window created: http://127.0.0.1:<port>/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 2 entities; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[25]= scene time step dt = 0.005\nOut[26]= camera distance = 6\nOut[27]= scene playback: running\nOut[28]= scene: http://127.0.0.1:<port>/  (0 window(s) connected)\nmode = running, t = 6.005, dt = 0.005, steps = <varies>, history = <varies> frame(s)\nentities = 2 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 6, target = [0, 0, 0]\nOut[29]= scene closed (http://127.0.0.1:<port>/)",
     "verified": "2026-07-30",
     "runner": "posim --script (from the repository root)"
    }
@@ -17196,7 +17196,7 @@
   "summary": "Worked example in grammar.md section 9.",
   "definition": "Example 1 \u2014 an eccentric Kepler orbit and the Runge\u2013Lenz compass \u2014 a documented worked example with a genuine captured transcript, in grammar.md section 9.",
   "syntax": [
-   "see grammar.md:2157"
+   "see grammar.md:2181"
   ],
   "parameters": [],
   "returns": null,
@@ -17204,7 +17204,7 @@
   "locations": [
    {
     "file": "grammar.md",
-    "line": 2157,
+    "line": 2181,
     "role": "the example"
    }
   ],
@@ -17225,7 +17225,7 @@
   "summary": "Worked example in grammar.md section 9.",
   "definition": "Example 2 \u2014 a thrown ball, checked against the textbook formula \u2014 a documented worked example with a genuine captured transcript, in grammar.md section 9.",
   "syntax": [
-   "see grammar.md:2192"
+   "see grammar.md:2216"
   ],
   "parameters": [],
   "returns": null,
@@ -17233,7 +17233,7 @@
   "locations": [
    {
     "file": "grammar.md",
-    "line": 2192,
+    "line": 2216,
     "role": "the example"
    }
   ],
@@ -17254,7 +17254,7 @@
   "summary": "Worked example in grammar.md section 9.",
   "definition": "Example 3 \u2014 cyclotron motion: expressions as arguments \u2014 a documented worked example with a genuine captured transcript, in grammar.md section 9.",
   "syntax": [
-   "see grammar.md:2220"
+   "see grammar.md:2244"
   ],
   "parameters": [],
   "returns": null,
@@ -17262,7 +17262,7 @@
   "locations": [
    {
     "file": "grammar.md",
-    "line": 2220,
+    "line": 2244,
     "role": "the example"
    }
   ],
@@ -17283,7 +17283,7 @@
   "summary": "Worked example in grammar.md section 9.",
   "definition": "Example 4 \u2014 the tennis-racket theorem (Dzhanibekov effect) \u2014 a documented worked example with a genuine captured transcript, in grammar.md section 9.",
   "syntax": [
-   "see grammar.md:2248"
+   "see grammar.md:2272"
   ],
   "parameters": [],
   "returns": null,
@@ -17291,7 +17291,7 @@
   "locations": [
    {
     "file": "grammar.md",
-    "line": 2248,
+    "line": 2272,
     "role": "the example"
    }
   ],
@@ -17312,7 +17312,7 @@
   "summary": "Worked example in grammar.md section 9.",
   "definition": "Example 5 \u2014 three bodies, then surgery with `DEL` \u2014 a documented worked example with a genuine captured transcript, in grammar.md section 9.",
   "syntax": [
-   "see grammar.md:2282"
+   "see grammar.md:2306"
   ],
   "parameters": [],
   "returns": null,
@@ -17320,7 +17320,7 @@
   "locations": [
    {
     "file": "grammar.md",
-    "line": 2282,
+    "line": 2306,
     "role": "the example"
    }
   ],
@@ -17341,7 +17341,7 @@
   "summary": "Worked example in grammar.md section 9.",
   "definition": "Example 6 \u2014 magnetic torque spins a body up (and why ENERGY grows) \u2014 a documented worked example with a genuine captured transcript, in grammar.md section 9.",
   "syntax": [
-   "see grammar.md:2323"
+   "see grammar.md:2347"
   ],
   "parameters": [],
   "returns": null,
@@ -17349,7 +17349,7 @@
   "locations": [
    {
     "file": "grammar.md",
-    "line": 2323,
+    "line": 2347,
     "role": "the example"
    }
   ],
@@ -17370,7 +17370,7 @@
   "summary": "Worked example in grammar.md section 9.",
   "definition": "Example 7 \u2014 fixing a typo in an old cell with `%edit` \u2014 a documented worked example with a genuine captured transcript, in grammar.md section 9.",
   "syntax": [
-   "see grammar.md:2356"
+   "see grammar.md:2380"
   ],
   "parameters": [],
   "returns": null,
@@ -17378,7 +17378,7 @@
   "locations": [
    {
     "file": "grammar.md",
-    "line": 2356,
+    "line": 2380,
     "role": "the example"
    }
   ],
@@ -17399,7 +17399,7 @@
   "summary": "Worked example in grammar.md section 9.",
   "definition": "Example 8 \u2014 checking the simulator against itself with vector algebra \u2014 a documented worked example with a genuine captured transcript, in grammar.md section 9.",
   "syntax": [
-   "see grammar.md:2388"
+   "see grammar.md:2412"
   ],
   "parameters": [],
   "returns": null,
@@ -17407,7 +17407,7 @@
   "locations": [
    {
     "file": "grammar.md",
-    "line": 2388,
+    "line": 2412,
     "role": "the example"
    }
   ],
@@ -17428,7 +17428,7 @@
   "summary": "Worked example in grammar.md section 9.",
   "definition": "Example 9 \u2014 hand-built tensors and a quaternion orientation \u2014 a documented worked example with a genuine captured transcript, in grammar.md section 9.",
   "syntax": [
-   "see grammar.md:2412"
+   "see grammar.md:2436"
   ],
   "parameters": [],
   "returns": null,
@@ -17436,7 +17436,7 @@
   "locations": [
    {
     "file": "grammar.md",
-    "line": 2412,
+    "line": 2436,
     "role": "the example"
    }
   ],
@@ -17457,7 +17457,7 @@
   "summary": "Worked example in grammar.md section 9.",
   "definition": "Example 10 \u2014 reproducibility: `%save`, `%reset`, `%load` \u2014 a documented worked example with a genuine captured transcript, in grammar.md section 9.",
   "syntax": [
-   "see grammar.md:2440"
+   "see grammar.md:2464"
   ],
   "parameters": [],
   "returns": null,
@@ -17465,7 +17465,7 @@
   "locations": [
    {
     "file": "grammar.md",
-    "line": 2440,
+    "line": 2464,
     "role": "the example"
    }
   ],
@@ -17486,7 +17486,7 @@
   "summary": "Worked example in grammar.md section 9.",
   "definition": "Example 11 \u2014 watching a Kepler orbit live, then running it backward \u2014 a documented worked example with a genuine captured transcript, in grammar.md section 9.",
   "syntax": [
-   "see grammar.md:2495"
+   "see grammar.md:2519"
   ],
   "parameters": [],
   "returns": null,
@@ -17494,7 +17494,7 @@
   "locations": [
    {
     "file": "grammar.md",
-    "line": 2495,
+    "line": 2519,
     "role": "the example"
    }
   ],
@@ -17515,7 +17515,7 @@
   "summary": "Worked example in grammar.md section 9.",
   "definition": "Example 12 \u2014 driving the camera from the notebook \u2014 a documented worked example with a genuine captured transcript, in grammar.md section 9.",
   "syntax": [
-   "see grammar.md:2550"
+   "see grammar.md:2574"
   ],
   "parameters": [],
   "returns": null,
@@ -17523,7 +17523,7 @@
   "locations": [
    {
     "file": "grammar.md",
-    "line": 2550,
+    "line": 2574,
     "role": "the example"
    }
   ],
@@ -17544,7 +17544,7 @@
   "summary": "Worked example in grammar.md section 9.",
   "definition": "Example 13 \u2014 the box of shapes: every body type in a rigid, infinitely massive box \u2014 a documented worked example with a genuine captured transcript, in grammar.md section 9.",
   "syntax": [
-   "see grammar.md:2606"
+   "see grammar.md:2630"
   ],
   "parameters": [],
   "returns": null,
@@ -17552,7 +17552,7 @@
   "locations": [
    {
     "file": "grammar.md",
-    "line": 2606,
+    "line": 2630,
     "role": "the example"
    }
   ],
@@ -17573,7 +17573,7 @@
   "summary": "Worked example in grammar.md section 9.",
   "definition": "Example 14 \u2014 two dumbbells from a user-defined function \u2014 a documented worked example with a genuine captured transcript, in grammar.md section 9.",
   "syntax": [
-   "see grammar.md:2691"
+   "see grammar.md:2715"
   ],
   "parameters": [],
   "returns": null,
@@ -17581,7 +17581,7 @@
   "locations": [
    {
     "file": "grammar.md",
-    "line": 2691,
+    "line": 2715,
     "role": "the example"
    }
   ],
@@ -17602,7 +17602,7 @@
   "summary": "Worked example in grammar.md section 9.",
   "definition": "Example 15 \u2014 a particle in a box, solved inside the language \u2014 a documented worked example with a genuine captured transcript, in grammar.md section 9.",
   "syntax": [
-   "see grammar.md:2761"
+   "see grammar.md:2785"
   ],
   "parameters": [],
   "returns": null,
@@ -17610,7 +17610,7 @@
   "locations": [
    {
     "file": "grammar.md",
-    "line": 2761,
+    "line": 2785,
     "role": "the example"
    }
   ],
@@ -17631,7 +17631,7 @@
   "summary": "Worked example in grammar.md section 9.",
   "definition": "Example 16 \u2014 quantum mechanics: bound states, then tunnelling \u2014 a documented worked example with a genuine captured transcript, in grammar.md section 9.",
   "syntax": [
-   "see grammar.md:2836"
+   "see grammar.md:2860"
   ],
   "parameters": [],
   "returns": null,
@@ -17639,7 +17639,7 @@
   "locations": [
    {
     "file": "grammar.md",
-    "line": 2836,
+    "line": 2860,
     "role": "the example"
    }
   ],
@@ -17660,7 +17660,7 @@
   "summary": "Worked example in grammar.md section 9.",
   "definition": "Example 17 \u2014 tunnelling, with the barrier as a user function \u2014 a documented worked example with a genuine captured transcript, in grammar.md section 9.",
   "syntax": [
-   "see grammar.md:2917"
+   "see grammar.md:2941"
   ],
   "parameters": [],
   "returns": null,
@@ -17668,7 +17668,7 @@
   "locations": [
    {
     "file": "grammar.md",
-    "line": 2917,
+    "line": 2941,
     "role": "the example"
    }
   ],
@@ -17689,7 +17689,7 @@
   "summary": "Worked example in grammar.md section 9.",
   "definition": "Example 18 \u2014 the double slit, in two dimensions \u2014 a documented worked example with a genuine captured transcript, in grammar.md section 9.",
   "syntax": [
-   "see grammar.md:3018"
+   "see grammar.md:3042"
   ],
   "parameters": [],
   "returns": null,
@@ -17697,7 +17697,7 @@
   "locations": [
    {
     "file": "grammar.md",
-    "line": 3018,
+    "line": 3042,
     "role": "the example"
    }
   ],
@@ -18734,7 +18734,7 @@
   "summary": "Worked example in special_functions.md.",
   "definition": "Intermediate example \u2014 check against the closed forms \u2014 a documented worked example with a genuine captured transcript, in special_functions.md.",
   "syntax": [
-   "see special_functions.md:67"
+   "see special_functions.md:68"
   ],
   "parameters": [],
   "returns": null,
@@ -18742,7 +18742,7 @@
   "locations": [
    {
     "file": "special_functions.md",
-    "line": 67,
+    "line": 68,
     "role": "the example"
    }
   ],
@@ -18763,7 +18763,7 @@
   "summary": "Worked example in special_functions.md.",
   "definition": "Expert example \u2014 hard-sphere scattering phase shifts \u2014 a documented worked example with a genuine captured transcript, in special_functions.md.",
   "syntax": [
-   "see special_functions.md:94"
+   "see special_functions.md:95"
   ],
   "parameters": [],
   "returns": null,
@@ -18771,7 +18771,7 @@
   "locations": [
    {
     "file": "special_functions.md",
-    "line": 94,
+    "line": 95,
     "role": "the example"
    }
   ],
@@ -18792,7 +18792,7 @@
   "summary": "Worked example in special_functions.md.",
   "definition": "Intermediate \u2014 values you can check by hand \u2014 a documented worked example with a genuine captured transcript, in special_functions.md.",
   "syntax": [
-   "see special_functions.md:229"
+   "see special_functions.md:230"
   ],
   "parameters": [],
   "returns": null,
@@ -18800,7 +18800,7 @@
   "locations": [
    {
     "file": "special_functions.md",
-    "line": 229,
+    "line": 230,
     "role": "the example"
    }
   ],
@@ -18821,7 +18821,7 @@
   "summary": "Worked example in special_functions.md.",
   "definition": "Expert \u2014 why two families exist \u2014 a documented worked example with a genuine captured transcript, in special_functions.md.",
   "syntax": [
-   "see special_functions.md:243"
+   "see special_functions.md:244"
   ],
   "parameters": [],
   "returns": null,
@@ -18829,7 +18829,7 @@
   "locations": [
    {
     "file": "special_functions.md",
-    "line": 243,
+    "line": 244,
     "role": "the example"
    }
   ],
@@ -18850,7 +18850,7 @@
   "summary": "Worked example in special_functions.md.",
   "definition": "Intermediate \u2014 a documented worked example with a genuine captured transcript, in special_functions.md.",
   "syntax": [
-   "see special_functions.md:277"
+   "see special_functions.md:278"
   ],
   "parameters": [],
   "returns": null,
@@ -18858,7 +18858,7 @@
   "locations": [
    {
     "file": "special_functions.md",
-    "line": 277,
+    "line": 278,
     "role": "the example"
    }
   ],
@@ -18879,7 +18879,7 @@
   "summary": "Worked example in special_functions.md.",
   "definition": "Expert \u2014 the quantum harmonic oscillator, two independent ways \u2014 a documented worked example with a genuine captured transcript, in special_functions.md.",
   "syntax": [
-   "see special_functions.md:289"
+   "see special_functions.md:290"
   ],
   "parameters": [],
   "returns": null,
@@ -18887,7 +18887,7 @@
   "locations": [
    {
     "file": "special_functions.md",
-    "line": 289,
+    "line": 290,
     "role": "the example"
    }
   ],
@@ -18908,7 +18908,7 @@
   "summary": "Worked example in special_functions.md.",
   "definition": "Intermediate \u2014 a documented worked example with a genuine captured transcript, in special_functions.md.",
   "syntax": [
-   "see special_functions.md:341"
+   "see special_functions.md:342"
   ],
   "parameters": [],
   "returns": null,
@@ -18916,7 +18916,7 @@
   "locations": [
    {
     "file": "special_functions.md",
-    "line": 341,
+    "line": 342,
     "role": "the example"
    }
   ],
@@ -18937,7 +18937,7 @@
   "summary": "Worked example in special_functions.md.",
   "definition": "Expert \u2014 a spectrum with a known closed form \u2014 a documented worked example with a genuine captured transcript, in special_functions.md.",
   "syntax": [
-   "see special_functions.md:349"
+   "see special_functions.md:350"
   ],
   "parameters": [],
   "returns": null,
@@ -18945,7 +18945,7 @@
   "locations": [
    {
     "file": "special_functions.md",
-    "line": 349,
+    "line": 350,
     "role": "the example"
    }
   ],
@@ -18966,7 +18966,7 @@
   "summary": "Worked example in special_functions.md.",
   "definition": "Intermediate \u2014 a documented worked example with a genuine captured transcript, in special_functions.md.",
   "syntax": [
-   "see special_functions.md:369"
+   "see special_functions.md:370"
   ],
   "parameters": [],
   "returns": null,
@@ -18974,7 +18974,7 @@
   "locations": [
    {
     "file": "special_functions.md",
-    "line": 369,
+    "line": 370,
     "role": "the example"
    }
   ],
@@ -18995,7 +18995,7 @@
   "summary": "Worked example in special_functions.md.",
   "definition": "Expert \u2014 the honest failure modes \u2014 a documented worked example with a genuine captured transcript, in special_functions.md.",
   "syntax": [
-   "see special_functions.md:380"
+   "see special_functions.md:381"
   ],
   "parameters": [],
   "returns": null,
@@ -19003,7 +19003,7 @@
   "locations": [
    {
     "file": "special_functions.md",
-    "line": 380,
+    "line": 381,
     "role": "the example"
    }
   ],
@@ -19024,7 +19024,7 @@
   "summary": "Worked example in special_functions.md.",
   "definition": "Intermediate \u2014 a documented worked example with a genuine captured transcript, in special_functions.md.",
   "syntax": [
-   "see special_functions.md:409"
+   "see special_functions.md:410"
   ],
   "parameters": [],
   "returns": null,
@@ -19032,7 +19032,7 @@
   "locations": [
    {
     "file": "special_functions.md",
-    "line": 409,
+    "line": 410,
     "role": "the example"
    }
   ],
@@ -19053,7 +19053,7 @@
   "summary": "Worked example in special_functions.md.",
   "definition": "Expert \u2014 why `norm_sqr` is separate from `abs` \u2014 a documented worked example with a genuine captured transcript, in special_functions.md.",
   "syntax": [
-   "see special_functions.md:420"
+   "see special_functions.md:421"
   ],
   "parameters": [],
   "returns": null,
@@ -19061,7 +19061,7 @@
   "locations": [
    {
     "file": "special_functions.md",
-    "line": 420,
+    "line": 421,
     "role": "the example"
    }
   ],
@@ -19082,7 +19082,7 @@
   "summary": "Worked example in special_functions.md.",
   "definition": "Intermediate \u2014 a documented worked example with a genuine captured transcript, in special_functions.md.",
   "syntax": [
-   "see special_functions.md:452"
+   "see special_functions.md:453"
   ],
   "parameters": [],
   "returns": null,
@@ -19090,7 +19090,7 @@
   "locations": [
    {
     "file": "special_functions.md",
-    "line": 452,
+    "line": 453,
     "role": "the example"
    }
   ],
@@ -19111,7 +19111,7 @@
   "summary": "Worked example in special_functions.md.",
   "definition": "Expert \u2014 one Crank\u2013Nicolson step, and why unitarity is the test \u2014 a documented worked example with a genuine captured transcript, in special_functions.md.",
   "syntax": [
-   "see special_functions.md:463"
+   "see special_functions.md:464"
   ],
   "parameters": [],
   "returns": null,
@@ -19119,7 +19119,7 @@
   "locations": [
    {
     "file": "special_functions.md",
-    "line": 463,
+    "line": 464,
     "role": "the example"
    }
   ],
@@ -19140,7 +19140,7 @@
   "summary": "Worked example in special_functions.md.",
   "definition": "Intermediate \u2014 a documented worked example with a genuine captured transcript, in special_functions.md.",
   "syntax": [
-   "see special_functions.md:522"
+   "see special_functions.md:523"
   ],
   "parameters": [],
   "returns": null,
@@ -19148,7 +19148,7 @@
   "locations": [
    {
     "file": "special_functions.md",
-    "line": 522,
+    "line": 523,
     "role": "the example"
    }
   ],
@@ -19169,7 +19169,7 @@
   "summary": "Worked example in special_functions.md.",
   "definition": "Expert \u2014 why downward, and why no coefficient tables \u2014 a documented worked example with a genuine captured transcript, in special_functions.md.",
   "syntax": [
-   "see special_functions.md:536"
+   "see special_functions.md:537"
   ],
   "parameters": [],
   "returns": null,
@@ -19177,7 +19177,7 @@
   "locations": [
    {
     "file": "special_functions.md",
-    "line": 536,
+    "line": 537,
     "role": "the example"
    }
   ],
@@ -19221,7 +19221,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1056,
+    "line": 1080,
     "role": "spec (5.1)"
    }
   ],
@@ -19305,7 +19305,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1163,
+    "line": 1187,
     "role": "spec (5.2)"
    }
   ],
@@ -19385,7 +19385,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1163,
+    "line": 1187,
     "role": "spec (5.2)"
    }
   ],
@@ -19460,7 +19460,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1281,
+    "line": 1295,
     "role": "spec (5.5)"
    }
   ],
@@ -19534,7 +19534,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1280,
+    "line": 1295,
     "role": "spec (5.5)"
    }
   ],
@@ -19610,7 +19610,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1232,
+    "line": 1256,
     "role": "spec (5.3)"
    }
   ],
@@ -19690,7 +19690,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1232,
+    "line": 1256,
     "role": "spec (5.3)"
    }
   ],
@@ -19828,7 +19828,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1251,
+    "line": 1275,
     "role": "spec (5.4)"
    }
   ],
@@ -19902,7 +19902,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1271,
+    "line": 1295,
     "role": "spec (5.5)"
    }
   ],
@@ -19972,7 +19972,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1271,
+    "line": 1295,
     "role": "spec (5.5)"
    }
   ],
@@ -20042,7 +20042,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1271,
+    "line": 1295,
     "role": "spec (5.5)"
    }
   ],
@@ -20112,7 +20112,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1271,
+    "line": 1295,
     "role": "spec (5.5)"
    }
   ],
@@ -20182,7 +20182,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1279,
+    "line": 1295,
     "role": "spec (5.5)"
    }
   ],
@@ -20254,7 +20254,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1282,
+    "line": 1295,
     "role": "spec (5.5)"
    }
   ],
@@ -20376,7 +20376,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1368,
+    "line": 1392,
     "role": "spec (5.7)"
    }
   ],
@@ -20457,7 +20457,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1391,
+    "line": 1392,
     "role": "spec (5.7)"
    }
   ],
@@ -20535,7 +20535,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1531,
+    "line": 1513,
     "role": "spec (5.9)"
    }
   ],
@@ -20609,7 +20609,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1495,
+    "line": 1513,
     "role": "spec (5.9)"
    }
   ],
@@ -20681,7 +20681,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1526,
+    "line": 1513,
     "role": "spec (5.9)"
    }
   ],
@@ -20757,7 +20757,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1427,
+    "line": 1451,
     "role": "spec (5.8)"
    }
   ],
@@ -20843,7 +20843,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 971,
+    "line": 995,
     "role": "spec (4.2)"
    }
   ],
@@ -20927,7 +20927,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1489,
+    "line": 1513,
     "role": "spec (5.9)"
    }
   ],
@@ -21002,7 +21002,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1511,
+    "line": 1513,
     "role": "spec (5.9)"
    }
   ],
@@ -21792,7 +21792,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:<port>/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene: http://127.0.0.1:<port>/  (0 window(s) connected)\nmode = running, t = 0.01, dt = 0.01, steps = <varies>, history = <varies> frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[5]= scene closed (http://127.0.0.1:<port>/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:<port>/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene: http://127.0.0.1:<port>/  (0 window(s) connected)\nmode = running, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[5]= scene closed (http://127.0.0.1:<port>/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -21946,7 +21946,7 @@
     "level": "intermediate",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene start\nscene pause\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:<port>/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene: http://127.0.0.1:<port>/  (0 window(s) connected)\nmode = paused, t = 0.01, dt = 0.01, steps = <varies>, history = <varies> frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene closed (http://127.0.0.1:<port>/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:<port>/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene playback: running\nOut[4]= scene playback: paused\nOut[5]= scene: http://127.0.0.1:<port>/  (0 window(s) connected)\nmode = paused, t = 0, dt = 0.01, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[6]= scene closed (http://127.0.0.1:<port>/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    },
@@ -22199,7 +22199,7 @@
     "level": "expert",
     "medium": "posim",
     "code": "new point { mass = 1, velocity = [1, 0, 0] }\nscene create\nscene set_time_step 0.001\nscene start\nscene pause\nscene status\nscene close",
-    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:<port>/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene time step dt = 0.001\nOut[4]= scene playback: running\nOut[5]= scene playback: paused\nOut[6]= scene: http://127.0.0.1:<port>/  (0 window(s) connected)\nmode = paused, t = 0.001, dt = 0.001, steps = <varies>, history = <varies> frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[7]= scene closed (http://127.0.0.1:<port>/)",
+    "expected": "Out[1]= obj0\nOut[2]= scene window created: http://127.0.0.1:<port>/\n(opened in your browser; if no window appeared, open that address yourself)\nshowing 1 entity; SCENE START begins the evolution \u2014 HELP lists all scene commands\nOut[3]= scene time step dt = 0.001\nOut[4]= scene playback: running\nOut[5]= scene playback: paused\nOut[6]= scene: http://127.0.0.1:<port>/  (0 window(s) connected)\nmode = paused, t = 0, dt = 0.001, steps = 0, history = 0 frame(s)\nentities = 1 (hidden: none)\ncamera: yaw = -60\u00b0, pitch = 55\u00b0, dist = 12, target = [0, 0, 0]\nOut[7]= scene closed (http://127.0.0.1:<port>/)",
     "verified": "2026-07-30",
     "runner": "posim --script"
    }
@@ -22398,7 +22398,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -22475,7 +22475,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -22552,7 +22552,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -22629,7 +22629,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -22706,7 +22706,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -22783,7 +22783,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -22862,7 +22862,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -22939,7 +22939,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -23016,7 +23016,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -23093,7 +23093,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -23170,7 +23170,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -23247,7 +23247,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -23324,7 +23324,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -23401,7 +23401,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -23478,7 +23478,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -23555,7 +23555,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -23632,7 +23632,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -23709,7 +23709,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -23786,7 +23786,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -23863,7 +23863,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -23940,7 +23940,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -24017,7 +24017,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -24094,7 +24094,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -24171,7 +24171,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -24248,7 +24248,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -24325,7 +24325,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -24402,7 +24402,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -24479,7 +24479,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -24556,7 +24556,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -24633,7 +24633,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -24710,7 +24710,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -24769,7 +24769,7 @@
    "Q"
   ],
   "summary": "The centroid <r> of the packet.",
-  "definition": "The centroid <r> of the packet.  UNDOCUMENTED ALIAS: `QM2 POSITION` works but appears in no manual (DIVERGENCES.md D3).",
+  "definition": "The centroid <r> of the packet.  `QM2 POSITION` is an accepted alias, documented in grammar.md since the D3 fix.",
   "syntax": [
    "QM2 CENTROID ..."
   ],
@@ -24789,7 +24789,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -24848,7 +24848,7 @@
    "Q"
   ],
   "summary": "Probability of being found in the given interval, rectangle or box.",
-  "definition": "Probability of being found in the given interval, rectangle or box.  UNDOCUMENTED ALIAS: `QM2 PROBABILITY` works but appears in no manual (DIVERGENCES.md D3).",
+  "definition": "Probability of being found in the given interval, rectangle or box.  `QM2 PROBABILITY` is an accepted alias, documented in grammar.md since the D3 fix.",
   "syntax": [
    "QM2 PROB ..."
   ],
@@ -24868,7 +24868,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -24945,7 +24945,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -25022,7 +25022,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -25101,7 +25101,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -25178,7 +25178,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -25255,7 +25255,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -25332,7 +25332,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -25409,7 +25409,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -25486,7 +25486,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -25563,7 +25563,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -25640,7 +25640,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -25719,7 +25719,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -25796,7 +25796,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -25873,7 +25873,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -25950,7 +25950,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -26027,7 +26027,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -26104,7 +26104,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -26163,7 +26163,7 @@
    "Q"
   ],
   "summary": "The centroid <r> of the packet.",
-  "definition": "The centroid <r> of the packet.  UNDOCUMENTED ALIAS: `QM3 POSITION` works but appears in no manual (DIVERGENCES.md D3).",
+  "definition": "The centroid <r> of the packet.  `QM3 POSITION` is an accepted alias, documented in grammar.md since the D3 fix.",
   "syntax": [
    "QM3 CENTROID ..."
   ],
@@ -26183,7 +26183,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -26242,7 +26242,7 @@
    "Q"
   ],
   "summary": "Probability of being found in the given interval, rectangle or box.",
-  "definition": "Probability of being found in the given interval, rectangle or box.  UNDOCUMENTED ALIAS: `QM3 PROBABILITY` works but appears in no manual (DIVERGENCES.md D3).",
+  "definition": "Probability of being found in the given interval, rectangle or box.  `QM3 PROBABILITY` is an accepted alias, documented in grammar.md since the D3 fix.",
   "syntax": [
    "QM3 PROB ..."
   ],
@@ -26262,7 +26262,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -26339,7 +26339,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -26416,7 +26416,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -26493,7 +26493,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -26552,7 +26552,7 @@
    "Q"
   ],
   "summary": "Extract the surface where |psi|^2 equals a chosen fraction of its peak (default 0.",
-  "definition": "Extract the surface where |psi|^2 equals a chosen fraction of its peak (default 0.25) and ship a rotatable view. MARCHING TETRAHEDRA, not marching cubes: marching cubes needs a 256-entry table which IS the algorithm, so one wrong entry gives a surface with a hole that looks fine from most angles. A tetrahedron has only 16 sign patterns, reducing to three cases derivable in a sentence, and the shared-face ambiguity cannot arise. Rendered by a software rasteriser on a 2-D canvas rather than WebGL, which can fail silently where there is no GPU. QM2 has no ISO -- a 2-D density is already drawable as a heat map (see DIVERGENCES.md D2).  UNDOCUMENTED ALIAS: `QM3 ISOSURFACE` works but appears in no manual (DIVERGENCES.md D3).",
+  "definition": "Extract the surface where |psi|^2 equals a chosen fraction of its peak (default 0.25) and ship a rotatable view. MARCHING TETRAHEDRA, not marching cubes: marching cubes needs a 256-entry table which IS the algorithm, so one wrong entry gives a surface with a hole that looks fine from most angles. A tetrahedron has only 16 sign patterns, reducing to three cases derivable in a sentence, and the shared-face ambiguity cannot arise. Rendered by a software rasteriser on a 2-D canvas rather than WebGL, which can fail silently where there is no GPU. QM2 has no ISO -- a 2-D density is already drawable as a heat map \u2014 stated in grammar.md \u00a75.12 and gated by `every_qm2_subcommand_is_documented_in_lockstep`.  `QM3 ISOSURFACE` is an accepted alias, documented in grammar.md since the D3 fix.",
   "syntax": [
    "QM3 ISO ..."
   ],
@@ -26572,7 +26572,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -26649,7 +26649,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],

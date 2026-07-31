@@ -1,94 +1,94 @@
 {
- "_source": "heading scan of the documentation, 2026-07-30",
+ "_source": "heading scan of the documentation, re-run 2026-07-30 after the D1/D3-D6 fixes",
  "grammar_md": [
   {
    "file": "grammar.md",
-   "line": 2157,
+   "line": 2181,
    "title": "Example 1 \u2014 an eccentric Kepler orbit and the Runge\u2013Lenz compass"
   },
   {
    "file": "grammar.md",
-   "line": 2192,
+   "line": 2216,
    "title": "Example 2 \u2014 a thrown ball, checked against the textbook formula"
   },
   {
    "file": "grammar.md",
-   "line": 2220,
+   "line": 2244,
    "title": "Example 3 \u2014 cyclotron motion: expressions as arguments"
   },
   {
    "file": "grammar.md",
-   "line": 2248,
+   "line": 2272,
    "title": "Example 4 \u2014 the tennis-racket theorem (Dzhanibekov effect)"
   },
   {
    "file": "grammar.md",
-   "line": 2282,
+   "line": 2306,
    "title": "Example 5 \u2014 three bodies, then surgery with `DEL`"
   },
   {
    "file": "grammar.md",
-   "line": 2323,
+   "line": 2347,
    "title": "Example 6 \u2014 magnetic torque spins a body up (and why ENERGY grows)"
   },
   {
    "file": "grammar.md",
-   "line": 2356,
+   "line": 2380,
    "title": "Example 7 \u2014 fixing a typo in an old cell with `%edit`"
   },
   {
    "file": "grammar.md",
-   "line": 2388,
+   "line": 2412,
    "title": "Example 8 \u2014 checking the simulator against itself with vector algebra"
   },
   {
    "file": "grammar.md",
-   "line": 2412,
+   "line": 2436,
    "title": "Example 9 \u2014 hand-built tensors and a quaternion orientation"
   },
   {
    "file": "grammar.md",
-   "line": 2440,
+   "line": 2464,
    "title": "Example 10 \u2014 reproducibility: `%save`, `%reset`, `%load`"
   },
   {
    "file": "grammar.md",
-   "line": 2495,
+   "line": 2519,
    "title": "Example 11 \u2014 watching a Kepler orbit live, then running it backward"
   },
   {
    "file": "grammar.md",
-   "line": 2550,
+   "line": 2574,
    "title": "Example 12 \u2014 driving the camera from the notebook"
   },
   {
    "file": "grammar.md",
-   "line": 2606,
+   "line": 2630,
    "title": "Example 13 \u2014 the box of shapes: every body type in a rigid, infinitely massive box"
   },
   {
    "file": "grammar.md",
-   "line": 2691,
+   "line": 2715,
    "title": "Example 14 \u2014 two dumbbells from a user-defined function"
   },
   {
    "file": "grammar.md",
-   "line": 2761,
+   "line": 2785,
    "title": "Example 15 \u2014 a particle in a box, solved inside the language"
   },
   {
    "file": "grammar.md",
-   "line": 2836,
+   "line": 2860,
    "title": "Example 16 \u2014 quantum mechanics: bound states, then tunnelling"
   },
   {
    "file": "grammar.md",
-   "line": 2917,
+   "line": 2941,
    "title": "Example 17 \u2014 tunnelling, with the barrier as a user function"
   },
   {
    "file": "grammar.md",
-   "line": 3018,
+   "line": 3042,
    "title": "Example 18 \u2014 the double slit, in two dimensions"
   }
  ],
@@ -271,82 +271,82 @@
  "special_functions_md": [
   {
    "file": "special_functions.md",
-   "line": 67,
+   "line": 68,
    "title": "Intermediate example \u2014 check against the closed forms"
   },
   {
    "file": "special_functions.md",
-   "line": 94,
+   "line": 95,
    "title": "Expert example \u2014 hard-sphere scattering phase shifts"
   },
   {
    "file": "special_functions.md",
-   "line": 229,
+   "line": 230,
    "title": "Intermediate \u2014 values you can check by hand"
   },
   {
    "file": "special_functions.md",
-   "line": 243,
+   "line": 244,
    "title": "Expert \u2014 why two families exist"
   },
   {
    "file": "special_functions.md",
-   "line": 277,
+   "line": 278,
    "title": "Intermediate"
   },
   {
    "file": "special_functions.md",
-   "line": 289,
+   "line": 290,
    "title": "Expert \u2014 the quantum harmonic oscillator, two independent ways"
   },
   {
    "file": "special_functions.md",
-   "line": 341,
+   "line": 342,
    "title": "Intermediate"
   },
   {
    "file": "special_functions.md",
-   "line": 349,
+   "line": 350,
    "title": "Expert \u2014 a spectrum with a known closed form"
   },
   {
    "file": "special_functions.md",
-   "line": 369,
+   "line": 370,
    "title": "Intermediate"
   },
   {
    "file": "special_functions.md",
-   "line": 380,
+   "line": 381,
    "title": "Expert \u2014 the honest failure modes"
   },
   {
    "file": "special_functions.md",
-   "line": 409,
+   "line": 410,
    "title": "Intermediate"
   },
   {
    "file": "special_functions.md",
-   "line": 420,
+   "line": 421,
    "title": "Expert \u2014 why `norm_sqr` is separate from `abs`"
   },
   {
    "file": "special_functions.md",
-   "line": 452,
+   "line": 453,
    "title": "Intermediate"
   },
   {
    "file": "special_functions.md",
-   "line": 463,
+   "line": 464,
    "title": "Expert \u2014 one Crank\u2013Nicolson step, and why unitarity is the test"
   },
   {
    "file": "special_functions.md",
-   "line": 522,
+   "line": 523,
    "title": "Intermediate"
   },
   {
    "file": "special_functions.md",
-   "line": 536,
+   "line": 537,
    "title": "Expert \u2014 why downward, and why no coefficient tables"
   }
  ],

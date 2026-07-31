@@ -15,7 +15,7 @@ reading alone.**
 
 ---
 
-## D1 — `grammar.md` §2.2 omits three keywords that the lexer defines
+## D1 — `grammar.md` §2.2 omitted three keywords that the lexer defines — **FIXED**
 
 **Claim.** `grammar.md:63-80` enumerates the reserved keywords in four
 groups (core, scene, collision, names/functions).
@@ -30,6 +30,17 @@ families themselves at length.
 
 **Index treatment.** `QM`, `QM2`, `QM3` get keyword entries, sourced to
 `lexer.rs`, cross-referenced to §§5.10–5.12.
+
+### Fixed, 2026-07-30
+
+Both keyword lists now carry a fourth group — `QM QM2 QM3` — in
+`grammar.md` §2.2 and in `grammar.tex`, cross-referenced to the three family
+sections. §2.2 also now states *why* the list is only three words long: every
+sub-command after them (`grid`, `run`, `state`, `energy`, `reset`) is read as
+an identifier-or-keyword and matched on its lowercased text, precisely so the
+quantum vocabulary stays out of the global keyword namespace. Several of those
+words are already keywords in their own right, and reserving the rest would
+have cost `system.energy` and `obj0.state` for nothing.
 
 ---
 
@@ -110,7 +121,7 @@ duplicated list is a list that drifts.
 
 ---
 
-## D3 — six path aliases work but appear in no documentation
+## D3 — six path aliases worked but appeared in no documentation — **FIXED**
 
 `posim/src/vm.rs` accepts a second spelling for several read paths. None of
 these appear in `grammar.md` §5.2/§5.7, `physical_object_simulator.md` or
@@ -155,12 +166,24 @@ Out[9]= 0.432954441903126
 ```
 
 **Index treatment.** Each is recorded in its canonical entry's `aliases`
-array and resolves through search, flagged *undocumented alias* so the entry
-is honest about where it came from.
+array and resolves through search.
+
+### Fixed, 2026-07-30
+
+All six are now documented where a reader looks for them, in `grammar.md`
+(and the two observable rows in `grammar.tex`):
+
+- §5.7's contact-field table: `contactK.t` *(alias `time`)*,
+  `contactK.rel_vel_n` *(alias `approach`)*, `contactK.impulse`
+  *(alias `impulse_n`)*;
+- §5.11 and §5.12: `CENTROID` also spells `POSITION`, `PROB` also spells
+  `PROBABILITY`, and `QM3 ISO` also spells `ISOSURFACE` — with the note that
+  **`QM2` has no `ISO`**, which is D2's other half stated where it will be
+  read.
 
 ---
 
-## D4 — `grammar.md` §3's EBNF predates the comparison operators
+## D4 — `grammar.md` §3's EBNF predated the comparison operators — **FIXED**
 
 **Claim.** `grammar.md:173`:
 
@@ -183,9 +206,24 @@ including their lowest precedence; only the formal grammar block is stale.
 **Index treatment.** The index quotes `parser.rs`'s EBNF as the syntax of
 record for every expression-level entry.
 
+### Fixed, 2026-07-30
+
+§3's grammar block now has the comparison level, matching `parser.rs`:
+
+```ebnf
+expr     := sum { ("<" | "<=" | ">" | ">=" | "==" | "!=") sum } ;
+sum      := term { ("+" | "-") term } ;
+```
+
+with an inline note that comparisons yield 1 or 0 at the lowest precedence and
+that `(x > a) * (x < b)` is therefore an indicator function — the idiom §4.2,
+§5.10 and Examples 17–18 are built on, which the old block could not derive.
+The `atom` production gained `IMAGINARY` in the same pass, for the same
+reason: it predated complex literals. `grammar.tex` carries both.
+
 ---
 
-## D5 — `special_functions.md` calls `wigner` "planned"; it shipped
+## D5 — `special_functions.md` called `wigner` "planned"; it had shipped — **FIXED**
 
 **Claim.** `special_functions.md:33`:
 
@@ -200,12 +238,32 @@ Clebsch–Gordan) is planned and will be added in the same shape."*
 even mention. All four are registered notebook builtins in
 `posim/src/special.rs`, and `grammar.md` §4.1 documents them as available.
 
-**Index treatment.** All four get full builtin entries. The status page notes
-that `special_functions.md`'s status table is behind its own §4.1 sibling.
+**Index treatment.** All four get full builtin entries.
+
+### Fixed, 2026-07-30
+
+The status row now reads *implemented, reachable from the notebook* and names
+**9j**, which the old "planned" row did not even list. The closing sentence
+that promised the module "will be added" is replaced by a real §10 covering
+all four functions: the row-by-row argument order of `wigner_9j`, why
+half-integer angular momenta are accepted as plain numbers, and why a
+selection-rule violation returns **0** (the mathematically correct answer)
+while a value that is not an angular momentum at all is an error.
+
+Its two numeric claims were checked by running them, not asserted:
+
+```
+In[1]:= wigner_3j(1, 1, 5, 0, 0, 0)
+Out[1]= 0
+In[2]:= clebsch_gordan(0.5, 0.5, 0.5, -0.5, 1, 0)
+Out[2]= 0.7071067811865475
+In[3]:= 1/sqrt(2)
+Out[3]= 0.7071067811865475
+```
 
 ---
 
-## D6 — ten `special_functions` modules exist but are absent from `special_functions.md`
+## D6 — ten `special_functions` modules were absent from `special_functions.md` — **FIXED**
 
 The document's "Status at a glance" table and section list cover
 `sph_bessel`, `legendre`, `orthopoly`, `eigen`, `quadrature`, `complex`,
@@ -221,9 +279,19 @@ them — 8,006 of the crate's lines. Their *notebook-facing* surface (`airy_z`,
 thoroughly documented, in `grammar.md` §4.1 instead. The gap is at module
 level, not at API level.
 
-**Index treatment.** Module entries are sourced from the crate; the accuracy
-laws and route-selection discussion come from `grammar.md` §4.1, which is the
-live document for this material.
+**Index treatment.** Module entries are sourced from the crate.
+
+### Fixed, 2026-07-30
+
+All ten now appear — in the status table, and in a new §11 that maps each
+module to the entry points it holds: `gamma_complex`, `bessel_complex`,
+`bessel_cnu`, `bessel_cnu_large`, `bessel_scaled`, `hankel`, `airy_complex`,
+`airy_uniform`, `debye`, `lanczos`.
+
+§11 is a map rather than a duplicate. The accuracy laws, the route selection
+and the measured error surfaces stay in `grammar.md` §4.1, because that is the
+document a notebook user actually reads; repeating them in two places would
+create exactly the drift this file exists to record.
 
 ---
 
@@ -273,14 +341,26 @@ Recorded so a later pass does not re-investigate them.
 
 | # | finding | state |
 |---|---|---|
-| D1 | `grammar.md` §2.2 omits `QM`/`QM2`/`QM3` | open — documentation |
+| D1 | `grammar.md` §2.2 omitted `QM`/`QM2`/`QM3` | **fixed 2026-07-30** |
 | D2 | phantom `QM2 ISO` in the `parser.rs` EBNF | **fixed 2026-07-30**, with a gate |
-| D3 | six undocumented path aliases | open — documentation |
-| D4 | `grammar.md` §3's EBNF has no comparison level | open — documentation |
-| D5 | `special_functions.md` calls `wigner` "planned" | open — documentation |
-| D6 | ten `special_functions` modules undocumented | open — documentation |
+| D3 | six undocumented path aliases | **fixed 2026-07-30** |
+| D4 | `grammar.md` §3's EBNF had no comparison level | **fixed 2026-07-30** |
+| D5 | `special_functions.md` called `wigner` "planned" | **fixed 2026-07-30** |
+| D6 | ten `special_functions` modules undocumented | **fixed 2026-07-30** |
 
-D2 was the only finding that was a defect in *code-adjacent* material rather
-than in prose, and the only one a reader could act on and be wrong. The five
-that remain are documentation drift: the index carries the code's behaviour
-and points here, so no reader is misled by them in the meantime.
+**All six are closed.** D2 was the only one that was a defect in
+*code-adjacent* material rather than in prose, and the only one a reader could
+act on and be wrong; it is the only one that needed a code change, and it got
+a test that gates the production in both directions. The other five were
+documentation drift, repaired in the documents themselves.
+
+Re-probed after the fixes, by searching the files rather than trusting the
+edit: every one of the seven strings D1/D3 needed is present in `grammar.md`,
+both keyword lists carry `QM QM2 QM3`, both EBNF blocks carry the comparison
+level, `special_functions.md` no longer calls anything shipped "planned", and
+none of the ten modules is missing. `grammar.pdf` was recompiled (twice, per
+the workflow rule).
+
+The three lockstep gates still pass — they read `grammar.md` and `grammar.tex`
+directly, so an edit that broke the agreement would have failed the build:
+`cargo test -p posim`, 104 passed, 0 failed.

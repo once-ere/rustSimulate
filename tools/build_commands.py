@@ -11,6 +11,7 @@ Stdlib only.
 """
 
 import json
+import re
 
 LEVELS = ["trivial", "intermediate", "advanced", "expert"]
 P = "posim/src/parser.rs"
@@ -45,6 +46,25 @@ KEPLER = ("new point { mass = 1e9, position = [0, 0, 0] }\n"
           "new point { mass = 1, position = [0.4, 0, 0], velocity = [0, 2, 0] }\n"
           "set system.g_constant = 1e-9\nset system.softening = 0")
 
+
+def gsec(sec):
+    """Line of `### <sec> …` in grammar.md, found rather than hardcoded.
+
+    The catalog cites grammar.md by line, and grammar.md is edited — the
+    hardcoded numbers this replaced had already drifted by up to 30 lines
+    after one round of documentation fixes, which turns a precise citation
+    into a confidently wrong one. Resolving the heading at build time means
+    the citation cannot rot.
+    """
+    if not hasattr(gsec, "_idx"):
+        gsec._idx = {}
+        for i, line in enumerate(open(G, encoding="utf-8"), 1):
+            m = re.match(r"^#{2,3} (\d+(?:\.\d+)?)[ .]", line)
+            if m:
+                gsec._idx[m.group(1)] = i
+    return gsec._idx.get(sec, 1)
+
+
 out = []
 
 # ==========================================================================
@@ -76,7 +96,7 @@ out.append(E(
             "`system` is reserved"],
     locations=[{"file": P, "line": 8, "role": "production"},
                {"file": V, "line": 1, "role": "NewObject/InitField/FinishNew"},
-               {"file": G, "line": 1056, "role": "spec (5.1)"}],
+               {"file": G, "line": gsec("5.1"), "role": "spec (5.1)"}],
     seeAlso=["cmd.del", "cmd.list", "type.shape.sphere", "kw.as"],
     invariants=["NEW is transactional: a failing initializer or final validation leaves no "
                 "ghost object.",
@@ -104,7 +124,7 @@ out.append(E(
             "system field `<name>` is not writable (or unknown) - see HELP"],
     locations=[{"file": P, "line": 12, "role": "production"},
                {"file": V, "line": 2411, "role": "store_path"},
-               {"file": G, "line": 1163, "role": "spec (5.2)"}],
+               {"file": G, "line": gsec("5.2"), "role": "spec (5.2)"}],
     seeAlso=["cmd.get", "prop.obj.mass", "cmd.let"]))
 
 out.append(E(
@@ -125,7 +145,7 @@ out.append(E(
     errors=["no object obj7", "unknown object field `bogus` - see HELP for the field list"],
     locations=[{"file": P, "line": 13, "role": "production"},
                {"file": V, "line": 2243, "role": "load_path"},
-               {"file": G, "line": 1163, "role": "spec (5.2)"}],
+               {"file": G, "line": gsec("5.2"), "role": "spec (5.2)"}],
     seeAlso=["cmd.set", "cmd.expr"],
     invariants=["GET takes a path, never an expression - use a bare expression for arithmetic."]))
 
@@ -146,7 +166,7 @@ out.append(E(
     aliases=["DELETE"],
     returns="string -- `deleted obj2; 2 object(s) remain (indices renumbered)`",
     locations=[{"file": P, "line": 14, "role": "production"},
-               {"file": G, "line": 1281, "role": "spec (5.5)"}],
+               {"file": G, "line": gsec("5.5"), "role": "spec (5.5)"}],
     seeAlso=["cmd.new", "cmd.list", "cmd.box"],
     invariants=["DEL renumbers later objects and carries the AS-name registry with them.",
                 "Deleting a wall dissolves the box but leaks no slab."]))
@@ -165,7 +185,7 @@ out.append(E(
      "new torus { mass = 1, inner_radius = 1, outer_radius = 2 }\nlist"],
     returns="string -- one line per object",
     locations=[{"file": P, "line": 15, "role": "production"},
-               {"file": G, "line": 1280, "role": "spec (5.5)"}],
+               {"file": G, "line": gsec("5.5"), "role": "spec (5.5)"}],
     seeAlso=["cmd.new", "cmd.del", "cmd.box"]))
 
 out.append(E(
@@ -184,7 +204,7 @@ out.append(E(
     returns="string -- `t = 1 (advanced by 1, 12 solver steps)`",
     locations=[{"file": P, "line": 16, "role": "production"},
                {"file": "physical_object/src/integrate.rs", "line": 1, "role": "the driver"},
-               {"file": G, "line": 1232, "role": "spec (5.3)"}],
+               {"file": G, "line": gsec("5.3"), "role": "spec (5.3)"}],
     seeAlso=["cmd.run", "cmd.method", "cmd.collide"],
     invariants=["Every step goes through cvode_rs/arkode_rs. Never a hand-rolled stepper."]))
 
@@ -208,7 +228,7 @@ out.append(E(
             "(the Lorentz force q v x B is velocity-dependent); use METHOD ADAMS or BDF"],
     locations=[{"file": P, "line": 17, "role": "production"},
                {"file": "physical_object/src/integrate.rs", "line": 1, "role": "the driver"},
-               {"file": G, "line": 1232, "role": "spec (5.3)"}],
+               {"file": G, "line": gsec("5.3"), "role": "spec (5.3)"}],
     seeAlso=["cmd.step", "cmd.steps", "cmd.method", "cmd.energy"]))
 
 out.append(E(
@@ -245,7 +265,7 @@ out.append(E(
     errors=["SPRK method requires a separable Hamiltonian: magnetic field B must be zero "
             "(the Lorentz force q v x B is velocity-dependent); use METHOD ADAMS or BDF"],
     locations=[{"file": P, "line": 18, "role": "production"},
-               {"file": G, "line": 1251, "role": "spec (5.4)"}],
+               {"file": G, "line": gsec("5.4"), "role": "spec (5.4)"}],
     seeAlso=["kw.adams", "kw.bdf", "kw.sprk", "prop.system.method"],
     invariants=["Useful SPRK tables: EULER_1_1, LEAPFROG_2_2 (velocity-Verlet), "
                 "MCLACHLAN_2_2/3_3/4_4/5_6, RUTH_3_3, YOSHIDA_6_8."]))
@@ -294,7 +314,7 @@ for cid, nm, blurb, rungs in [
                  blurb + " An observable: it reads the live system and prints, changing nothing.",
                  [nm], rungs,
                  locations=[{"file": P, "line": 19, "role": "production"},
-                            {"file": G, "line": 1271, "role": "spec (5.5)"}],
+                            {"file": G, "line": gsec("5.5"), "role": "spec (5.5)"}],
                  seeAlso=["cmd.run", "cmd.list"]))
 
 out.append(E(
@@ -313,7 +333,7 @@ out.append(E(
      KEPLER + "\nlaplace 1\nmethod sprk mclachlan_4_4 0.001\nrun 12.6 steps 2\nlaplace 1"],
     returns="vec3",
     locations=[{"file": P, "line": 20, "role": "production"},
-               {"file": G, "line": 1279, "role": "spec (5.5)"}],
+               {"file": G, "line": gsec("5.5"), "role": "spec (5.5)"}],
     seeAlso=["cmd.energy", "cmd.angmom", "nb.kepler_orbit", "prop.system.softening"]))
 
 out.append(E(
@@ -330,7 +350,7 @@ out.append(E(
      'new sphere as "ball" { mass = 2 }\nreset\nnew sphere as "ball" { mass = 3 }\n'
      "get ball.mass"],
     locations=[{"file": P, "line": 21, "role": "production"},
-               {"file": G, "line": 1282, "role": "spec (5.5)"}],
+               {"file": G, "line": gsec("5.5"), "role": "spec (5.5)"}],
     seeAlso=["cmd.scene.reset", "magic.reset"],
     invariants=["RESET wipes the SYSTEM. SCENE RESET re-initialises the WINDOW's playback "
                 "copy. They are different commands with different scopes."]))
@@ -362,7 +382,7 @@ out.append(E(
     returns="string -- `collisions ON (51 collidable pair(s); 0 impulse(s) so far)`",
     locations=[{"file": P, "line": 23, "role": "production"},
                {"file": "physical_object/src/collide.rs", "line": 1, "role": "implementation"},
-               {"file": G, "line": 1368, "role": "spec (5.7)"}],
+               {"file": G, "line": gsec("5.7"), "role": "spec (5.7)"}],
     seeAlso=["cmd.contacts", "prop.system.collide", "prop.contact.normal"],
     invariants=["Two points can never collide.",
                 "Zero-collidable-pair systems are bit-identical with COLLIDE ON vs OFF."]))
@@ -382,7 +402,7 @@ out.append(E(
     errors=["no contact0 - the last STEP/RUN recorded 0 contact(s); CONTACTS lists them"],
     locations=[{"file": P, "line": 24, "role": "production"},
                {"file": V, "line": 2381, "role": "contact paths"},
-               {"file": G, "line": 1391, "role": "spec (5.7)"}],
+               {"file": G, "line": gsec("5.7"), "role": "spec (5.7)"}],
     seeAlso=["cmd.collide", "prop.contact.normal", "prop.contact.impulse"]))
 
 out.append(E(
@@ -403,7 +423,7 @@ out.append(E(
             "use `speed.field` for a registered object)"],
     locations=[{"file": P, "line": 25, "role": "production"},
                {"file": V, "line": 1, "role": "StoreGlobal"},
-               {"file": G, "line": 1531, "role": "spec (5.9)"}],
+               {"file": G, "line": gsec("5.9"), "role": "spec (5.9)"}],
     seeAlso=["cmd.def", "cmd.expr", "kw.as"]))
 
 out.append(E(
@@ -419,7 +439,7 @@ out.append(E(
      "  new sphere as name { mass = m, position = [0, h, 0] }\n}\nfuncs\nshow drop"],
     aliases=["FUNCTIONS"],
     locations=[{"file": P, "line": 26, "role": "production"},
-               {"file": G, "line": 1495, "role": "spec (5.9)"}],
+               {"file": G, "line": gsec("5.9"), "role": "spec (5.9)"}],
     seeAlso=["cmd.def", "cmd.show"]))
 
 out.append(E(
@@ -439,7 +459,7 @@ out.append(E(
      'drop("skydiver")\nskydiver.y'],
     errors=["no user function `nosuch` - FUNCS lists the defined ones"],
     locations=[{"file": P, "line": 27, "role": "production"},
-               {"file": G, "line": 1526, "role": "spec (5.9)"}],
+               {"file": G, "line": gsec("5.9"), "role": "spec (5.9)"}],
     seeAlso=["cmd.def", "cmd.funcs", "cmd.scene.show"]))
 
 out.append(E(
@@ -463,7 +483,7 @@ out.append(E(
             "box: dissolved (a wall was deleted; 5 tracked slab(s) remain - BOX <size> "
             "replaces them, BOX OFF removes them)"],
     locations=[{"file": P, "line": 28, "role": "production"},
-               {"file": G, "line": 1427, "role": "spec (5.8)"}],
+               {"file": G, "line": gsec("5.8"), "role": "spec (5.8)"}],
     seeAlso=["prop.system.box", "cmd.collide", "prop.obj.inverse_mass", "nb.box_of_shapes"],
     invariants=["Momentum is NOT conserved inside a box; energy is.",
                 "The walls end every run bit-identically at rest."]))
@@ -490,7 +510,7 @@ out.append(E(
             "or use `bogusname.field` for a registered object)"],
     locations=[{"file": P, "line": 32, "role": "production"},
                {"file": P, "line": 68, "role": "expr/sum/term/unary"},
-               {"file": G, "line": 971, "role": "spec (4.2)"}],
+               {"file": G, "line": gsec("4.2"), "role": "spec (4.2)"}],
     seeAlso=["cmd.get", "type.number", "fn.dot"],
     invariants=["Comparisons sit at the LOWEST precedence and are left-associative, so "
                 "`a < b < c` means `(a < b) < c` - legal, and almost certainly not what you "
@@ -531,7 +551,7 @@ out.append(E(
             "function call depth limit (32) exceeded"],
     locations=[{"file": P, "line": 56, "role": "line-form note"},
                {"file": V, "line": 1, "role": "Call/ListFns/ShowFn"},
-               {"file": G, "line": 1489, "role": "spec (5.9)"}],
+               {"file": G, "line": gsec("5.9"), "role": "spec (5.9)"}],
     seeAlso=["cmd.funcs", "cmd.show", "cmd.let"],
     invariants=["DEF is a LINE FORM, not a keyword - `def` has no arm in Keyword::from_ident.",
                 "A failing body line aborts the call; lines that already ran keep their "
@@ -555,7 +575,7 @@ out.append(E(
      'def mk(m = 3) {\n  new sphere as pip { mass = m }\n}\nmk()\nget pip.mass'],
     indexKeys=["<"],
     locations=[{"file": P, "line": 168, "role": "call production"},
-               {"file": G, "line": 1511, "role": "spec (5.9)"}],
+               {"file": G, "line": gsec("5.9"), "role": "spec (5.9)"}],
     seeAlso=["cmd.def", "cmd.expr"]))
 
 # ==========================================================================
@@ -815,7 +835,8 @@ QM_DOC = {
         "reducing to three cases derivable in a sentence, and the shared-face ambiguity cannot "
         "arise. Rendered by a software rasteriser on a 2-D canvas rather than WebGL, which can "
         "fail silently where there is no GPU. QM2 has no ISO -- a 2-D density is already "
-        "drawable as a heat map (see DIVERGENCES.md D2).",
+        "drawable as a heat map — stated in grammar.md \u00a75.12 and gated by "
+        "`every_qm2_subcommand_is_documented_in_lockstep`.",
 }
 
 LADDER = {"qm": {}, "qm2": {}, "qm3": {}}
@@ -1007,8 +1028,8 @@ for fam in ("qm", "qm2", "qm3"):
         doc = QM_DOC.get(canon, "")
         note = ""
         if aliases:
-            note = ("  UNDOCUMENTED ALIAS: `" + aliases[0] + "` works but appears in no "
-                    "manual (DIVERGENCES.md D3).")
+            note = ("  `" + aliases[0] + "` is an accepted alias, documented in "
+                    "grammar.md since the D3 fix.")
         out.append(E(
             "cmd." + fam + "." + canon, fam.upper() + " " + canon.upper(),
             (doc.split(".")[0] + "." if doc else fam.upper() + " " + canon.upper()),
@@ -1018,7 +1039,7 @@ for fam in ("qm", "qm2", "qm3"):
                     if canon == "states" else []),
             locations=[{"file": P, "line": EBNF_LINE[fam], "role": fam + "cmd EBNF"},
                        {"file": "posim/src/" + fam + ".rs", "line": 1, "role": "implementation"},
-                       {"file": G, "line": 1588, "role": "spec (5.10-5.12)"}],
+                       {"file": G, "line": gsec("5.10"), "role": "spec (5.10-5.12)"}],
             seeAlso=["kw." + fam, "cmd.def"],
             invariants=["Separate negative arguments with COMMAS: `well 5 -2 2` reads `5 - 2` "
                         "as subtraction and then finds two arguments where three were wanted."]))

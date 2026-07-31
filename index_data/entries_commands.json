@@ -34,7 +34,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1056,
+    "line": 1080,
     "role": "spec (5.1)"
    }
   ],
@@ -118,7 +118,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1163,
+    "line": 1187,
     "role": "spec (5.2)"
    }
   ],
@@ -198,7 +198,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1163,
+    "line": 1187,
     "role": "spec (5.2)"
    }
   ],
@@ -273,7 +273,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1281,
+    "line": 1295,
     "role": "spec (5.5)"
    }
   ],
@@ -347,7 +347,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1280,
+    "line": 1295,
     "role": "spec (5.5)"
    }
   ],
@@ -423,7 +423,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1232,
+    "line": 1256,
     "role": "spec (5.3)"
    }
   ],
@@ -503,7 +503,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1232,
+    "line": 1256,
     "role": "spec (5.3)"
    }
   ],
@@ -641,7 +641,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1251,
+    "line": 1275,
     "role": "spec (5.4)"
    }
   ],
@@ -715,7 +715,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1271,
+    "line": 1295,
     "role": "spec (5.5)"
    }
   ],
@@ -785,7 +785,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1271,
+    "line": 1295,
     "role": "spec (5.5)"
    }
   ],
@@ -855,7 +855,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1271,
+    "line": 1295,
     "role": "spec (5.5)"
    }
   ],
@@ -925,7 +925,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1271,
+    "line": 1295,
     "role": "spec (5.5)"
    }
   ],
@@ -995,7 +995,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1279,
+    "line": 1295,
     "role": "spec (5.5)"
    }
   ],
@@ -1067,7 +1067,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1282,
+    "line": 1295,
     "role": "spec (5.5)"
    }
   ],
@@ -1189,7 +1189,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1368,
+    "line": 1392,
     "role": "spec (5.7)"
    }
   ],
@@ -1270,7 +1270,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1391,
+    "line": 1392,
     "role": "spec (5.7)"
    }
   ],
@@ -1348,7 +1348,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1531,
+    "line": 1513,
     "role": "spec (5.9)"
    }
   ],
@@ -1422,7 +1422,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1495,
+    "line": 1513,
     "role": "spec (5.9)"
    }
   ],
@@ -1494,7 +1494,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1526,
+    "line": 1513,
     "role": "spec (5.9)"
    }
   ],
@@ -1570,7 +1570,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1427,
+    "line": 1451,
     "role": "spec (5.8)"
    }
   ],
@@ -1656,7 +1656,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 971,
+    "line": 995,
     "role": "spec (4.2)"
    }
   ],
@@ -1740,7 +1740,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1489,
+    "line": 1513,
     "role": "spec (5.9)"
    }
   ],
@@ -1815,7 +1815,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1511,
+    "line": 1513,
     "role": "spec (5.9)"
    }
   ],
@@ -3213,7 +3213,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -3290,7 +3290,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -3367,7 +3367,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -3444,7 +3444,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -3521,7 +3521,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -3598,7 +3598,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -3677,7 +3677,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -3754,7 +3754,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -3831,7 +3831,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -3908,7 +3908,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -3985,7 +3985,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -4062,7 +4062,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -4139,7 +4139,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -4216,7 +4216,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -4293,7 +4293,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -4370,7 +4370,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -4447,7 +4447,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -4524,7 +4524,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -4601,7 +4601,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -4678,7 +4678,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -4755,7 +4755,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -4832,7 +4832,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -4909,7 +4909,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -4986,7 +4986,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -5063,7 +5063,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -5140,7 +5140,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -5217,7 +5217,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -5294,7 +5294,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -5371,7 +5371,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -5448,7 +5448,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -5525,7 +5525,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -5584,7 +5584,7 @@
    "Q"
   ],
   "summary": "The centroid <r> of the packet.",
-  "definition": "The centroid <r> of the packet.  UNDOCUMENTED ALIAS: `QM2 POSITION` works but appears in no manual (DIVERGENCES.md D3).",
+  "definition": "The centroid <r> of the packet.  `QM2 POSITION` is an accepted alias, documented in grammar.md since the D3 fix.",
   "syntax": [
    "QM2 CENTROID ..."
   ],
@@ -5604,7 +5604,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -5663,7 +5663,7 @@
    "Q"
   ],
   "summary": "Probability of being found in the given interval, rectangle or box.",
-  "definition": "Probability of being found in the given interval, rectangle or box.  UNDOCUMENTED ALIAS: `QM2 PROBABILITY` works but appears in no manual (DIVERGENCES.md D3).",
+  "definition": "Probability of being found in the given interval, rectangle or box.  `QM2 PROBABILITY` is an accepted alias, documented in grammar.md since the D3 fix.",
   "syntax": [
    "QM2 PROB ..."
   ],
@@ -5683,7 +5683,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -5760,7 +5760,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -5837,7 +5837,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -5916,7 +5916,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -5993,7 +5993,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -6070,7 +6070,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -6147,7 +6147,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -6224,7 +6224,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -6301,7 +6301,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -6378,7 +6378,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -6455,7 +6455,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -6534,7 +6534,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -6611,7 +6611,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -6688,7 +6688,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -6765,7 +6765,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -6842,7 +6842,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -6919,7 +6919,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -6978,7 +6978,7 @@
    "Q"
   ],
   "summary": "The centroid <r> of the packet.",
-  "definition": "The centroid <r> of the packet.  UNDOCUMENTED ALIAS: `QM3 POSITION` works but appears in no manual (DIVERGENCES.md D3).",
+  "definition": "The centroid <r> of the packet.  `QM3 POSITION` is an accepted alias, documented in grammar.md since the D3 fix.",
   "syntax": [
    "QM3 CENTROID ..."
   ],
@@ -6998,7 +6998,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -7057,7 +7057,7 @@
    "Q"
   ],
   "summary": "Probability of being found in the given interval, rectangle or box.",
-  "definition": "Probability of being found in the given interval, rectangle or box.  UNDOCUMENTED ALIAS: `QM3 PROBABILITY` works but appears in no manual (DIVERGENCES.md D3).",
+  "definition": "Probability of being found in the given interval, rectangle or box.  `QM3 PROBABILITY` is an accepted alias, documented in grammar.md since the D3 fix.",
   "syntax": [
    "QM3 PROB ..."
   ],
@@ -7077,7 +7077,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -7154,7 +7154,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -7231,7 +7231,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -7308,7 +7308,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -7367,7 +7367,7 @@
    "Q"
   ],
   "summary": "Extract the surface where |psi|^2 equals a chosen fraction of its peak (default 0.",
-  "definition": "Extract the surface where |psi|^2 equals a chosen fraction of its peak (default 0.25) and ship a rotatable view. MARCHING TETRAHEDRA, not marching cubes: marching cubes needs a 256-entry table which IS the algorithm, so one wrong entry gives a surface with a hole that looks fine from most angles. A tetrahedron has only 16 sign patterns, reducing to three cases derivable in a sentence, and the shared-face ambiguity cannot arise. Rendered by a software rasteriser on a 2-D canvas rather than WebGL, which can fail silently where there is no GPU. QM2 has no ISO -- a 2-D density is already drawable as a heat map (see DIVERGENCES.md D2).  UNDOCUMENTED ALIAS: `QM3 ISOSURFACE` works but appears in no manual (DIVERGENCES.md D3).",
+  "definition": "Extract the surface where |psi|^2 equals a chosen fraction of its peak (default 0.25) and ship a rotatable view. MARCHING TETRAHEDRA, not marching cubes: marching cubes needs a 256-entry table which IS the algorithm, so one wrong entry gives a surface with a hole that looks fine from most angles. A tetrahedron has only 16 sign patterns, reducing to three cases derivable in a sentence, and the shared-face ambiguity cannot arise. Rendered by a software rasteriser on a 2-D canvas rather than WebGL, which can fail silently where there is no GPU. QM2 has no ISO -- a 2-D density is already drawable as a heat map \u2014 stated in grammar.md \u00a75.12 and gated by `every_qm2_subcommand_is_documented_in_lockstep`.  `QM3 ISOSURFACE` is an accepted alias, documented in grammar.md since the D3 fix.",
   "syntax": [
    "QM3 ISO ..."
   ],
@@ -7387,7 +7387,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],
@@ -7464,7 +7464,7 @@
    },
    {
     "file": "grammar.md",
-    "line": 1588,
+    "line": 1612,
     "role": "spec (5.10-5.12)"
    }
   ],

@@ -30,7 +30,8 @@ public-domain US Government work, or written in our own notation. See
 | `complex` — `Complex64` | **native** | ✅ implemented (Stage 1) |
 | `tridiag` — Thomas + Sherman–Morrison, real and complex | **native** | ✅ implemented (Stage 1), clean-room |
 | `bessel` — integer-order Jₙ table | **native** | ✅ implemented (Stage 1), clean-room |
-| `wigner` — 3j, 6j, Clebsch–Gordan | native | **planned** |
+| `gamma_complex`, `bessel_complex`, `bessel_cnu`, `bessel_cnu_large`, `bessel_scaled`, `hankel`, `airy_complex`, `airy_uniform`, `debye`, `lanczos` | **native** | ✅ implemented — see §11, and `grammar.md` §4.1 for the accuracy laws |
+| `wigner` — 3j, 6j, **9j**, Clebsch–Gordan | **native** | ✅ implemented, reachable from the notebook |
 
 Modules marked *clean-room* replace licence-encumbered routines from the
 SolveIt C++ sources; see [CLEANROOM_PROVENANCE.md](CLEANROOM_PROVENANCE.md)
@@ -565,5 +566,57 @@ parity, and the first zero of `J₀`; `J₃₀(1)` correctly ≈ 1e-49; and
 
 ---
 
-*A `wigner` module (3j, 6j, Clebsch–Gordan) is planned and will be added
-in the same shape.*
+## 10. `wigner` — 3j, 6j, 9j and Clebsch–Gordan
+
+Recoupling coefficients for angular momentum. `wigner_3j`,
+`wigner_6j`, `wigner_9j` and `clebsch_gordan` are all implemented and are
+registered notebook builtins.
+
+`wigner_9j` takes its nine arguments **row by row**: it recouples four
+angular momenta and is the overlap between coupling (1,2) and (3,4) first
+versus (1,3) and (2,4) first. It is evaluated as a single sum over 6-j
+symbols and vanishes when any of the six triads fails to close.
+
+**Angular momenta may be half-integers**, so these four take plain numbers
+rather than demanding whole ones — `clebsch_gordan(0.5, 0.5, 0.5, -0.5, 1, 0)`
+is exactly what you write for two spin-½ particles. A coupling that violates
+a selection rule returns **0**, which is the mathematically correct answer and
+not an error; a value that is not an angular momentum at all (`j = 0.3`, or a
+negative `j`) *is* an error.
+
+```rust
+use special_functions::wigner::{wigner_3j, clebsch_gordan};
+// the triangle rule: |j1-j2| <= j3 <= j1+j2, or the symbol vanishes
+assert_eq!(wigner_3j(1.0, 1.0, 5.0, 0.0, 0.0, 0.0)?, 0.0);
+// two spin-1/2 particles coupling to the triplet m = 0 state: 1/sqrt(2)
+let cg = clebsch_gordan(0.5, 0.5, 0.5, -0.5, 1.0, 0.0)?;
+assert!((cg - (0.5_f64).sqrt()).abs() < 1e-14);
+# Ok::<(), String>(())
+```
+
+---
+
+## 11. The complex-argument and large-argument chapters
+
+Ten further modules carry the material `grammar.md` §4.1 documents in
+depth — the accuracy laws, the route selection and the measured error
+surfaces live there, because that is the document a notebook user reads.
+This table is the map from those entry points back to the source:
+
+| module | what it holds |
+|---|---|
+| `complex` | `Complex64` (§7 above) |
+| `gamma_complex` | `gamma_z`, `ln_gamma_z`, `rgamma_z` — Stirling with argument shifting, deliberately **not** Lanczos, whose coefficient tables are most often reproduced from *Numerical Recipes* |
+| `bessel_complex` | `bessel_j_z`, `bessel_i_z`, `bessel_y_z`, `bessel_k_z` — whole order, complex argument |
+| `bessel_cnu` | `bessel_*_nu` — any real **or complex** order, by ascending series and reflection |
+| `bessel_cnu_large` | the uniform expansions for large order |
+| `bessel_scaled` | `bessel_*_scaled`, `hankel_*_scaled` — the exponential factored out, so `K_0(2000)` exists at all |
+| `hankel` | `hankel_h1_*`, `hankel_h2_*`, `sph_hankel_*` — the travelling-wave pair |
+| `airy_complex` | `airy_z` → `[Ai, Ai', Bi, Bi']`, verified by the elementary Wronskian `Ai Bi' − Ai' Bi = 1/π` |
+| `airy_uniform` | Olver's uniform Airy-type expansion (DLMF 10.20) at the turning point |
+| `debye` | the Debye polynomials and the uniform expansions either side of it |
+| `lanczos` | the Lanczos eigensolver used by the 2-D and 3-D bound-state solvers |
+
+Each is reachable from the notebook under the name `grammar.md` §4.1 gives
+it; none of them adds a grammar production, because registering a builtin
+is not a grammar change.
