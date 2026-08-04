@@ -2296,12 +2296,23 @@ In[8]:= get obj0.angular_momentum
 Out[8]= [0.05, 12.75, 0.0125]
 ```
 
-*What to notice.* At t = 40 the wobble has exploded (`ω_x ≈ 1.54`,
-mid-flip); by t = 80 the body has completed the flip and returned to a
-clean spin. Through all of it the **world-frame angular momentum**
-(`Out[8]`) is exactly the initial `I·ω = [0.05, 12.75, 0.0125]` — the
-solver integrates the full quaternion + angular-momentum state with
-energy error ~5×10⁻⁹.
+*What to notice.* These two samples are snapshots of a **recurring**
+motion, not the start and end of one flip. The turn-over is a
+*body-frame* event: the angular momentum is fixed in space, so the
+world-frame `ω_y` printed above stays near +3 for the whole run and
+never reverses at all. Extract `ω_body = conj(q)·ω_world·q` and its
+y-component reverses at roughly t = 4, 18, 28, 40, 50, 62, 74 — about
+every 12–13 units. By t = 80 the body has turned over some **seven**
+times; t = 40 merely lands mid-reversal and t = 80 between reversals.
+Through all of it the **world-frame angular momentum** (`Out[8]`) is
+exactly the initial `I·ω = [0.05, 12.75, 0.0125]` — the solver
+integrates the full quaternion + angular-momentum state with energy
+error ~5×10⁻⁹. (With these moments a symmetric wobble `(d, 3, d)` sits
+exactly on the separatrix `G² = B·T`, since
+`G² − B·T = d²[A(A−B) + C(C−B)] = d²[5(0.75) + 1.25(−3)] = 0` for every
+`d`; the repeated reversal is robust, but the exact times shift with the
+tolerances. `dynamic_notebooks/tumbling_body.posim` shows the body-frame
+component directly.)
 
 ### Example 5 — three bodies, then surgery with `DEL`
 
