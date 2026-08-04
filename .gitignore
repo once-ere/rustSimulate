@@ -16,6 +16,12 @@ target/
 # Runtime artifact produced by running the notebooks/examples
 session.posim
 
+# Python bytecode from the index tooling in tools/. The repo had no
+# committed Python packages until the index landed, so nothing had ever
+# needed this rule — and `git add -A` duly swept a .pyc into the merge.
+__pycache__/
+*.pyc
+
 # Editor / OS clutter
 *.swp
 *~
@@ -51,3 +57,6 @@ StageNbks/out_*.html
 # posim/examples/scene_server_reference.rs — a loose copy must never
 # shadow it or get pushed alongside it.
 recover.txt
+
+# PHASE 1 refined-prompt artifact (working document, never published)
+/prompt_01.md

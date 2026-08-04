@@ -1,6 +1,11 @@
 # rustSimulate
 
-Pure-Rust physics simulator. **All** numerical integration runs through
+Pure-Rust physics simulator. 
+
+Based on a Claude-Fable-5/Opus-5 port of my
+2002 'SolveIt' code (c++ v.14, c, fortran, x86 assembly codes)
+anything that could not be ported to pure rust has been omitted.
+Numerical integration runs through
 [`sundials_rs/`](sundials_rs) — a pure-Rust translation of SUNDIALS
 7.7.0 vendored in this repository (CVODE Adams/BDF, ARKODE symplectic
 SPRK). Zero `unsafe`, zero external crate dependencies, zero warnings.
@@ -64,6 +69,88 @@ and L); 104 tests green (40 lib + 16 collision + 9 conservation +
 - [ARCHITECTURE.md](ARCHITECTURE.md) — module responsibilities and
   pinned cross-module contracts.
 - [CLAUDE.md](CLAUDE.md) — working rules for contributors and agents.
+
+## The Index of Functions
+
+`index_of_entities.html` is a browsable catalog of **every named entity in this
+repository** — 4,830 of them — with a definition, the `file:line` where it is
+defined, its complete syntax, and examples you can paste into a notebook and
+run. Open it directly; it needs no server and fetches nothing.
+
+```bash
+open index_of_entities.html          # macOS  (xdg-open on Linux)
+```
+
+Keep `catalog-c.js` beside it: the page loads that second payload on demand
+when you open a bucket or search, which is what keeps the main file at 1.2 MB
+instead of 5.
+
+| tier | what | entries | examples |
+|---|---|---|---|
+| A | the notebook surface — commands, keywords, field paths, builtins, types, notebooks, worked examples | 452 | 1,141 posim + 24 machine-mode fragments, **all executed** |
+| B | the first-party Rust API — `physical_object`, `special_functions`, `quantum`, `posim` | 491 | 258 snippets, **all compiled** |
+| C | the vendored `sundials_rs` workspace | 3,887 | linked to the shipped example programs that call them |
+
+**Every example is checked, and the page says which kind of check it got:**
+a posim fragment is *executed* (`posim --script`, output captured), a
+machine-mode fragment is *executed* through the JSONL protocol, a Rust snippet
+is *compiled*, and a shell command reads "run this yourself" because it points
+at a program verified elsewhere rather than one this page ran. 1,435 of 1,435
+runnable examples pass.
+
+The 68 documented worked examples now carry their real transcripts. Where the
+typed half replays, it is **executed** and shown beside the document's own
+published output so you can compare; where it cannot — a deliberate refusal
+that *is* the lesson, an elided session, or a `SCENE REVERSE` that depends on
+wall-clock playback — the transcript is quoted and the reason is stated.
+
+Navigation is A–Z / 0–9 / special-character buckets, with search and kind
+filters. The whole thing is operable from the keyboard — press <kbd>?</kbd> for
+the map — and has BACK/FORWARD history that agrees with the browser's own
+buttons. You can edit, add and hide entries; changes live in a local overlay
+you can export and re-import, and the generated catalog is never mutated.
+
+### What it does not claim
+
+The status page inside the app is the authority, and it is blunt:
+
+- **There are no stubs left.** Every Tier-A and Tier-B entry is either
+  `complete` (it carries examples) or `reference` — 233 of the latter, all in
+  `posim`, which is a binary crate with no lib target, so nothing can
+  `use posim::…` and no Rust snippet is possible. Those link instead to the
+  notebook command each one implements.
+- **3,887 Tier-C entries carry status `reference`**, not `complete`.
+  `sundials_rs` is a faithful translation of a C library whose API is
+  `&mut CVodeMem` plus a context, a matrix, a linear solver and callbacks; a
+  one-line snippet would misrepresent how any of it is reached. Instead each
+  entry links to the shipped example *programs* that actually call it — those
+  are diffed byte-for-byte against the upstream C references
+  ([sundials_rs/VERIFICATION.md](sundials_rs/VERIFICATION.md)).
+- **All 254 Tier-A commands, builtins, field paths and types carry the full
+  four-rung ladder.** Closing the last 24 meant giving the machine-mode JSON
+  ops real executed examples (`posim --machine` is as runnable as the
+  notebook), and giving each shape a rung that *checks* its documented inertia
+  formula against the printed tensor rather than restating it.
+- Captured output has genuine run-to-run variation normalised — the
+  OS-assigned scene port becomes `<port>`, playback counters become
+  `<varies>`. Solver step counts are **not** normalised: those are
+  deterministic, and they are the anchors the documentation pins.
+
+[index_data/DIVERGENCES.md](index_data/DIVERGENCES.md) records six places where
+the prose and the code disagreed, each settled by running a probe rather than
+by reading. One was a defect in code-adjacent material and has been fixed with
+a test that now gates it in both directions; the rest are documentation drift,
+and the index carries the code's behaviour.
+
+### Rebuilding it
+
+```bash
+python3 tools/extract_rust_items.py > index_data/rust_items.jsonl
+python3 tools/build_commands.py && python3 tools/build_tierb.py && python3 tools/build_tierc.py
+python3 tools/build_catalog.py && python3 tools/build_app.py
+python3 tools/verify_index_examples.py      # runs every posim fragment
+python3 tools/verify_tierb_examples.py      # compiles every Rust snippet
+```
 
 ## Quick start
 
