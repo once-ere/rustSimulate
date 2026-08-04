@@ -1,7 +1,7 @@
 # rustSimulate
 
 Pure-Rust physics simulator. 
-**All** 
+
 Based on a Claude-Fable-5/Opus-5 port of my
 2002 'SolveIt' code (c++ v.14, c, fortran, x86 assembly codes)
 anything that could not be ported to pure rust has been omitted.
