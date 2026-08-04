@@ -1,6 +1,11 @@
 # rustSimulate
 
-Pure-Rust physics simulator. **All** numerical integration runs through
+Pure-Rust physics simulator. 
+**All** 
+Based on a Claude-Fable-5/Opus-5 port of my
+2002 'SolveIt' code (c++ v.14, c, fortran, x86 assembly codes)
+anything that could not be ported to pure rust has been omitted.
+Numerical integration runs through
 [`sundials_rs/`](sundials_rs) — a pure-Rust translation of SUNDIALS
 7.7.0 vendored in this repository (CVODE Adams/BDF, ARKODE symplectic
 SPRK). Zero `unsafe`, zero external crate dependencies, zero warnings.
