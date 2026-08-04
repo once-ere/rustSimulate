@@ -355,7 +355,8 @@ pub struct SceneHandle {
     pub url: String,
     /// Whether a browser-opening command was actually launched for this
     /// window. False when suppressed by `$POSIM_NO_BROWSER`, and false on
-    /// any system without `xdg-open` (macOS, Windows), where the spawn
+    /// any system whose platform opener -- `open` on macOS, `cmd /c start`
+    /// on Windows, `xdg-open` on Linux/BSD -- is missing, where the spawn
     /// fails. Callers use it to avoid claiming a window was opened when
     /// none was.
     pub browser_launched: bool,
@@ -469,14 +470,26 @@ impl SceneHandle {
         /* Best-effort: open the user's browser on the scene page
          * (suppressed when $POSIM_NO_BROWSER is set, e.g. in tests).
          *
-         * Whether we actually tried is REPORTED rather than assumed. xdg-open
-         * is a Linux/BSD utility: on macOS and Windows the spawn fails because
-         * the binary does not exist, and the old caller announced "opened in
-         * your browser" regardless. A reader on those systems then waits for a
-         * window that was never going to appear. spawn() failing is exactly the
-         * signal needed to say so, so it is kept instead of discarded. */
+         * Whether we actually tried is REPORTED rather than assumed. Each
+         * platform has its own opener and none of them is universal: if the
+         * chosen binary is absent the spawn fails, and the old caller
+         * announced "opened in your browser" regardless. A reader on such a
+         * system then waits for a window that was never going to appear.
+         * spawn() failing is exactly the signal needed to say so, so it is
+         * kept instead of discarded. */
         let browser_launched = if open_browser && std::env::var_os("POSIM_NO_BROWSER").is_none() {
-            std::process::Command::new("xdg-open")
+            /* `start` is a cmd builtin rather than an executable, and its
+             * first quoted argument is the window title -- omit the empty
+             * title and it would swallow the URL. */
+            let (program, args): (&str, &[&str]) = if cfg!(target_os = "macos") {
+                ("open", &[])
+            } else if cfg!(target_os = "windows") {
+                ("cmd", &["/C", "start", ""])
+            } else {
+                ("xdg-open", &[])
+            };
+            std::process::Command::new(program)
+                .args(args)
                 .arg(&url)
                 .stdout(std::process::Stdio::null())
                 .stderr(std::process::Stdio::null())
@@ -749,6 +762,11 @@ fn handle_connection(mut stream: TcpStream, shared: Arc<Mutex<Shared>>) {
                     break;
                 }
             }
+            /* EINTR is not a failure: the read was interrupted by a signal
+             * before any byte moved, and retrying is the correct response.
+             * Lumping it in with the fatal arm closed the connection with no
+             * reply at all, which the peer sees as an EOF in mid-handshake. */
+            Err(ref e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
             Err(_) => return,
         }
     }
@@ -1025,6 +1043,47 @@ mod tests {
             .unwrap()
     }
 
+    /// Connect to the scene server and complete the RFC 6455 handshake,
+    /// returning the socket and the response head.
+    ///
+    /// Retried, deliberately. `handle_connection` gives a connection five
+    /// seconds to deliver its request head and closes it otherwise. Under a
+    /// full `cargo test --workspace` this thread can be descheduled past that
+    /// budget between `connect()` and `write_all()`, whereupon the server
+    /// closes with no reply and the handshake read here fails with
+    /// `UnexpectedEof`. Nothing is wrong with the server in that case -- the
+    /// test simply lost a scheduling race -- so the race is retried rather
+    /// than asserted away.
+    fn ws_handshake(url: &str) -> (TcpStream, String) {
+        let mut last = String::new();
+        for _ in 0..5 {
+            match try_ws_handshake(url) {
+                Ok(pair) => return pair,
+                Err(e) => last = e,
+            }
+        }
+        panic!("websocket handshake never completed after 5 attempts: {last}");
+    }
+
+    fn try_ws_handshake(url: &str) -> Result<(TcpStream, String), String> {
+        let mut stream =
+            TcpStream::connect(("127.0.0.1", port_of(url))).map_err(|e| e.to_string())?;
+        stream
+            .write_all(
+                b"GET /ws HTTP/1.1\r\nHost: localhost\r\nUpgrade: websocket\r\n\
+                  Connection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n\
+                  Sec-WebSocket-Version: 13\r\n\r\n",
+            )
+            .map_err(|e| e.to_string())?;
+        let mut head = Vec::new();
+        let mut byte = [0u8; 1];
+        while !head.windows(4).any(|w| w == b"\r\n\r\n") {
+            stream.read_exact(&mut byte).map_err(|e| e.to_string())?;
+            head.push(byte[0]);
+        }
+        Ok((stream, String::from_utf8_lossy(&head).to_string()))
+    }
+
     #[test]
     fn serves_the_scene_page_over_http() {
         let handle = SceneHandle::start(test_system(), 0, false, false).unwrap();
@@ -1053,22 +1112,8 @@ mod tests {
     #[test]
     fn websocket_session_end_to_end() {
         let handle = SceneHandle::start(test_system(), 0, false, false).unwrap();
-        let mut stream = TcpStream::connect(("127.0.0.1", port_of(&handle.url))).unwrap();
-        stream
-            .write_all(
-                b"GET /ws HTTP/1.1\r\nHost: localhost\r\nUpgrade: websocket\r\n\
-                  Connection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n\
-                  Sec-WebSocket-Version: 13\r\n\r\n",
-            )
-            .unwrap();
         /* handshake reply carries the RFC 6455 accept key */
-        let mut head = Vec::new();
-        let mut byte = [0u8; 1];
-        while !head.windows(4).any(|w| w == b"\r\n\r\n") {
-            stream.read_exact(&mut byte).unwrap();
-            head.push(byte[0]);
-        }
-        let head = String::from_utf8_lossy(&head).to_string();
+        let (mut stream, head) = ws_handshake(&handle.url);
         assert!(head.starts_with("HTTP/1.1 101"), "{head}");
         assert!(head.contains("s3pPLMBiTxaQ9kYGzzhZRbK+xOo="), "{head}");
 
@@ -1157,20 +1202,7 @@ mod tests {
             )
             .unwrap();
 
-        let mut stream = TcpStream::connect(("127.0.0.1", port_of(&handle.url))).unwrap();
-        stream
-            .write_all(
-                b"GET /ws HTTP/1.1\r\nHost: localhost\r\nUpgrade: websocket\r\n\
-                  Connection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n\
-                  Sec-WebSocket-Version: 13\r\n\r\n",
-            )
-            .unwrap();
-        let mut head = Vec::new();
-        let mut byte = [0u8; 1];
-        while !head.windows(4).any(|w| w == b"\r\n\r\n") {
-            stream.read_exact(&mut byte).unwrap();
-            head.push(byte[0]);
-        }
+        let (mut stream, _head) = ws_handshake(&handle.url);
         /* read messages until an init carrying the box arrives (the
          * pre-set_box init may race ahead of the flagged one) */
         let mut seen = String::new();
