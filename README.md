@@ -101,6 +101,64 @@ MACMILLAN AND CO., LIMITED
 NEW YORK: THE MACMILLAN COMPANY
 1905
 
+Thirty-two of Routh's problems are solved here as runnable notebooks — sixteen
+from each Part. Every one derives the closed-form answer in its own header and
+then checks it against the integrator, so the numbers below are measured, not
+quoted. Launch any of them by name:
+
+```bash
+tools/posim_notebook routh_p1_hodograph_circle
+```
+
+### Part I — *Dynamics of a Particle* (1898)
+
+| notebook | Arts. | what it shows | measured |
+|---|---|---|---|
+| `routh_p1_sphere_exchange` | 85, 87 | equal elastic spheres exchange velocities; `m = e·m'` stops the striker dead | `v = 0` exactly, momentum 1 |
+| `routh_p1_geometric_progression` | 88 | masses in geometric progression give velocities in geometric progression | 1, 2/3, 4/9, 8/27; `\|dE/E\| = 1.1e-16` |
+| `routh_p1_oblique_impact` | 89 | equal spheres leave an oblique impact at a right angle | `v₀·v₁ = -8.3e-17` |
+| `routh_p1_centre_of_gravity` | 92 | impacts cannot move the centre of gravity | 5.0e-15 from `P/M·t` through 8 impacts |
+| `routh_p1_three_projectiles` | 158 | the plane through three projectiles stays parallel to itself | normal fixed to 1e-15 while the triangle grows 4× |
+| `routh_p1_parabola_of_safety` | 159–160 | two trajectories reach any point inside the envelope | both arcs within 3.6e-15; every clearance positive |
+| `routh_p1_expanding_sphere` | 167 | equal speeds in all directions give an expanding sphere | radii 5, 5, 5 then 10, 10, 10 |
+| `routh_p1_escape_velocity` | 312, 335 | the velocity from infinity, and the three conics | `E` = −0.19 / **exactly 0** / +0.21 |
+| `routh_p1_equal_periods` | 335 | speed alone fixes the orbit's size, hence its period | four eccentricities 0.87→0.21, one period, all home within 1e-9 |
+| `routh_p1_two_trajectories` | 339 | two orbits of one speed reach the same target | 1.3e-6 and 9.0e-7 |
+| `routh_p1_kepler_equation` | 342–346 | Kepler's equation and the equation of the centre | radius predicted to 1e-11 |
+| `routh_p1_lambert_theorem` | 350–355 | the time depends only on chord, `r₁+r₂` and `a` | two dissimilar ellipses, both 1.3453158122479596 |
+| `routh_p1_hodograph_circle` | 394–398 | the hodograph of a Kepler orbit is a circle | radius 1.25 while the speed swings 2 → 0.5 |
+| `routh_double_star_period` | 400 | a double star's period depends only on the **sum** of the masses | ratios 1:1, 3:1, 19:1 all close to ~1e-11 |
+| `routh_p1_equilateral_three_body` | 407–408, 412 | Lagrange's equilateral solution, and why it cannot hold | home to 3e-10; nudged 0.001 → sides 0.405 / 1.802 / 1.409 |
+| `routh_p1_collinear_three_body` | 409–412 | Euler's collinear solution, and its instability | home to 6e-11; nudged → spacings 3.44 / 0.34 |
+| `routh_p1_apsidal_symmetry` | 419–420 | an apsidal radius divides the orbit symmetrically | `r(1) = r(2π−1)` to 3e-9; apses at exactly 0.4 and 1.6 |
+
+### Part II — *Advanced Rigid Dynamics* (1905)
+
+| notebook | Arts. | what it shows | measured |
+|---|---|---|---|
+| `routh_p2_two_quadrics` | 140–142 | the two quadrics whose intersection is the polhode | `G` bit-identical, `E` to 12 digits, `\|ω\|` wanders 3.017 → 3.407 |
+| `routh_p2_invariable_line` | 141 | the invariable line is fixed in space; the instantaneous axis is not | `normalize(L)` bit-identical; `normalize(ω)` swings |
+| `routh_p2_poinsot_rolling` | 143 | the momental ellipsoid rolls on a fixed plane | `ω·L̂ = 2E/G` constant to 12 digits |
+| `routh_p2_thin_rod` | 144 | a thin rod's momental ellipsoid is a circular cylinder | a 50× axial spin carries 0.0075 of `L` |
+| `routh_p2_impulsive_couple` | 146 | an impulsive couple tilts the invariable line | `\|L'\| = √(G²+25)`; tilt 21.2785° |
+| `routh_p2_fixed_couple` | 148 | a couple whose axis is fixed in space | `L(t) = (0,0,2t)` **exactly** |
+| `routh_p2_polhode_quarter_period` | 150a | the quarter period as an elliptic integral | `k² = 0.25` exactly; `ω₃` vanishes at `K/λ` to 6e-12 |
+| `routh_rectangle_diagonal` | 150b Ex. 1 | a rectangle spun about one diagonal ends on the other | at `T = 4.285129705594264`, error 1.2e-12 |
+| `routh_p2_period_ratio` | 150b Ex. 2 | the ratio of the two periods is independent of the disturbance | sixfold different wobbles, identical period |
+| `routh_p2_mean_axis_instability` | 155 | the three principal axes have unequal stability | mean axis reverses; the others stay within 0.005 and 0.018 |
+| `routh_p2_spin_stabilisation` | 156 | rapid rotation steadies a body | one kick at n = 1, 3, 9 → 20.171°, 8.326°, 2.854° |
+| `routh_p2_rolling_cones` | 157–159 | the body and space cones roll on one another | both half-angles constant to 13 digits |
+| `routh_p2_principal_axes_in_space` | 176–179 | `cos α = Aω₁/G` — the invariable line seen from the body | fixed in space, sweeping `(1.5,12.75,0.125)` → `(11.52,−4.90,2.86)` in the body |
+| `routh_p2_uniaxal_precession` | 180–183 | steady precession when `A = B` — two periods at once | space 4.683, body 3.491; `\|ω\|` constant |
+| `routh_p2_separatrix` | 184–185 | `G² = BT` decides which axis the polhode encircles | +0.3 / 0 / −0.337 pins `ω_x`, nothing, `ω_z` |
+| `routh_p2_correlated_bodies` | 192–195 | confocal ellipsoids of gyration | `ω − ω' = kL` exact at correspondence, with the drift measured |
+| `routh_p2_sylvester_time` | 196–198 | the clock Poinsot's rolling cannot supply | rate `kG = 1.283854061020956` |
+
+Provenance and the full run record for every notebook — including the other 27
+in the directory — are in
+[dynamic_notebooks/MANIFEST.md](dynamic_notebooks/MANIFEST.md); the reader's
+catalogue is [dynamic_notebooks/README.md](dynamic_notebooks/README.md).
+
 ## The Index of Functions
 
 `index_of_entities.html` is a browsable catalog of **every named entity in this
