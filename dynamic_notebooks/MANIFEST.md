@@ -1,6 +1,8 @@
 # dynamic_notebooks/ — MANIFEST
 
 Provenance and verification record for every notebook in this directory.
+Includes the 32 Routh solutions -- 16 from Part I and 16 from Part II --
+each solving a numbered article and checking its closed-form answer.
 `README.md` is the reader's catalogue — what you watch and the physical
 anchor. This file is the *audit trail*: where each notebook came from, and
 the result of actually running it.
@@ -11,7 +13,7 @@ the result of actually running it.
 POSIM_NO_BROWSER=1 ./target/release/posim --script dynamic_notebooks/<name>.posim
 ```
 
-and all 27 loaded with **exit status 0 and zero failing cells**. 25 reach
+and all 59 loaded with **exit status 0 and zero failing cells**. 57 reach
 `SCENE CREATE`; the two quantum notebooks deliberately do not (they write an
 HTML file instead). Cell counts below are the `In[n]` totals from those runs.
 
@@ -38,6 +40,22 @@ HTML file instead). Cell counts below are the `In[n]` totals from those runs.
 | `routh_rectangle_diagonal` | **Routh, Part II, Art. 150b Ex. 1** (Advanced Rigid Dynamics, 1905) | yes | 26 | ok |
 | `routh_p1_hodograph_circle` | **Routh, Part I, Arts. 394-398** (Dynamics of a Particle, 1898) | yes | 19 | ok |
 | `routh_p1_two_trajectories` | **Routh, Part I, Art. 339** (Dynamics of a Particle, 1898) | yes | 29 | ok |
+| `routh_p1_lambert_theorem` | **Routh, Part I, Arts. 350-355** (Dynamics of a Particle, 1898) | yes | 32 | ok |
+| `routh_p1_collinear_three_body` | **Routh, Part I, Arts. 409-412** (Dynamics of a Particle, 1898) | yes | 42 | ok |
+| `routh_p2_poinsot_rolling` | **Routh, Part II, Art. 143** (Advanced Rigid Dynamics, 1905) | yes | 25 | ok |
+| `routh_p2_uniaxal_precession` | **Routh, Part II, Arts. 180-183** (Advanced Rigid Dynamics, 1905) | yes | 23 | ok |
+| `routh_p2_impulsive_couple` | **Routh, Part II, Art. 146** (Advanced Rigid Dynamics, 1905) | yes | 24 | ok |
+| `routh_p2_thin_rod` | **Routh, Part II, Art. 144** (Advanced Rigid Dynamics, 1905) | yes | 21 | ok |
+| `routh_p2_rolling_cones` | **Routh, Part II, Arts. 157-159** (Advanced Rigid Dynamics, 1905) | yes | 24 | ok |
+| `routh_p2_principal_axes_in_space` | **Routh, Part II, Arts. 176-179** (Advanced Rigid Dynamics, 1905) | yes | 24 | ok |
+| `routh_p2_correlated_bodies` | **Routh, Part II, Arts. 192-195** (Advanced Rigid Dynamics, 1905) | yes | 29 | ok |
+| `routh_p2_sylvester_time` | **Routh, Part II, Arts. 196-198** (Advanced Rigid Dynamics, 1905) | yes | 31 | ok |
+| `routh_p2_polhode_quarter_period` | **Routh, Part II, Art. 150a** (Advanced Rigid Dynamics, 1905) | yes | 22 | ok |
+| `routh_p2_period_ratio` | **Routh, Part II, Art. 150b Ex. 2** (Advanced Rigid Dynamics, 1905) | yes | 22 | ok |
+| `routh_p1_parabola_of_safety` | **Routh, Part I, Arts. 159-160** (Dynamics of a Particle, 1898) | yes | 45 | ok |
+| `routh_p1_apsidal_symmetry` | **Routh, Part I, Arts. 419-420** (Dynamics of a Particle, 1898) | yes | 40 | ok |
+| `routh_p2_invariable_line` | **Routh, Part II, Art. 141** (Advanced Rigid Dynamics, 1905) | yes | 23 | ok |
+| `routh_p2_separatrix` | **Routh, Part II, Arts. 184-185** (Advanced Rigid Dynamics, 1905) | yes | 36 | ok |
 | `routh_p1_kepler_equation` | **Routh, Part I, Arts. 342-346** (Dynamics of a Particle, 1898) | yes | 28 | ok |
 | `routh_p1_equilateral_three_body` | **Routh, Part I, Arts. 407-408 + 412** (Dynamics of a Particle, 1898) | yes | 45 | ok |
 | `routh_p2_spin_stabilisation` | **Routh, Part II, Art. 156** (Advanced Rigid Dynamics, 1905) | yes | 25 | ok |
