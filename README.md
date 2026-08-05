@@ -70,6 +70,37 @@ and L); 104 tests green (40 lib + 16 collision + 9 conservation +
   pinned cross-module contracts.
 - [CLAUDE.md](CLAUDE.md) — working rules for contributors and agents.
 
+## Some Beautiful Examples from
+Routh Part1:
+A TREATISE ON
+DYNAMICS OF A PARTICLE
+WITH NUMEROUS EXAMPLES
+BY
+EDWARD JOHN ROUTH, Sc.D., LL.D., M.A., F.R.S., &c.,
+HON. FELLOW OF PETERHOUSE, CAMBRIDGE;
+FELLOW OF THE UNIVERSITY OF LONDON.
+CAMBRIDGE
+AT THE UNIVERSITY PRESS
+1898
+
+Routh Part2:
+THE ADVANCED PART
+OF A TREATISE ON THE
+DYNAMICS OF A SYSTEM OF
+RIGID BODIES.
+BEING PART II. OF A TREATISE ON THE WHOLE
+SUBJECT.
+WITH NUMEROUS EXAMPLES.
+BY
+EDWARD JOHN ROUTH, Sc.D., LL.D., F.R.S., &c.
+HON. FELLOW OF PETERHOUSE, CAMBRIDGE;
+FELLOW OF THE SENATE OF THE UNIVERSITY OF LONDON.
+SIXTH EDITION, REVISED AND ENLARGED.
+London:
+MACMILLAN AND CO., LIMITED
+NEW YORK: THE MACMILLAN COMPANY
+1905
+
 ## The Index of Functions
 
 `index_of_entities.html` is a browsable catalog of **every named entity in this
