@@ -171,12 +171,6 @@ fn accept(c: Cand, what: &str, nu: C, z: C) -> Result<C, String> {
     }
 }
 
-/// `J` and `Y` from the uniform Airy-type expansion of DLMF 10.20 at
-/// complex order, near the turning point.
-///
-/// This is the region neither the ascending series nor the `1/z`
-/// expansions reach — `|z|` comparable to `|nu|`, both complex — and
-/// which Stage 18 recorded as needing complex Airy. It has that now.
 /// `J` and `Y` from the Debye expansions at complex order — the band
 /// `|z|` a few times `|nu|`, on either side of the turning point.
 fn debye_candidates(nu: C, z: C) -> (Cand, Cand) {
@@ -185,6 +179,12 @@ fn debye_candidates(nu: C, z: C) -> (Cand, Cand) {
     (j.and_then(f), y.and_then(f))
 }
 
+/// `J` and `Y` from the uniform Airy-type expansion of DLMF 10.20 at
+/// complex order, near the turning point.
+///
+/// This is the region neither the ascending series nor the `1/z`
+/// expansions reach — `|z|` comparable to `|nu|`, both complex — and
+/// which Stage 18 recorded as needing complex Airy. It has that now.
 fn airy_candidates(nu: C, z: C) -> (Cand, Cand) {
     match crate::airy_uniform::jy_airy_c(nu, z) {
         Some((j, y)) => (

@@ -217,14 +217,38 @@ fn parse_value(c: &[char], pos: &mut usize) -> Result<Json, String> {
                             Some('b') => s.push('\u{0008}'),
                             Some('f') => s.push('\u{000c}'),
                             Some('u') => {
-                                let mut code = 0u32;
-                                for _ in 0..4 {
-                                    *pos += 1;
-                                    let d = c
-                                        .get(*pos)
-                                        .and_then(|ch| ch.to_digit(16))
-                                        .ok_or("bad \\u escape")?;
-                                    code = code * 16 + d;
+                                /* RFC 8259 §7: a \uXXXX escape may be
+                                 * half of a UTF-16 surrogate pair —
+                                 * Python's json.dumps (the default
+                                 * ensure_ascii=True) writes EVERY
+                                 * non-BMP character that way, so the
+                                 * pair must be recombined; an unpaired
+                                 * half stays U+FFFD. */
+                                let hex4 = |c: &[char], pos: &mut usize| -> Result<u32, String> {
+                                    let mut code = 0u32;
+                                    for _ in 0..4 {
+                                        *pos += 1;
+                                        let d = c
+                                            .get(*pos)
+                                            .and_then(|ch| ch.to_digit(16))
+                                            .ok_or("bad \\u escape")?;
+                                        code = code * 16 + d;
+                                    }
+                                    Ok(code)
+                                };
+                                let mut code = hex4(c, pos)?;
+                                while (0xD800..=0xDBFF).contains(&code)
+                                    && c.get(*pos + 1) == Some(&'\\')
+                                    && c.get(*pos + 2) == Some(&'u')
+                                {
+                                    *pos += 2; // onto the second escape's 'u'
+                                    let next = hex4(c, pos)?;
+                                    if (0xDC00..=0xDFFF).contains(&next) {
+                                        code = 0x10000 + ((code - 0xD800) << 10) + (next - 0xDC00);
+                                        break;
+                                    }
+                                    s.push('\u{fffd}'); // the lone high half
+                                    code = next; // may itself start a pair
                                 }
                                 s.push(char::from_u32(code).unwrap_or('\u{fffd}'));
                             }
@@ -522,6 +546,33 @@ mod tests {
         assert_eq!(j, back);
         assert!(parse("{\"a\":}").is_err());
         assert_eq!(parse("\"a\\u0041b\"").unwrap(), Json::Str("aAb".to_string()));
+    }
+
+    /// RFC 8259 surrogate pairs decode to the real character — this is
+    /// how Python's json.dumps (default ensure_ascii=True) writes every
+    /// non-BMP char, so the shipped kernel hits it for any emoji or
+    /// astral math symbol. Unpaired halves stay U+FFFD, exactly as
+    /// before.
+    #[test]
+    fn surrogate_pairs_decode_to_the_real_character() {
+        // U+1F600 GRINNING FACE as json.dumps writes it.
+        assert_eq!(parse("\"\\ud83d\\ude00\"").unwrap(), Json::Str("\u{1F600}".to_string()));
+        // U+1D4A9 MATHEMATICAL SCRIPT CAPITAL N, mid-string.
+        assert_eq!(
+            parse("\"a\\ud835\\udca9b\"").unwrap(),
+            Json::Str(format!("a{}b", '\u{1D4A9}'))
+        );
+        // A lone high half stays U+FFFD (previous behavior kept)...
+        assert_eq!(parse("\"\\ud800x\"").unwrap(), Json::Str("\u{fffd}x".to_string()));
+        // ...also when the following escape is not a low surrogate,
+        assert_eq!(parse("\"\\ud800\\u0041\"").unwrap(), Json::Str("\u{fffd}A".to_string()));
+        // ...and a lone low half likewise.
+        assert_eq!(parse("\"\\ude00\"").unwrap(), Json::Str("\u{fffd}".to_string()));
+        // A high half chained before a real pair still yields the pair.
+        assert_eq!(
+            parse("\"\\ud800\\ud83d\\ude00\"").unwrap(),
+            Json::Str(format!("\u{fffd}{}", '\u{1F600}'))
+        );
     }
 
     #[test]

@@ -7,6 +7,8 @@
 #![forbid(unsafe_code)]
 #![deny(warnings)]
 #![allow(non_snake_case)]
+#![allow(non_camel_case_types)]
+#![allow(non_upper_case_globals)]
 
 use ::physical_object::boundary::Boundary;
 use ::physical_object::integrate;

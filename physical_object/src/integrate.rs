@@ -86,9 +86,11 @@ pub struct Snapshot {
 #[derive(Clone, Debug, Default)]
 pub struct RunReport {
     pub snapshots: Vec<Snapshot>,
-    /// Internal solver steps.
+    /// Internal solver steps (CVODE reports its adaptive count; the
+    /// SPRK path computes this from the fixed step count).
     pub nst: i64,
-    /// Right-hand-side evaluations.
+    /// Right-hand-side evaluations (CVODE paths only — the SPRK path
+    /// leaves this 0 even though it evaluates forces every stage).
     pub nfe: i64,
     /// Nonlinear (Newton) iterations (CVODE paths only).
     pub nni: i64,

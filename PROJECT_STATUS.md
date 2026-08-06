@@ -13,17 +13,18 @@ Date: 2026-07-26 · Repository: <https://github.com/once-ere/rustSimulate>
 | component | state | evidence |
 |---|---|---|
 | `physical_object` — the union struct, get/set API, observables | complete | 40 library tests |
-| collision detection & impulse response | complete | 16 collision tests, analytic TOI checks |
+| collision detection & impulse response | complete | 19 collision tests, analytic TOI checks |
 | `integrate` — CVODE Adams/BDF + ARKODE SPRK, event rootfinding | complete | 9 conservation tests; solar-system energy drift < 1e-6 over 1369 years |
-| `posim` — lexer → parser → stack machine → notebook/machine/scene | complete | 39 tests |
+| `posim` — lexer → parser → stack machine → notebook/machine/scene | complete | 107 tests |
+| `quantum` — nash / qm1d / qm2d / qm3d / transfer / absorber / isosurface | complete | 92 tests + 5 doctests |
 | scene window (std-only HTTP + WebSocket + canvas) | complete | live browser verification |
 | JupyterLab kernel | complete | protocol test + 7-cell ZMQ test |
 | `sundials_rs` — pure-Rust SUNDIALS 7.7.0 | vendored, byte-identical | 394 files, tree hash verified |
 | `special_functions` — spherical Bessel (native) | new | 7 unit + 3 doctests |
 | `special_functions` — Cephes classical chapters | vendored | 11 identity tests |
 
-**125 tests green, zero warnings, zero `unsafe`, zero crates.io
-dependencies.**
+**566 passed workspace-wide, zero warnings, zero `unsafe`, zero
+crates.io dependencies.**
 
 ---
 
@@ -105,11 +106,17 @@ That has not been true for many stages: the VM has a `Complex` value
 type, and `special_functions` carries complex argument **and** complex
 order throughout Bessel, Airy and gamma.)*
 
-**Linear algebra stops at 3×3.** `Vec3`/`Mat3`/`Quat` and nothing more.
-There is no general matrix type, no decomposition, no eigensolver.
+**Linear algebra stops at 3×3** in `physical_object`'s `linalg`.
+*(Partly retired: `special_functions` now carries a dense Jacobi
+eigensolver (`eigen.rs`), Lanczos for large symmetric operators
+(`lanczos.rs`), and real/complex tridiagonal solvers (`tridiag.rs`).
+There is still no general dense matrix type or decomposition beyond
+those.)*
 
-**No quadrature, no root-finding, no optimisation** as reusable
-components (CVODE's event rootfinding exists but is wired to collisions).
+**No optimisation** as a reusable component. *(The quadrature and
+root-finding halves of this entry are retired: `quadrature.rs` provides
+Gauss–Legendre and adaptive quadrature, Brent root-finding and
+`find_roots` scanning.)*
 
 **Single-threaded and unprofiled**, apart from the scene playback
 thread. Performance has never been measured against another simulator.
@@ -136,28 +143,33 @@ Here is the audit rather than a verdict.
 
 ### Missing, in order of how badly it blocks
 
+*(This list is preserved as the 2026-07-26 audit; every item on it has
+since been built. The italic notes record where.)*
+
 1. **Complex arithmetic — the single biggest gap.** Wavefunctions are
-   complex by construction. There is no complex type in the `posim` VM
-   and no complex-argument special function. Everything below is
-   downstream of this.
+   complex by construction. *(Retired: the VM has `Value::Complex`, and
+   `special_functions` carries complex argument and complex order
+   throughout `complex.rs`, `bessel_complex.rs`, `airy_complex.rs`,
+   `gamma_complex.rs`.)*
 2. **Associated Legendre Pₗᵐ and spherical harmonics Yₗᵐ.** Without
-   them there is no angular part of *any* central-potential problem —
-   no hydrogen, no rigid rotor, no multipole expansion. Planned, not
-   built.
+   them there is no angular part of *any* central-potential problem.
+   *(Retired: built in `legendre.rs`, with normalised forms and real
+   and complex `Yₗᵐ`.)*
 3. **Generalised Laguerre Lₙ^α.** The hydrogen radial functions.
-   Planned, not built.
-4. **Hermite Hₙ.** The harmonic oscillator, i.e. the second problem in
-   every textbook. Planned, not built.
+   *(Retired: built in `orthopoly.rs`.)*
+4. **Hermite Hₙ.** The harmonic oscillator. *(Retired: built in
+   `orthopoly.rs`, both conventions.)*
 5. **Wigner 3j/6j and Clebsch–Gordan.** Angular-momentum coupling and
-   selection rules. Planned, not built.
+   selection rules. *(Retired: built in `wigner.rs`, including 9j.)*
 6. **A general eigensolver.** Matrix mechanics *is* diagonalisation.
-   With only `Mat3` there is no variational method, no
-   basis-set expansion, no perturbation theory beyond the analytic
-   cases. **Not currently in any plan** — this is the largest omission.
-7. **Quadrature.** Matrix elements ⟨ψ|V|ψ⟩ are integrals. Absent.
-8. **Root-finding as a component.** Bound-state energies by shooting,
-   zeros of jₙ for the spherical well. CVODE's rootfinder exists but is
-   bound to collision events.
+   *(Retired: `eigen.rs` (dense Jacobi) and `lanczos.rs` (large
+   symmetric operators) power `QM STATES` in one, two and three
+   dimensions.)*
+7. **Quadrature.** Matrix elements ⟨ψ|V|ψ⟩ are integrals. *(Retired:
+   `quadrature.rs` — Gauss–Legendre and adaptive.)*
+8. **Root-finding as a component.** *(Retired: `brent_root` and
+   `find_roots` in `quadrature.rs`, decoupled from CVODE's
+   collision-event rootfinder.)*
 
 ### What could be built *today*, honestly
 

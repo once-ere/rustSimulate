@@ -106,8 +106,9 @@ impl Grid2 {
     pub fn len(&self) -> usize {
         self.nx * self.ny
     }
+    /// Always false for a grid built via `new` (every axis has n >= 1).
     pub fn is_empty(&self) -> bool {
-        false
+        self.len() == 0
     }
     /// Cell area, for turning a sum into an integral.
     pub fn cell(&self) -> f64 {
@@ -309,6 +310,10 @@ impl Hamiltonian2 {
     /// `special_functions::lanczos`. The 2-D isotropic oscillator's
     /// `E = 2, 2` and `E = 3, 3, 3` come out with the right
     /// multiplicities and orthogonal partners.
+    ///
+    /// Pass `max_iters = 0` to let the solver choose its own Krylov
+    /// budget, scaling with `k` and capped at the grid size; any
+    /// positive value overrides it.
     ///
     /// # Errors
     /// `k == 0` or `k > nx*ny`, an absorbing Hamiltonian (not

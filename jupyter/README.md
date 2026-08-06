@@ -53,4 +53,5 @@ get obj0.position
 Machine-mode ops (one JSON doc per line):
 `{"op":"exec","code":"..."}`, `{"op":"get","path":"obj0.position"}`,
 `{"op":"set","path":"obj0.mass","value":2.5}`, `{"op":"state"}`,
+`{"op":"events"}` (drain queued scene-window events),
 `{"op":"help"}`, `{"op":"quit"}`.

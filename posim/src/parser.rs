@@ -297,6 +297,19 @@ impl Parser {
         }
     }
 
+    /// As [`Parser::expect_number`], but for whole-number arguments
+    /// (object indices, step counts): a fractional value is rejected
+    /// rather than truncated, which would act on a confidently wrong
+    /// target — the same policy the special functions apply to integer
+    /// orders and `SCENE CREATE` applies to its port.
+    fn expect_index(&mut self, what: &str) -> Result<usize, String> {
+        let n = self.expect_number(what)?;
+        if n.fract() != 0.0 {
+            return Err(format!("{what} must be a whole number, got {n}"));
+        }
+        Ok(n as usize)
+    }
+
     fn expect_ident(&mut self, what: &str) -> Result<String, String> {
         match self.next() {
             Some(Token { kind: TokKind::Ident(s), .. }) => Ok(s),
@@ -411,8 +424,8 @@ impl Parser {
             }
             TokKind::Keyword(Keyword::Del) => {
                 self.pos += 1;
-                let n = self.expect_number("an object index")?;
-                prog.push(Instr::Delete(n as usize));
+                let n = self.expect_index("an object index")?;
+                prog.push(Instr::Delete(n));
             }
             TokKind::Keyword(Keyword::List) => {
                 self.pos += 1;
@@ -427,7 +440,7 @@ impl Parser {
                 self.pos += 1;
                 self.expr(&mut prog)?;
                 let steps = if self.eat_keyword(Keyword::Steps) {
-                    self.expect_number("a step count")? as usize
+                    self.expect_index("a step count")?
                 } else {
                     10
                 };
@@ -482,8 +495,8 @@ impl Parser {
             }
             TokKind::Keyword(Keyword::Laplace) => {
                 self.pos += 1;
-                let n = self.expect_number("an object index")?;
-                prog.push(Instr::Laplace(n as usize));
+                let n = self.expect_index("an object index")?;
+                prog.push(Instr::Laplace(n));
             }
             TokKind::Keyword(Keyword::Qm) => {
                 self.pos += 1;
@@ -667,8 +680,8 @@ impl Parser {
                 Ok(None)
             }
             Some(TokKind::Number(_)) => {
-                let n = self.expect_number("an object index")?;
-                Ok(Some(n as usize))
+                let n = self.expect_index("an object index")?;
+                Ok(Some(n))
             }
             Some(other) => Err(format!(
                 "parse error: HIDE/SHOW takes an object index or ALL, found {other}"
@@ -682,24 +695,52 @@ impl Parser {
         let root = parse_root(&root_name)?;
         self.eat(&TokKind::Dot)?;
         let field = self.expect_field()?;
-        let mut comp = None;
-        if matches!(self.peek(), Some(t) if t.kind == TokKind::Dot) {
-            self.pos += 1;
-            let c = self.expect_ident("a component (x, y, z or w)")?;
-            comp = Some(match c.to_ascii_lowercase().as_str() {
-                "x" => 0usize,
-                "y" => 1,
-                "z" => 2,
-                "w" => 3,
-                other => return Err(format!("unknown component `.{other}` (use x, y, z or w)")),
-            });
-        }
+        let comp = self.component_suffix()?;
         Ok(Path { root, field, comp })
+    }
+
+    /// Optional `.x|.y|.z|.w` component suffix on a dotted path
+    /// (`Ok(None)` when the next token is not a dot). One home for the
+    /// suffix grammar and its error text — `path()` and `atom()` both
+    /// parse it.
+    fn component_suffix(&mut self) -> Result<Option<usize>, String> {
+        if !matches!(self.peek(), Some(t) if t.kind == TokKind::Dot) {
+            return Ok(None);
+        }
+        self.pos += 1;
+        let c = self.expect_ident("a component (x, y, z or w)")?;
+        Ok(Some(match c.to_ascii_lowercase().as_str() {
+            "x" => 0usize,
+            "y" => 1,
+            "z" => 2,
+            "w" => 3,
+            other => return Err(format!("unknown component `.{other}` (use x, y, z or w)")),
+        }))
     }
 
     /// `QM3 <word> [args]` — the three-dimensional family. Same
     /// conventions as [`Self::qm2_command`]; argument groups come in
     /// threes, so commas between axes are worth using.
+    /// Compiles `n` expression arguments for a QM-family subcommand
+    /// (shared by `qm_command`, `qm2_command` and `qm3_command`).
+    /// Arguments may be separated by spaces or by commas. Commas are
+    /// not decoration: `qm potential well 5 -2 2` parses the `-2` as
+    /// SUBTRACTION, giving `(5-2)` and `2` — two arguments where three
+    /// were wanted. Writing `5, -2, 2` is unambiguous. Space separation
+    /// is kept because it reads better when every argument is positive,
+    /// which is the common case.
+    fn qm_args(&mut self, n: usize, prog: &mut Vec<Instr>) -> Result<(), String> {
+        for i in 0..n {
+            if i > 0 {
+                if let Some(Token { kind: TokKind::Comma, .. }) = self.peek() {
+                    self.pos += 1;
+                }
+            }
+            self.expr(prog)?;
+        }
+        Ok(())
+    }
+
     fn qm3_command(&mut self) -> Result<Vec<Instr>, String> {
         use crate::qm3::Qm3Cmd;
         let mut prog = Vec::new();
@@ -707,38 +748,27 @@ impl Parser {
             return Ok(vec![Instr::Qm3(Qm3Cmd::Status)]);
         }
         let word = self.expect_field()?;
-        let args = |me: &mut Self, n: usize, p: &mut Vec<Instr>| -> Result<(), String> {
-            for i in 0..n {
-                if i > 0 {
-                    if let Some(Token { kind: TokKind::Comma, .. }) = me.peek() {
-                        me.pos += 1;
-                    }
-                }
-                me.expr(p)?;
-            }
-            Ok(())
-        };
         let cmd = match word.as_str() {
             "status" => Qm3Cmd::Status,
             "grid" => {
-                args(self, 9, &mut prog)?;
+                self.qm_args(9, &mut prog)?;
                 Qm3Cmd::Grid
             }
             "potential" => Qm3Cmd::Potential(self.expect_field()?),
             "packet" => {
-                args(self, 9, &mut prog)?;
+                self.qm_args(9, &mut prog)?;
                 Qm3Cmd::Packet
             }
             "states" => {
-                args(self, 1, &mut prog)?;
+                self.qm_args(1, &mut prog)?;
                 Qm3Cmd::States
             }
             "state" => {
-                args(self, 1, &mut prog)?;
+                self.qm_args(1, &mut prog)?;
                 Qm3Cmd::LoadState
             }
             "step" => {
-                args(self, 1, &mut prog)?;
+                self.qm_args(1, &mut prog)?;
                 Qm3Cmd::Step
             }
             "run" => {
@@ -759,7 +789,7 @@ impl Parser {
             "energy" => Qm3Cmd::Energy,
             "centroid" | "position" => Qm3Cmd::Centroid,
             "prob" | "probability" => {
-                args(self, 6, &mut prog)?;
+                self.qm_args(6, &mut prog)?;
                 Qm3Cmd::Prob
             }
             "absorb" => {
@@ -771,7 +801,7 @@ impl Parser {
                     self.pos += 1;
                     Qm3Cmd::AbsorbOff
                 } else {
-                    args(self, 2, &mut prog)?;
+                    self.qm_args(2, &mut prog)?;
                     if self.peek().is_some() {
                         if let Some(Token { kind: TokKind::Comma, .. }) = self.peek() {
                             self.pos += 1;
@@ -884,30 +914,19 @@ impl Parser {
             return Ok(vec![Instr::Qm2(Qm2Cmd::Status)]);
         }
         let word = self.expect_field()?;
-        let args = |me: &mut Self, n: usize, p: &mut Vec<Instr>| -> Result<(), String> {
-            for i in 0..n {
-                if i > 0 {
-                    if let Some(Token { kind: TokKind::Comma, .. }) = me.peek() {
-                        me.pos += 1;
-                    }
-                }
-                me.expr(p)?;
-            }
-            Ok(())
-        };
         let cmd = match word.as_str() {
             "status" => Qm2Cmd::Status,
             "grid" => {
-                args(self, 6, &mut prog)?;
+                self.qm_args(6, &mut prog)?;
                 Qm2Cmd::Grid
             }
             "potential" => Qm2Cmd::Potential(self.expect_field()?),
             "packet" => {
-                args(self, 6, &mut prog)?;
+                self.qm_args(6, &mut prog)?;
                 Qm2Cmd::Packet
             }
             "step" => {
-                args(self, 1, &mut prog)?;
+                self.qm_args(1, &mut prog)?;
                 Qm2Cmd::Step
             }
             "run" => {
@@ -928,7 +947,7 @@ impl Parser {
             "energy" => Qm2Cmd::Energy,
             "centroid" | "position" => Qm2Cmd::Centroid,
             "prob" | "probability" => {
-                args(self, 4, &mut prog)?;
+                self.qm_args(4, &mut prog)?;
                 Qm2Cmd::Prob
             }
             "absorb" => {
@@ -940,7 +959,7 @@ impl Parser {
                     self.pos += 1;
                     Qm2Cmd::AbsorbOff
                 } else {
-                    args(self, 2, &mut prog)?;
+                    self.qm_args(2, &mut prog)?;
                     if self.peek().is_some() {
                         if let Some(Token { kind: TokKind::Comma, .. }) = self.peek() {
                             self.pos += 1;
@@ -969,11 +988,11 @@ impl Parser {
                 }
             }
             "states" => {
-                args(self, 1, &mut prog)?;
+                self.qm_args(1, &mut prog)?;
                 Qm2Cmd::States
             }
             "state" => {
-                args(self, 1, &mut prog)?;
+                self.qm_args(1, &mut prog)?;
                 Qm2Cmd::LoadState
             }
             "reset" => Qm2Cmd::Reset,
@@ -1035,27 +1054,10 @@ impl Parser {
             return Ok(vec![Instr::Qm(QmCmd::Status)]);
         }
         let word = self.expect_field()?;
-        // Arguments may be separated by spaces or by commas. Commas
-        // are not decoration: `qm potential well 5 -2 2` parses the
-        // `-2` as SUBTRACTION, giving `(5-2)` and `2` — two arguments
-        // where three were wanted. Writing `5, -2, 2` is unambiguous.
-        // Space separation is kept because it reads better when every
-        // argument is positive, which is the common case.
-        let args = |me: &mut Self, n: usize, p: &mut Vec<Instr>| -> Result<(), String> {
-            for i in 0..n {
-                if i > 0 {
-                    if let Some(Token { kind: TokKind::Comma, .. }) = me.peek() {
-                        me.pos += 1;
-                    }
-                }
-                me.expr(p)?;
-            }
-            Ok(())
-        };
         let cmd = match word.as_str() {
             "status" => QmCmd::Status,
             "grid" => {
-                args(self, 3, &mut prog)?;
+                self.qm_args(3, &mut prog)?;
                 QmCmd::Grid
             }
             "potential" => {
@@ -1076,38 +1078,38 @@ impl Parser {
                 match name.as_str() {
                     "zero" | "free" => QmCmd::Potential(PotentialSpec::Zero),
                     "barrier" if !bare => {
-                        args(self, 3, &mut prog)?;
+                        self.qm_args(3, &mut prog)?;
                         QmCmd::Potential(PotentialSpec::Barrier)
                     }
                     "well" if !bare => {
-                        args(self, 3, &mut prog)?;
+                        self.qm_args(3, &mut prog)?;
                         QmCmd::Potential(PotentialSpec::Well)
                     }
                     _ => QmCmd::Potential(PotentialSpec::Named(name)),
                 }
             }
             "mass" => {
-                args(self, 1, &mut prog)?;
+                self.qm_args(1, &mut prog)?;
                 QmCmd::Mass
             }
             "hbar" => {
-                args(self, 1, &mut prog)?;
+                self.qm_args(1, &mut prog)?;
                 QmCmd::Hbar
             }
             "states" => {
-                args(self, 1, &mut prog)?;
+                self.qm_args(1, &mut prog)?;
                 QmCmd::States
             }
             "state" => {
-                args(self, 1, &mut prog)?;
+                self.qm_args(1, &mut prog)?;
                 QmCmd::LoadState
             }
             "packet" => {
-                args(self, 3, &mut prog)?;
+                self.qm_args(3, &mut prog)?;
                 QmCmd::Packet
             }
             "step" => {
-                args(self, 1, &mut prog)?;
+                self.qm_args(1, &mut prog)?;
                 QmCmd::Step
             }
             "run" => {
@@ -1130,7 +1132,7 @@ impl Parser {
             "position" | "x" => QmCmd::Position,
             "momentum" | "p" => QmCmd::Momentum,
             "prob" | "probability" => {
-                args(self, 2, &mut prog)?;
+                self.qm_args(2, &mut prog)?;
                 QmCmd::Prob
             }
             "density" => QmCmd::Density,
@@ -1165,11 +1167,11 @@ impl Parser {
                 QmCmd::Animate(path)
             }
             "transmission" => {
-                args(self, 1, &mut prog)?;
+                self.qm_args(1, &mut prog)?;
                 QmCmd::Transmission
             }
             "scan" => {
-                args(self, 3, &mut prog)?;
+                self.qm_args(3, &mut prog)?;
                 QmCmd::Scan
             }
             "method" => {
@@ -1241,7 +1243,7 @@ impl Parser {
                     self.pos += 1;
                     QmCmd::AbsorbOff
                 } else {
-                    args(self, 2, &mut prog)?;
+                    self.qm_args(2, &mut prog)?;
                     if self.peek().is_some() {
                         if let Some(Token { kind: TokKind::Comma, .. }) = self.peek() {
                             self.pos += 1;
@@ -1406,22 +1408,7 @@ impl Parser {
                     let root = parse_root(&name)?;
                     self.pos += 1;
                     let field = self.expect_field()?;
-                    let mut comp = None;
-                    if matches!(self.peek(), Some(t) if t.kind == TokKind::Dot) {
-                        self.pos += 1;
-                        let c = self.expect_ident("a component (x, y, z or w)")?;
-                        comp = Some(match c.to_ascii_lowercase().as_str() {
-                            "x" => 0usize,
-                            "y" => 1,
-                            "z" => 2,
-                            "w" => 3,
-                            other => {
-                                return Err(format!(
-                                    "unknown component `.{other}` (use x, y, z or w)"
-                                ))
-                            }
-                        });
-                    }
+                    let comp = self.component_suffix()?;
                     prog.push(Instr::Load(Path { root, field, comp }));
                 } else {
                     match name.to_ascii_lowercase().as_str() {
@@ -1599,5 +1586,22 @@ mod tests {
          * variables) and resolves at execution instead */
         let p = compile_line("bogusname").unwrap();
         assert_eq!(p, vec![Instr::LoadIdent("bogusname".to_string())]);
+    }
+
+    /// Whole-number arguments are rejected when fractional, never
+    /// truncated: `DEL 1.9` acting on obj1 (and renumbering everything
+    /// above it) is exactly the confident-wrong-answer the language's
+    /// documented policy forbids. Same policy at every index site.
+    #[test]
+    fn fractional_indices_are_refused_not_truncated() {
+        for line in ["del 1.9", "run 10 steps 2.7", "laplace 0.5", "scene hide 1.5"] {
+            let e = compile_line(line).unwrap_err();
+            assert!(e.contains("whole number"), "`{line}` gave: {e}");
+        }
+        // Whole values still compile to the same instructions as before.
+        assert_eq!(compile_line("del 1").unwrap(), vec![Instr::Delete(1)]);
+        assert_eq!(compile_line("laplace 0").unwrap(), vec![Instr::Laplace(0)]);
+        assert!(compile_line("run 10 steps 3").is_ok());
+        assert!(compile_line("scene show 2").is_ok());
     }
 }

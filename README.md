@@ -33,8 +33,9 @@ rod as ONE rigid body, exact part-wise collisions conserving E, P and
 L through real solver events); the scene window gains a permanent
 Reset button (with `SCENE RESET` — bit-identical re-initialization,
 Start re-runs) and a live labeled conserved-quantities readout (E, P
-and L); 104 tests green (40 lib + 16 collision + 9 conservation +
-39 posim).
+and L); 566 passed workspace-wide (40 physical_object lib +
+19 collision + 9 conservation + 107 posim + 92 quantum +
+233 special_functions + 11 vendored identities + 55 doctests).
 
 - `physical_object/` — library: `pub struct physical_object`, the
   unique union of the legacy `PointParticle`, `RigidBody` and
@@ -101,8 +102,9 @@ MACMILLAN AND CO., LIMITED
 NEW YORK: THE MACMILLAN COMPANY
 1905
 
-Thirty-two of Routh's problems are solved here as runnable notebooks — sixteen
-from each Part. Every one derives the closed-form answer in its own header and
+Thirty-four of Routh's problems are solved here as runnable notebooks —
+seventeen from each Part (a first pair, then sixteen more from each book).
+Every one derives the closed-form answer in its own header and
 then checks it against the integrator, so the numbers below are measured, not
 quoted. Launch any of them by name:
 

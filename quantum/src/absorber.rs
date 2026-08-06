@@ -53,6 +53,7 @@
 //! interpretation — which is the point of keeping both.
 
 use crate::transfer::{scatter, Scattering};
+use special_functions::complex::Complex64 as C;
 
 /// The shape of the absorbing ramp: `W(x) = strength (x/width)^power`.
 #[derive(Clone, Copy, Debug)]
@@ -68,7 +69,6 @@ pub struct Band {
     pub k_hi: f64,
     pub samples: usize,
 }
-use special_functions::complex::Complex64 as C;
 
 /// What an absorber does to a wave of one wavenumber.
 #[derive(Clone, Copy, Debug)]

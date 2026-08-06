@@ -133,9 +133,10 @@ exported; the union mapping they produced is recorded in `PLAN.md`.
   strategy.
 - Commit after every coherent file group; keep
   `cargo build --workspace` warning-free and `cargo test --workspace`
-  green at every commit (104 tests: 40 lib + 16 collision +
-  9 conservation + 39 posim). Phase gates are tagged
-  (`phase-posim-green`).
+  green at every commit (566 tests: 40 physical_object lib +
+  19 collision + 9 conservation + 107 posim + 92 quantum +
+  233 special_functions + 11 vendored identities + 55 doctests).
+  Phase gates are tagged (`phase-posim-green`).
 - New solver features need: a unit or conservation test with an
   analytic expectation, a grammar hook if user-facing (lexer keyword →
   parser production → VM instruction → HELP_TEXT → grammar.md/.tex),

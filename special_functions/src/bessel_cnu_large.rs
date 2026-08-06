@@ -17,13 +17,14 @@
 //! * **The uniform expansions of DLMF 10.41** for `I` and `K` extend to
 //!   complex order in the sector `|arg nu| < pi/2` (DLMF 10.41.5), with
 //!   the same Debye polynomials. That fills the large-`|nu|` rows.
-//! * **The Airy-type expansion of DLMF 10.20 does not extend here**,
-//!   and the obstacle is concrete rather than theoretical: it needs
-//!   `Ai(nu^(2/3) zeta)`, and with `nu` complex that argument is
-//!   complex. This crate has only the real-argument Airy functions from
-//!   the vendored Cephes. **Complex Airy is not implemented**, so the
-//!   turning point `z ~ nu` at complex order is reached by the
-//!   ascending series or not at all — and the routines say which.
+//! * **The Airy-type expansion of DLMF 10.20 is not implemented in
+//!   this module**: it needs `Ai(nu^(2/3) zeta)`, and with `nu` complex
+//!   that argument is complex — at the time this module was written the
+//!   crate had only the real-argument Airy from the vendored Cephes.
+//!   That obstacle was later removed: [`crate::airy_complex`] supplies
+//!   complex-argument Airy and [`crate::airy_uniform::jy_airy_c`]
+//!   carries DLMF 10.20 to complex order, so the turning point
+//!   `z ~ nu` is covered there rather than here.
 //!
 //! # Estimates, and the one that has to be measured
 //!

@@ -156,7 +156,8 @@ const ctx = canvas.getContext("2d");
 
 const state = {
   entities: [],           /* {i, shape, radius?, half_extents?, ring_radius?,
-                             tube_radius?, half_height?, wall?, mass}   */
+                             tube_radius?, half_height?, r1?, r2?, rod_radius?,
+                             z1?, z2?, wall?, name?, mass}              */
   bodies: [],             /* [x,y,z,qw,qx,qy,qz] per entity           */
   box: null,              /* inner side length of the rigid bounding box */
   hidden: new Set(),
@@ -550,7 +551,7 @@ function drawCylinder(ent, pos, b, basis, w, h, focal, color) {
 }
 
 /* Dumbbell: two shaded spheres at their (rotated) offsets joined by
- * the rod's two silhouette lines — one rigid body, spin visible. */
+ * the rod's four silhouette lines — one rigid body, spin visible. */
 function drawDumbbell(ent, pos, b, basis, w, h, focal, color) {
   const q = b ? [b[3], b[4], b[5], b[6]] : [1, 0, 0, 0];
   /* ?? not ||: a legitimate 0 / -0.0 offset must not fall back */

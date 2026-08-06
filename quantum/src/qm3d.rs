@@ -121,8 +121,9 @@ impl Grid3 {
     pub fn len(&self) -> usize {
         self.nx * self.ny * self.nz
     }
+    /// Always false for a grid built via `new` (every axis has n >= 1).
     pub fn is_empty(&self) -> bool {
-        false
+        self.len() == 0
     }
     /// Cell volume, turning a sum into an integral.
     pub fn cell(&self) -> f64 {
@@ -386,6 +387,10 @@ impl Hamiltonian3 {
     /// The eigensolver's full reorthogonalisation is `O(m^2 n)` and it
     /// stores the whole Krylov basis, so this is practical to roughly
     /// **40³** and not beyond. Propagation has no such limit.
+    ///
+    /// Pass `max_iters = 0` to let the solver choose its own Krylov
+    /// budget, scaling with `k` and capped at the grid size; any
+    /// positive value overrides it.
     ///
     /// # Errors
     /// `k == 0` or `k > n`, an absorbing Hamiltonian, or a Lanczos
@@ -719,8 +724,8 @@ impl Propagator3 {
         let half = C::I * (tau / (2.0 * self.ham.hbar));
         let o = half * C::real(off);
 
-        let mut sub = vec![o; len];
-        let mut sup = vec![o; len];
+        let sub = vec![o; len];
+        let sup = vec![o; len];
         let mut diag = vec![C::ZERO; len];
         let mut rhs = vec![C::ZERO; len];
 
@@ -739,10 +744,6 @@ impl Propagator3 {
                 }
                 rhs[j] = w.psi[k] - half * ap;
             }
-            // The band ends are unused by the solver but must not carry
-            // stale values from a previous line.
-            sub[0] = o;
-            sup[len - 1] = o;
             let sol = solve_tridiag_c(&sub, &diag, &sup, &rhs)?;
             for (j, v) in sol.into_iter().enumerate() {
                 w.psi[base + j * stride] = v;
