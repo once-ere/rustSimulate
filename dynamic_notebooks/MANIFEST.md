@@ -1,8 +1,10 @@
 # dynamic_notebooks/ — MANIFEST
 
 Provenance and verification record for every notebook in this directory.
-Includes the 32 Routh solutions -- 16 from Part I and 16 from Part II --
-each solving a numbered article and checking its closed-form answer.
+Includes the 34 Routh solutions -- 17 from each Part: a first pair
+(`routh_double_star_period`, `routh_rectangle_diagonal`), then 16 more
+from each book -- each solving a numbered article and checking its
+closed-form answer.
 `README.md` is the reader's catalogue — what you watch and the physical
 anchor. This file is the *audit trail*: where each notebook came from, and
 the result of actually running it.

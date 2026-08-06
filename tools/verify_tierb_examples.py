@@ -53,20 +53,6 @@ def build_file(entries):
     return "\n".join(parts), index
 
 
-def failing(stderr, index):
-    """Map each compiler error back to the function it came from."""
-    bad = {}
-    cur = None
-    for line in stderr.splitlines():
-        m = re.search(r"--> posim/examples/_tierb_compile_check\.rs:(\d+):", line)
-        if m:
-            cur = int(m.group(1))
-        if line.startswith("error"):
-            cur = None
-    # simpler and more reliable: ask rustc for the function each error is in
-    return bad
-
-
 def main():
     keep = "--keep" in sys.argv
     entries = json.load(open(ENTRIES))
@@ -79,6 +65,8 @@ def main():
             ["cargo", "build", "-p", "posim", "--example", "_tierb_compile_check",
              "--message-format=short"],
             capture_output=True, text=True, cwd=ROOT, timeout=1800)
+    except subprocess.TimeoutExpired:
+        sys.exit("cargo build timed out after 1800 s — nothing was marked verified")
     finally:
         if not keep and os.path.exists(SRC):
             os.remove(SRC)
@@ -107,6 +95,13 @@ def main():
         o = owner(int(m.group(1)))
         if o:
             bad.setdefault(o[3], []).append(m.group(2).strip()[:130])
+
+    # A build failure that maps to no snippet must FAIL the run, not
+    # stamp every snippet verified — the vacuous-gate failure mode
+    # certify_clean.sh and mutation_probe.sh were written to hunt down.
+    if r.returncode != 0 and not bad:
+        sys.exit("cargo build FAILED but no error mapped to any snippet — "
+                 "refusing to mark anything verified:\n" + r.stderr[-2000:])
 
     ok = 0
     for e in entries:
