@@ -3,17 +3,22 @@
 //! Modeled on the surveyed engines (Bullet, Rapier/parry, Chrono, SOFA,
 //! ncollide — see `collision_detection.md`) but specialized to this
 //! workspace's closed shape set {`Point`, `Sphere`, `Cuboid`, `Torus`,
-//! `Disk`, `Cylinder`}, in three exactness tiers (no GJK/EPA/MPR
-//! machinery):
+//! `Disk`, `Cylinder`, `Dumbbell`}, in three exactness tiers (no
+//! GJK/EPA/MPR machinery); a dumbbell-vs-anything pair decomposes over
+//! its two spheres and its rod, so only rod-vs-rod reaches the
+//! approximate tier:
 //!
-//! 1. **exact closed forms** — ball(= sphere/point) vs ball, ball vs
-//!    cuboid, cuboid vs cuboid (15-axis SAT), and ball vs
-//!    torus/disk/cylinder via the shapes' exact SDFs (a small ball can
-//!    genuinely pass through a torus hole);
-//! 2. **support-axis tests** for every remaining extended-vs-extended
+//! 1. **exact ball-vs-anything** — ball(= sphere/point) vs ball by
+//!    center distance, ball vs cuboid via the box SDF, and ball vs
+//!    torus/disk/cylinder via the shapes' exact SDF closest point (a
+//!    small ball can genuinely pass through a torus hole);
+//! 2. **exact cuboid-cuboid** — the 15-axis SAT;
+//! 3. **support-axis tests** for every remaining extended-vs-extended
 //!    pair: the candidate axes are each cuboid's three face axes, each
-//!    round shape's symmetry axis, and the center line. Exact for
-//!    face-on contacts (in particular every wall-slab contact);
+//!    round shape's symmetry axis, their pairwise cross products, the
+//!    radial rejection axes, and the center line. Exact for face-on
+//!    contacts (in particular every wall-slab contact) and for
+//!    side-on round-shape contacts (via the radial rejection axes);
 //!    conservative (may report contact slightly early, along a
 //!    candidate axis) for corner-on configurations. For the torus this
 //!    tier sees the convex hull — only balls can thread the hole.
@@ -107,8 +112,11 @@ pub struct ContactGeometry {
     pub depth: f64,
 }
 
-/// Effective collision radius of a boundary for pairing purposes:
-/// a `Point` collides as a zero-radius sphere.
+/// Whether a boundary has collision extent of its own. Only `Point`
+/// fails: it is a zero-radius sphere, so [`collidable_pairs`] excludes
+/// a pair only when **both** sides fail (two zero-radius spheres cannot
+/// overlap transversally) — a `Point` still collides with every
+/// extended shape.
 fn is_collidable(b: &Boundary) -> bool {
     !matches!(b, Boundary::Point)
 }
@@ -247,11 +255,15 @@ fn dumbbell_vs_any_separation(
 }
 
 /// Support-axis separation for extended-vs-extended pairs: evaluates
-/// the SAT gap `|d·l| − (h_a(l) + h_b(l))` over the candidate axes
-/// (each cuboid's face axes, each round shape's symmetry axis, and the
-/// center line) and returns the maximum gap with the world axis
-/// achieving it, oriented from `a` toward `b`. All candidate axes are
-/// unit vectors, so no renormalization is needed.
+/// the directed SAT gap `g(±l) = ±d·l − h_a(±l) − h_b(∓l)` over the
+/// candidate axes (each cuboid's face axes, each round shape's symmetry
+/// axis, their pairwise cross products, the radial rejection axes, and
+/// the center line) and returns the maximum gap with the world axis
+/// achieving it, oriented from `a` toward `b`. The directed form
+/// reduces to `|d·l| − (h_a + h_b)` for centrally symmetric shapes; the
+/// dumbbell's off-center spheres break `h(−u) = h(u)`, so both signs
+/// are evaluated. All candidate axes are unit vectors, so no
+/// renormalization is needed.
 fn support_axis_separation(
     ba: &Boundary,
     pa: Vec3,
