@@ -1,7 +1,8 @@
-//! One-dimensional quantum mechanics.
+//! Quantum mechanics on a grid: bound states, propagation, and
+//! scattering in 1, 2 and 3 dimensions.
 //!
-//! This is the Rust port of the 1-D quantum machinery from SolveIt. It
-//! does the two things a 1-D quantum solver is for:
+//! The core is the Rust port of the 1-D quantum machinery from SolveIt.
+//! It does the two things a 1-D quantum solver is for:
 //!
 //! * **Bound states** — discretise `H = -hbar^2/2m d^2/dx^2 + V(x)` on a
 //!   grid and diagonalise it, giving eigenvalues and eigenfunctions for
@@ -23,6 +24,18 @@
 //! licence-encumbered routines in the original C++ — see
 //! `CLEANROOM_PROVENANCE.md`.
 //!
+//! Beyond 1-D, the crate carries:
+//!
+//! * [`qm2d`] / [`qm3d`] — 2-D and 3-D grids: ADI propagation with
+//!   Strang-composed Cayley factors (exactly unitary at any step) and
+//!   Lanczos bound states; `qm3d` adds marginal densities;
+//! * [`transfer`] — fixed-energy scattering by transfer matrix:
+//!   `T(E)`, `R(E)`, flux balance, and a measured conditioning number;
+//! * [`absorber`] — the absorbing boundary, designed rather than tuned
+//!   (reflection and leakage computed exactly from the same transfer
+//!   matrix);
+//! * [`isosurface`] — marching tetrahedra, for rendering 3-D densities.
+//!
 //! # Units
 //!
 //! `hbar` and the mass are explicit fields rather than being fixed to 1,
@@ -30,7 +43,7 @@
 //! way to lose an afternoon. They default to 1, which is what almost
 //! every textbook problem wants.
 //!
-//! # Boundary conditions
+//! # Boundary conditions (the 1-D modules)
 //!
 //! Dirichlet for [`qm1d`]: the wavefunction is pinned to zero just
 //! outside the grid,

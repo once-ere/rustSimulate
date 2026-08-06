@@ -206,8 +206,9 @@ fn no_method(what: &str, nu: f64, z: C, asym_err: f64, series_err: f64) -> Strin
          |z| large compared with nu^2, not merely large — truncates at \
          about {asym_err:.1e}. Both are out of range here. The general \
          remedy is the uniform Airy-type expansions of DLMF 10.20, which \
-         cover the region where |z| and nu are comparable; they are not \
-         implemented."
+         cover the region where |z| and nu are comparable; they are in \
+         `crate::airy_uniform` and are offered as candidates where they \
+         apply, so this point is beyond them too."
     )
 }
 

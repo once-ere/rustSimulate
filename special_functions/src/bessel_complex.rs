@@ -226,6 +226,13 @@ pub fn bessel_j_array_c(n_max: usize, z: C) -> Result<Vec<C>, String> {
 /// assert!(v.abs() < 1e-12);
 /// ```
 pub fn bessel_j_c(n: i32, z: C) -> Result<C, String> {
+    /* the documented error contract must hold on the WHOLE domain, so
+     * the order guard comes before any route (the asymptotic routes
+     * carry no guard of their own and used to leak values for n < 0
+     * in the regions they cover) */
+    if n < 0 {
+        return Err(format!("bessel_j_c: order n must be >= 0, got {n}"));
+    }
     if let Some(v) = j_via_i(n, z) {
         return Ok(v);
     }
@@ -237,9 +244,6 @@ pub fn bessel_j_c(n: i32, z: C) -> Result<C, String> {
     }
     if let Some(v) = j_via_airy(n, z) {
         return Ok(v);
-    }
-    if n < 0 {
-        return Err(format!("bessel_j_c: order n must be >= 0, got {n}"));
     }
     Ok(bessel_j_array_c(n as usize, z)?[n as usize])
 }
@@ -863,6 +867,26 @@ pub fn bessel_i_nu(nu: f64, z: C) -> Result<C, String> {
     nu_series(nu, z, false)
 }
 
+/// How much precision the reflection route spends, **measured from the
+/// values**: the largest quantity either series forms, over the answer.
+///
+/// This is what makes the guard in [`bessel_y_nu`] possible without a
+/// modelled `exp(|z|)` law. `nu_series_loss` reports each series'
+/// own cancellation; the reflection then adds its own, and the product
+/// is what `f64` has to survive.
+fn y_nu_loss(nu: f64, z: C) -> Result<f64, String> {
+    let nearest = nu.round();
+    if (nu - nearest).abs() < NEAR_INTEGER { return Ok(1.0); }
+    let (jp, lp) = nu_series_loss(nu, z, true)?;
+    let (jm, lm) = nu_series_loss(-nu, z, true)?;
+    let (s, c) = (nu * std::f64::consts::PI).sin_cos();
+    let out = (jp * c - jm) * (1.0 / s);
+    let combine = if out.abs() > 0.0 {
+        ((jp * c).abs() + jm.abs()) / (out.abs() * s.abs())
+    } else { f64::INFINITY };
+    Ok(lp.max(lm) * combine.max(1.0))
+}
+
 /// `Y_nu(z)` for real order and complex `z`.
 ///
 /// **Prefer [`crate::bessel_cnu::bessel_y_cnu`] unless `|z|` is small.**
@@ -885,26 +909,6 @@ pub fn bessel_i_nu(nu: f64, z: C) -> Result<C, String> {
 ///
 /// # Errors
 /// As [`bessel_j_nu`]; also `z = 0`, where `Y` is singular.
-/// How much precision the reflection route spends, **measured from the
-/// values**: the largest quantity either series forms, over the answer.
-///
-/// This is what makes the guard in [`bessel_y_nu`] possible without a
-/// modelled `exp(|z|)` law. `nu_series_loss` reports each series'
-/// own cancellation; the reflection then adds its own, and the product
-/// is what `f64` has to survive.
-fn y_nu_loss(nu: f64, z: C) -> Result<f64, String> {
-    let nearest = nu.round();
-    if (nu - nearest).abs() < NEAR_INTEGER { return Ok(1.0); }
-    let (jp, lp) = nu_series_loss(nu, z, true)?;
-    let (jm, lm) = nu_series_loss(-nu, z, true)?;
-    let (s, c) = (nu * std::f64::consts::PI).sin_cos();
-    let out = (jp * c - jm) * (1.0 / s);
-    let combine = if out.abs() > 0.0 {
-        ((jp * c).abs() + jm.abs()) / (out.abs() * s.abs())
-    } else { f64::INFINITY };
-    Ok(lp.max(lm) * combine.max(1.0))
-}
-
 pub fn bessel_y_nu(nu: f64, z: C) -> Result<C, String> {
     let nearest = nu.round();
     if (nu - nearest).abs() < NEAR_INTEGER {
@@ -956,11 +960,12 @@ pub fn bessel_y_nu(nu: f64, z: C) -> Result<C, String> {
     // `nu = 36.8, z = 47.84`, adjudicated by the J-Y Wronskian against
     // Cephes (whose residual there is 2.2e-23 to our 3.7e-3).
     //
-    // It carries no guard yet because calibrating one honestly needs a
-    // sweep that has not been run. Until then, USE
-    // `crate::bessel_cnu::bessel_y_cnu`, which compares error estimates
-    // across routes and is accurate to 4.8e-13 at exactly those points
-    // — see `the_selector_is_accurate_where_the_raw_reflection_is_not`.
+    // Stage 2J calibrated the guard above from exactly that sweep, so
+    // these points now REFUSE instead of returning a wrong value.
+    // `crate::bessel_cnu::bessel_y_cnu` remains the better entry point
+    // — it compares error estimates across routes and is accurate to
+    // 4.8e-13 at those points — see
+    // `the_selector_is_accurate_where_the_raw_reflection_is_not`.
 }
 
 /// `K_nu(z)` for real order and complex `z`.
@@ -1408,6 +1413,11 @@ mod tests {
     fn invalid_input_is_reported() {
         assert!(bessel_j_c(-1, C::ONE).is_err(), "negative order");
         assert!(bessel_i_c(-1, C::ONE).is_err(), "negative order");
+        // The refusal must hold on the WHOLE domain, including the
+        // regions the guard-free asymptotic routes cover — these two
+        // used to leak values for n < 0.
+        assert!(bessel_j_c(-1, C::new(0.0, 30.0)).is_err(), "negative order, rotation route");
+        assert!(bessel_j_c(-1, C::new(60.0, 40.0)).is_err(), "negative order, asymptotic route");
         assert!(
             bessel_j_array_c(3, C::new(f64::NAN, 0.0)).is_err(),
             "non-finite z"

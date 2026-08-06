@@ -217,10 +217,6 @@ pub fn truncation_bound(lambda: f64, k: usize) -> Result<f64, String> {
     Ok((2.0 * tail).max(f64::EPSILON))
 }
 
-/// A Bessel-expanded split-operator propagator on a periodic grid.
-///
-/// Built once for a fixed potential and time step; every step then costs
-/// `O(n K)` multiply-adds and no allocation beyond one scratch buffer.
 /// Which way the exponential is split.
 ///
 /// The two share every ingredient — the same Bessel stencil, the same
@@ -245,6 +241,10 @@ pub enum Splitting {
     Strang,
 }
 
+/// A Bessel-expanded split-operator propagator on a periodic grid.
+///
+/// Built once for a fixed potential and time step; every step then costs
+/// `O(n K)` multiply-adds and no allocation beyond one scratch buffer.
 pub struct NashPropagator {
     grid: PeriodicGrid,
     hbar: f64,
@@ -405,7 +405,6 @@ impl NashPropagator {
         self.truncation
     }
 
-    /// One step, in place. `scratch` is resized to hold a copy of `psi`.
     /// The Bessel stencil alone — `exp(i (lambda/2)(S + S^-1))`, with
     /// no diagonal factor. Both splittings are built from this.
     fn kinetic(&self, psi: &mut [C], scratch: &mut Vec<C>) {
@@ -437,6 +436,7 @@ impl NashPropagator {
         }
     }
 
+    /// One step, in place. `scratch` is resized to hold a copy of `psi`.
     fn step_with(&self, psi: &mut [C], scratch: &mut Vec<C>) {
         match self.splitting {
             Splitting::Lie => {
