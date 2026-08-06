@@ -129,14 +129,17 @@ asserted error string observes the old behavior.
   preceding `error:` event carrying the judgment), and the proposed fix
   left that semantics half-changed. Declined as not clearly an
   improvement.
-- **`tools/extract_rust_items.py` `#[cfg(test)]` exclusion** is dead
-  code (the flag clears on the same line it is set): confirmed
-  mechanically, but the corrected exclusion produces **byte-identical
-  output** on this tree (no pub item exists inside any `#[cfg(test)]`
-  module), and the committed `rust_items.jsonl` has unrelated
-  pre-existing staleness a regeneration would surface as noise.
-  Declined as pure churn; recorded here so the next index rebuild
-  knows.
+- ~~**`tools/extract_rust_items.py` `#[cfg(test)]` exclusion** is dead
+  code — declined as churn, deferred to the next index rebuild~~ —
+  **done at that rebuild** (follow-up commit): the exclusion now arms
+  on the attribute and fires only when its target is a `mod` (the
+  docstring's stated policy; attribute-gated single items such as
+  `hankel_ratio` stay indexed). Verified on a synthetic file (module
+  items excluded, gated single items kept, scanning resumes after the
+  module) and on the real tree: the regenerated `rust_items.jsonl`
+  differs from the stale one by exactly the two recorded omissions
+  (`QM2_SUBCOMMANDS`, `QM3_SUBCOMMANDS`), 163 line repositions, and
+  the six doc texts this pass edited — nothing removed.
 - **Parser ANIMATE/ISO argument parse** is repeated four times with
   per-family error strings and one structurally different site (ISO's
   optional `LEVEL`): extraction is only safe with every message
@@ -170,10 +173,18 @@ asserted error string observes the old behavior.
   `del_inside_a_new_initializer_keeps_the_rollback_on_target`,
   `box_off_inside_a_new_initializer_keeps_the_rollback_on_target`.
   Workspace count: 568.
-- The committed `index_data/rust_items.jsonl` carries minor
-  pre-existing staleness relative to the current sources (line-number
-  drift, two missing constant entries); the published index entries are
-  unaffected. Will be reconciled at the next index rebuild.
+- ~~The committed `index_data/rust_items.jsonl` carries minor
+  pre-existing staleness (line-number drift, two missing constant
+  entries)~~ — **reconciled**: the full index pipeline was re-run
+  (extract → build_commands/tierb/tierc → build_catalog → build_app →
+  both verifiers). Tier B grows 491 → 493 (`QM2_SUBCOMMANDS`,
+  `QM3_SUBCOMMANDS`, both `reference` like every posim entry), the
+  entity total 4,830 → 4,832, and every runnable example still passes:
+  1177/1177 posim fragments executed, 258/258 Rust snippets compiled.
+  Captured outputs in this rebuild come from headless runs, so the
+  handful of `SCENE CREATE` captures now read "no browser was
+  launched — open that address yourself" — the message the same
+  command prints in any `POSIM_NO_BROWSER=1` environment.
 
 ## 6. Evidence (re-verification after the pass)
 

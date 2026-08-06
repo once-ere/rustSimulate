@@ -164,7 +164,7 @@ catalogue is [dynamic_notebooks/README.md](dynamic_notebooks/README.md).
 ## The Index of Functions
 
 `index_of_entities.html` is a browsable catalog of **every named entity in this
-repository** — 4,830 of them — with a definition, the `file:line` where it is
+repository** — 4,832 of them — with a definition, the `file:line` where it is
 defined, its complete syntax, and examples you can paste into a notebook and
 run. Open it directly; it needs no server and fetches nothing.
 
@@ -173,13 +173,13 @@ open index_of_entities.html          # macOS  (xdg-open on Linux)
 ```
 
 Keep `catalog-c.js` beside it: the page loads that second payload on demand
-when you open a bucket or search, which is what keeps the main file at 1.2 MB
-instead of 5.
+when you open a bucket or search, which is what keeps the main file at 1.7 MB
+instead of 6.
 
 | tier | what | entries | examples |
 |---|---|---|---|
 | A | the notebook surface — commands, keywords, field paths, builtins, types, notebooks, worked examples | 452 | 1,141 posim + 24 machine-mode fragments, **all executed** |
-| B | the first-party Rust API — `physical_object`, `special_functions`, `quantum`, `posim` | 491 | 258 snippets, **all compiled** |
+| B | the first-party Rust API — `physical_object`, `special_functions`, `quantum`, `posim` | 493 | 258 snippets, **all compiled** |
 | C | the vendored `sundials_rs` workspace | 3,887 | linked to the shipped example programs that call them |
 
 **Every example is checked, and the page says which kind of check it got:**
@@ -206,7 +206,7 @@ you can export and re-import, and the generated catalog is never mutated.
 The status page inside the app is the authority, and it is blunt:
 
 - **There are no stubs left.** Every Tier-A and Tier-B entry is either
-  `complete` (it carries examples) or `reference` — 233 of the latter, all in
+  `complete` (it carries examples) or `reference` — 235 of the latter, all in
   `posim`, which is a binary crate with no lib target, so nothing can
   `use posim::…` and no Rust snippet is possible. Those link instead to the
   notebook command each one implements.

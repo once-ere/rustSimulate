@@ -29,7 +29,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::boundary::{Boundary, Sdf};\n\n// Sdf is the trait every shape implements: a signed distance, plus a\n// surface normal that defaults to a central difference of it.\nlet s = Boundary::Sphere { radius: 0.5 };\nlet d = s.signed_distance(&Vec3::new(1.0, 0.0, 0.0));\nassert!((d - 0.5).abs() < 1e-9);   // 1.0 out from a radius-0.5 sphere",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -160,7 +160,7 @@
     "medium": "rust",
     "code": "use ::physical_object::boundary::Boundary;\nuse ::physical_object::boundary::analytic_inertia_tensor;\nuse ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = analytic_inertia_tensor(0.5, &Boundary::Sphere { radius: 0.5 });",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -203,7 +203,7 @@
     "medium": "rust",
     "code": "use ::physical_object::boundary::Boundary;\nuse ::physical_object::boundary::support_extent;\nuse ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = support_extent(&Boundary::Sphere { radius: 0.5 }, Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -246,7 +246,7 @@
     "medium": "rust",
     "code": "use ::physical_object::boundary::Boundary;\nuse ::physical_object::boundary::support_point;\nuse ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = support_point(&Boundary::Sphere { radius: 0.5 }, Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -289,7 +289,7 @@
     "medium": "rust",
     "code": "use ::physical_object::boundary::Boundary;\nuse ::physical_object::boundary::support_rank;\nuse ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = support_rank(&Boundary::Sphere { radius: 0.5 }, Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -332,7 +332,7 @@
     "medium": "rust",
     "code": "use ::physical_object::boundary::Boundary;\nuse ::physical_object::boundary::support_footprint_radius;\nuse ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = support_footprint_radius(&Boundary::Sphere { radius: 0.5 }, Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -375,7 +375,7 @@
     "medium": "rust",
     "code": "use ::physical_object::boundary::Boundary;\nuse ::physical_object::boundary::bounding_radius;\nuse ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = bounding_radius(&Boundary::Sphere { radius: 0.5 });",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -403,7 +403,7 @@
   "locations": [
    {
     "file": "physical_object/src/collide.rs",
-    "line": 54,
+    "line": 59,
     "role": "definition"
    },
    {
@@ -437,7 +437,7 @@
   "locations": [
    {
     "file": "physical_object/src/collide.rs",
-    "line": 67,
+    "line": 72,
     "role": "definition"
    }
   ],
@@ -447,7 +447,7 @@
     "medium": "rust",
     "code": "use ::physical_object::collide::ZENO_GAP_RELATIVE;\n\n// the relative gap below which a contact is treated as resting rather\n// than as another impact \u2014 the anti-Zeno guard\nassert!(ZENO_GAP_RELATIVE > 0.0);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -475,7 +475,7 @@
   "locations": [
    {
     "file": "physical_object/src/collide.rs",
-    "line": 70,
+    "line": 75,
     "role": "definition"
    },
    {
@@ -490,7 +490,7 @@
     "medium": "rust",
     "code": "use ::physical_object::collide::same_burst;\nuse ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = same_burst(0.5, 0.5);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -518,7 +518,7 @@
   "locations": [
    {
     "file": "physical_object/src/collide.rs",
-    "line": 75,
+    "line": 80,
     "role": "definition"
    },
    {
@@ -552,7 +552,7 @@
   "locations": [
    {
     "file": "physical_object/src/collide.rs",
-    "line": 79,
+    "line": 84,
     "role": "definition"
    },
    {
@@ -586,7 +586,7 @@
   "locations": [
    {
     "file": "physical_object/src/collide.rs",
-    "line": 101,
+    "line": 106,
     "role": "definition"
    }
   ],
@@ -596,7 +596,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::boundary::Boundary;\nuse ::physical_object::collide::{ContactGeometry, contact_geometry};\n\nlet a = physical_object::new_rigid(0, 1.0, 0.0, Vec3::new(-0.6, 0.0, 0.0),\n    Quat::identity(), Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0),\n    Mat3::identity(), Mat3::identity(), Boundary::Sphere { radius: 0.5 });\nlet b = physical_object::new_rigid(1, 1.0, 0.0, Vec3::new(0.6, 0.0, 0.0),\n    Quat::identity(), Vec3::new(-1.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0),\n    Mat3::identity(), Mat3::identity(), Boundary::Sphere { radius: 0.5 });\nlet g: Option<ContactGeometry> = contact_geometry(&a, &b, 1e-9);\n// the two spheres are 1.2 apart with radii 0.5 each, so they are NOT\n// touching yet and the narrow phase says so\nassert!(g.is_none());",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -624,7 +624,7 @@
   "locations": [
    {
     "file": "physical_object/src/collide.rs",
-    "line": 128,
+    "line": 136,
     "role": "definition"
    },
    {
@@ -663,7 +663,7 @@
   "locations": [
    {
     "file": "physical_object/src/collide.rs",
-    "line": 151,
+    "line": 159,
     "role": "definition"
    },
    {
@@ -697,7 +697,7 @@
   "locations": [
    {
     "file": "physical_object/src/collide.rs",
-    "line": 340,
+    "line": 352,
     "role": "definition"
    },
    {
@@ -731,7 +731,7 @@
   "locations": [
    {
     "file": "physical_object/src/collide.rs",
-    "line": 361,
+    "line": 373,
     "role": "definition"
    }
   ],
@@ -741,7 +741,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::collide::world_aabb;\n\nlet o = physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0));\nlet (lo, hi) = world_aabb(&o);\nassert!(lo.x <= hi.x);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -769,7 +769,7 @@
   "locations": [
    {
     "file": "physical_object/src/collide.rs",
-    "line": 406,
+    "line": 418,
     "role": "definition"
    },
    {
@@ -803,7 +803,7 @@
   "locations": [
    {
     "file": "physical_object/src/collide.rs",
-    "line": 503,
+    "line": 515,
     "role": "definition"
    }
   ],
@@ -813,7 +813,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::boundary::Boundary;\nuse ::physical_object::collide::contact_geometry;\n\nlet a = physical_object::new_rigid(0, 1.0, 0.0, Vec3::new(-0.6, 0.0, 0.0),\n    Quat::identity(), Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0),\n    Mat3::identity(), Mat3::identity(), Boundary::Sphere { radius: 0.5 });\nlet b = physical_object::new_rigid(1, 1.0, 0.0, Vec3::new(0.6, 0.0, 0.0),\n    Quat::identity(), Vec3::new(-1.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0),\n    Mat3::identity(), Mat3::identity(), Boundary::Sphere { radius: 0.5 });\n// separation > 0 means apart; the normal points from a toward b\nlet g = contact_geometry(&a, &b, 1e-9);\nlet _ = g;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -841,7 +841,7 @@
   "locations": [
    {
     "file": "physical_object/src/collide.rs",
-    "line": 980,
+    "line": 992,
     "role": "definition"
    }
   ],
@@ -851,7 +851,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\nuse ::physical_object::collide::resolve_pair;\n\nlet mut sys = PhysicalObjectSystem::new(vec![\n    physical_object::new_point(0, 1.0, Vec3::new(-1.0, 0.0, 0.0), Vec3::new(1.0, 0.0, 0.0)),\n    physical_object::new_point(1, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(-1.0, 0.0, 0.0)),\n], 0.0);\n// two POINTS can never collide, so the resolver has nothing to do\nlet c = resolve_pair(&mut sys, 0, 1, false)?;\nassert!(c.is_none());",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -879,7 +879,7 @@
   "locations": [
    {
     "file": "physical_object/src/collide.rs",
-    "line": 1076,
+    "line": 1088,
     "role": "definition"
    },
    {
@@ -913,7 +913,7 @@
   "locations": [
    {
     "file": "physical_object/src/collide.rs",
-    "line": 1110,
+    "line": 1122,
     "role": "definition"
    },
    {
@@ -947,7 +947,7 @@
   "locations": [
    {
     "file": "physical_object/src/collide.rs",
-    "line": 1158,
+    "line": 1170,
     "role": "definition"
    },
    {
@@ -1098,7 +1098,7 @@
   "locations": [
    {
     "file": "physical_object/src/integrate.rs",
-    "line": 377,
+    "line": 379,
     "role": "definition"
    }
   ],
@@ -1108,7 +1108,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\nuse ::physical_object::integrate::run;\n\nlet mut sys = PhysicalObjectSystem::new(vec![\n    physical_object::new_point(0, 1.0, Vec3::new(0.0, 0.0, 0.0), Vec3::new(1.0, 0.0, 0.0)),\n], 0.0);\n// every step goes through the pure-Rust SUNDIALS solvers; there is no\n// hand-rolled stepper anywhere in the project\nlet report = run(&mut sys, 1.0, 2)?;\nlet _ = report;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -1136,7 +1136,7 @@
   "locations": [
    {
     "file": "physical_object/src/integrate.rs",
-    "line": 391,
+    "line": 393,
     "role": "definition"
    },
    {
@@ -1185,7 +1185,7 @@
   "locations": [
    {
     "file": "physical_object/src/integrate.rs",
-    "line": 991,
+    "line": 993,
     "role": "definition"
    },
    {
@@ -1298,7 +1298,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Vec3::new(0.5, 0.5, 0.5);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -1356,7 +1356,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Vec3::zeros();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -1433,7 +1433,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Vec3::new(1.0, 2.0, 3.0);\nlet _value = subject.to_array();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -1486,7 +1486,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Vec3::new(1.0, 2.0, 3.0);\nlet _value = subject.dot(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -1546,7 +1546,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Vec3::new(1.0, 2.0, 3.0);\nlet _value = subject.cross(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -1601,7 +1601,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Vec3::new(1.0, 2.0, 3.0);\nlet _value = subject.norm_squared();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -1659,7 +1659,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Vec3::new(1.0, 2.0, 3.0);\nlet _value = subject.norm();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -1714,7 +1714,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Vec3::new(1.0, 2.0, 3.0);\nlet _value = subject.normalize();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -1813,7 +1813,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Mat3::zeros();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -1866,7 +1866,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Mat3::identity();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -1914,7 +1914,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Mat3::from_diagonal(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -1967,7 +1967,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Mat3::identity();\nlet _value = subject.transpose();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -2010,7 +2010,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Mat3::identity();\nlet _value = subject.determinant();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -2053,7 +2053,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Mat3::identity();\nlet _value = subject.try_inverse();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -2096,7 +2096,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Mat3::identity();\nlet _value = subject.inverse_diagonal();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -2139,7 +2139,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Mat3::skew(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -2192,7 +2192,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Mat3::outer(Vec3::new(1.0, 0.0, 0.0), Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -2289,7 +2289,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Quat::new(0.5, 0.5, 0.5, 0.5);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -2342,7 +2342,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Quat::identity();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -2385,7 +2385,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Quat::pure(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -2438,7 +2438,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet _value = Quat::from_axis_angle(Vec3::new(1.0, 0.0, 0.0), 0.5);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -2496,7 +2496,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Quat::identity();\nlet _value = subject.norm();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -2551,7 +2551,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Quat::identity();\nlet _value = subject.normalize();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -2606,7 +2606,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Quat::identity();\nlet _value = subject.conjugate();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -2649,7 +2649,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Quat::identity();\nlet _value = subject.inverse();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -2702,7 +2702,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Quat::identity();\nlet _value = subject.rotate(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -2755,7 +2755,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\n\nlet subject = Quat::identity();\nlet _value = subject.to_rotation_matrix();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -2862,7 +2862,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet _value = physical_object::new_point(1, 0.5, Vec3::new(1.0, 0.0, 0.0), Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -2900,7 +2900,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::boundary::Boundary;\n\n// id, mass, charge, then pose, then the two velocities, then the two\n// tensors, then the shape\nlet o = physical_object::new_rigid(\n    0, 2.0, 0.0,\n    Vec3::new(0.0, 0.0, 0.0), Quat::identity(),\n    Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 0.0),\n    Mat3::identity(), Mat3::identity(),\n    Boundary::Sphere { radius: 0.5 },\n);\nassert_eq!(o.get_mass(), 2.0);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -3002,7 +3002,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_id();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -3045,7 +3045,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_id(1);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -3098,7 +3098,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_mass();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -3141,7 +3141,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_mass(0.5);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -3184,7 +3184,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_inverse_mass();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -3232,7 +3232,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_inverse_mass(0.5);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -3285,7 +3285,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_charge();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -3328,7 +3328,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_charge(0.5);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -3386,7 +3386,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_position();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -3439,7 +3439,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_position(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -3487,7 +3487,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_orientation();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -3540,7 +3540,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_orientation(Quat::identity());",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -3583,7 +3583,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_momentum();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -3636,7 +3636,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_momentum(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -3689,7 +3689,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_angular_momentum();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -3737,7 +3737,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_angular_momentum(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -3780,7 +3780,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_inertia_tensor();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -3823,7 +3823,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_inertia_tensor(Mat3::identity());",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -3871,7 +3871,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_inverse_inertia_tensor();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -3919,7 +3919,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_inverse_inertia_tensor(Mat3::identity());",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -3967,7 +3967,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_magnetic_moment_tensor();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -4010,7 +4010,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_magnetic_moment_tensor(Mat3::identity());",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -4063,7 +4063,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_restitution();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -4111,7 +4111,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_restitution(0.5);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -4164,7 +4164,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_boundary();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -4207,7 +4207,7 @@
     "medium": "rust",
     "code": "use ::physical_object::boundary::Boundary;\nuse ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_boundary(Boundary::Sphere { radius: 0.5 });",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -4255,7 +4255,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_velocity();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -4303,7 +4303,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_velocity(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -4351,7 +4351,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.linear_velocity();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -4399,7 +4399,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.get_angular_velocity();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -4442,7 +4442,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.world_inverse_inertia();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -4485,7 +4485,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.set_angular_velocity(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -4528,7 +4528,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.angular_velocity();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -4586,7 +4586,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.momentum();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -4634,7 +4634,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.orbital_angular_momentum(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -4677,7 +4677,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.total_angular_momentum(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -4720,7 +4720,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.laplace_vector(Vec3::new(1.0, 0.0, 0.0), 0.5);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -4768,7 +4768,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.kinetic_energy();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -4806,7 +4806,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.to_local_space(&Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -4844,7 +4844,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.to_world_space(&Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -4892,7 +4892,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.signed_distance(&Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -4935,7 +4935,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nlet _value = subject.surface_normal(&Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -4978,7 +4978,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.recompute_inertia_from_boundary();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -5036,7 +5036,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\n\nlet mut subject = physical_object::new_point(0, 2.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 3.0, 0.0));\nsubject.integrate(&Vec3::new(1.0, 0.0, 0.0), &Vec3::new(1.0, 0.0, 0.0), 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -5177,7 +5177,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet _value = PhysicalObjectSystem::new(vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))], 0.5);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -5264,7 +5264,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet mut subject = PhysicalObjectSystem::new(\n    vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))],\n    1.0,\n);\nlet _value = subject.remove_object(1);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -5307,7 +5307,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet subject = PhysicalObjectSystem::new(\n    vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))],\n    1.0,\n);\nlet _value = subject.total_mass();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -5365,7 +5365,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet subject = PhysicalObjectSystem::new(\n    vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))],\n    1.0,\n);\nlet _value = subject.center_of_mass();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -5408,7 +5408,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet subject = PhysicalObjectSystem::new(\n    vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))],\n    1.0,\n);\nlet _value = subject.compute_accelerations();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -5456,7 +5456,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet subject = PhysicalObjectSystem::new(\n    vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))],\n    1.0,\n);\nlet _value = subject.total_momentum();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -5499,7 +5499,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet subject = PhysicalObjectSystem::new(\n    vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))],\n    1.0,\n);\nlet _value = subject.total_angular_momentum(Vec3::new(1.0, 0.0, 0.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -5557,7 +5557,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet subject = PhysicalObjectSystem::new(\n    vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))],\n    1.0,\n);\nlet _value = subject.total_energy();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -5600,7 +5600,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet subject = PhysicalObjectSystem::new(\n    vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))],\n    1.0,\n);\nlet _value = subject.laplace_vector(1);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -5643,7 +5643,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet subject = PhysicalObjectSystem::new(\n    vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))],\n    1.0,\n);\nlet _value = subject.state_len();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -5686,7 +5686,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet subject = PhysicalObjectSystem::new(\n    vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))],\n    1.0,\n);\nlet _value = subject.pack_state();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -5729,7 +5729,7 @@
     "medium": "rust",
     "code": "use ::physical_object::linalg::{Vec3, Mat3, Quat};\nuse ::physical_object::physical_object::physical_object;\nuse ::physical_object::system::PhysicalObjectSystem;\n\nlet mut subject = PhysicalObjectSystem::new(\n    vec![physical_object::new_point(0, 1.0, Vec3::new(1.0, 0.0, 0.0), Vec3::new(0.0, 1.0, 0.0))],\n    1.0,\n);\nsubject.unpack_state(&[1.0, 2.0, 3.0]);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -6098,7 +6098,7 @@
   "locations": [
    {
     "file": "posim/src/machine.rs",
-    "line": 279,
+    "line": 303,
     "role": "definition"
    }
   ],
@@ -6129,7 +6129,7 @@
   "locations": [
    {
     "file": "posim/src/machine.rs",
-    "line": 423,
+    "line": 447,
     "role": "definition"
    }
   ],
@@ -6160,7 +6160,7 @@
   "locations": [
    {
     "file": "posim/src/machine.rs",
-    "line": 488,
+    "line": 512,
     "role": "definition"
    },
    {
@@ -6344,7 +6344,7 @@
   "locations": [
    {
     "file": "posim/src/notebook.rs",
-    "line": 197,
+    "line": 178,
     "role": "definition"
    },
    {
@@ -6378,7 +6378,7 @@
   "locations": [
    {
     "file": "posim/src/notebook.rs",
-    "line": 259,
+    "line": 240,
     "role": "definition"
    },
    {
@@ -6412,7 +6412,7 @@
   "locations": [
    {
     "file": "posim/src/notebook.rs",
-    "line": 275,
+    "line": 256,
     "role": "definition"
    },
    {
@@ -6446,7 +6446,7 @@
   "locations": [
    {
     "file": "posim/src/parser.rs",
-    "line": 209,
+    "line": 217,
     "role": "definition"
    }
   ],
@@ -6477,7 +6477,7 @@
   "locations": [
    {
     "file": "posim/src/parser.rs",
-    "line": 217,
+    "line": 225,
     "role": "definition"
    },
    {
@@ -6511,7 +6511,7 @@
   "locations": [
    {
     "file": "posim/src/parser.rs",
-    "line": 235,
+    "line": 243,
     "role": "definition"
    },
    {
@@ -6740,6 +6740,45 @@
   "status": "reference"
  },
  {
+  "id": "rs.posim.qm2.QM2_SUBCOMMANDS",
+  "name": "QM2_SUBCOMMANDS",
+  "kind": "type",
+  "tier": "B",
+  "aliases": [],
+  "indexKeys": [
+   "Q"
+  ],
+  "summary": "Every `QM2` subcommand word the parser accepts, canonical spelling only.",
+  "definition": "Every `QM2` subcommand word the parser accepts, canonical spelling only.  This list is not documentation \u2014 it is the input to `every_qm2_subcommand_is_documented_in_lockstep`, which checks each word against the parser, `HELP_TEXT`, the EBNF comment and both grammar documents, **and checks the converse**: that every word the EBNF quotes is one this list declares.  The converse direction is the one   Declared in the `qm2` module of the `posim` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `posim/src/parser.rs`, `posim/src/qm3.rs`.",
+  "syntax": [
+   "pub const QM2_SUBCOMMANDS: &[&str] = &[ \"status\", \"grid\", \"potential\", \"packet\", \"step\", \"run\", \"norm\", \"energy\", \"centroid\", \"prob\", \"absorb\", \"drive\", \"states\", \"state\", \"reset\", \"animate\", ]"
+  ],
+  "parameters": [],
+  "returns": null,
+  "errors": [],
+  "locations": [
+   {
+    "file": "posim/src/qm2.rs",
+    "line": 41,
+    "role": "definition"
+   },
+   {
+    "file": "posim/src/parser.rs",
+    "line": 1,
+    "role": "used here"
+   },
+   {
+    "file": "posim/src/qm3.rs",
+    "line": 1,
+    "role": "used here"
+   }
+  ],
+  "examples": [],
+  "seeAlso": [],
+  "invariants": [],
+  "status": "reference"
+ },
+ {
   "id": "rs.posim.qm2.Qm2Cmd",
   "name": "Qm2Cmd",
   "kind": "type",
@@ -6759,7 +6798,7 @@
   "locations": [
    {
     "file": "posim/src/qm2.rs",
-    "line": 28,
+    "line": 48,
     "role": "definition"
    },
    {
@@ -6798,7 +6837,7 @@
   "locations": [
    {
     "file": "posim/src/qm2.rs",
-    "line": 63,
+    "line": 83,
     "role": "definition"
    },
    {
@@ -6832,7 +6871,7 @@
   "locations": [
    {
     "file": "posim/src/qm2.rs",
-    "line": 82,
+    "line": 102,
     "role": "definition"
    },
    {
@@ -6866,11 +6905,45 @@
   "locations": [
    {
     "file": "posim/src/qm2.rs",
-    "line": 126,
+    "line": 146,
     "role": "definition"
    },
    {
     "file": "posim/src/vm.rs",
+    "line": 1,
+    "role": "used here"
+   }
+  ],
+  "examples": [],
+  "seeAlso": [],
+  "invariants": [],
+  "status": "reference"
+ },
+ {
+  "id": "rs.posim.qm3.QM3_SUBCOMMANDS",
+  "name": "QM3_SUBCOMMANDS",
+  "kind": "type",
+  "tier": "B",
+  "aliases": [],
+  "indexKeys": [
+   "Q"
+  ],
+  "summary": "Every `QM3` subcommand word the parser accepts, canonical spelling only.",
+  "definition": "Every `QM3` subcommand word the parser accepts, canonical spelling only.  Input to `every_qm3_subcommand_is_documented_in_lockstep`; see [`crate::qm2::QM2_SUBCOMMANDS`] for why the check runs in both directions.  Declared in the `qm3` module of the `posim` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `posim/src/parser.rs`.",
+  "syntax": [
+   "pub const QM3_SUBCOMMANDS: &[&str] = &[ \"status\", \"grid\", \"potential\", \"packet\", \"states\", \"state\", \"step\", \"run\", \"norm\", \"energy\", \"centroid\", \"prob\", \"absorb\", \"drive\", \"animate\", \"iso\", \"reset\", ]"
+  ],
+  "parameters": [],
+  "returns": null,
+  "errors": [],
+  "locations": [
+   {
+    "file": "posim/src/qm3.rs",
+    "line": 37,
+    "role": "definition"
+   },
+   {
+    "file": "posim/src/parser.rs",
     "line": 1,
     "role": "used here"
    }
@@ -6900,7 +6973,7 @@
   "locations": [
    {
     "file": "posim/src/qm3.rs",
-    "line": 34,
+    "line": 44,
     "role": "definition"
    },
    {
@@ -6939,7 +7012,7 @@
   "locations": [
    {
     "file": "posim/src/qm3.rs",
-    "line": 67,
+    "line": 77,
     "role": "definition"
    },
    {
@@ -6973,7 +7046,7 @@
   "locations": [
    {
     "file": "posim/src/qm3.rs",
-    "line": 81,
+    "line": 91,
     "role": "definition"
    },
    {
@@ -7007,7 +7080,7 @@
   "locations": [
    {
     "file": "posim/src/qm3.rs",
-    "line": 128,
+    "line": 138,
     "role": "definition"
    },
    {
@@ -7143,7 +7216,7 @@
    "S"
   ],
   "summary": "fn `symbol` in `posim::vm`.",
-  "definition": "No doc comment in the source.  Declared in the `vm` module of the `posim` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `quantum/src/nash.rs`, `special_functions/src/wigner.rs`.",
+  "definition": "No doc comment in the source.  Declared in the `vm` module of the `posim` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `posim/src/machine.rs`, `quantum/src/nash.rs`, `special_functions/src/wigner.rs`.",
   "syntax": [
    "pub fn symbol(self) -> &'static str"
   ],
@@ -7155,6 +7228,11 @@
     "file": "posim/src/vm.rs",
     "line": 28,
     "role": "definition"
+   },
+   {
+    "file": "posim/src/machine.rs",
+    "line": 1,
+    "role": "used here"
    },
    {
     "file": "quantum/src/nash.rs",
@@ -7588,7 +7666,7 @@
   "locations": [
    {
     "file": "posim/src/vm.rs",
-    "line": 363,
+    "line": 371,
     "role": "definition"
    },
    {
@@ -7632,7 +7710,7 @@
   "locations": [
    {
     "file": "posim/src/vm.rs",
-    "line": 674,
+    "line": 682,
     "role": "definition"
    },
    {
@@ -7671,7 +7749,7 @@
   "locations": [
    {
     "file": "posim/src/vm.rs",
-    "line": 1823,
+    "line": 1875,
     "role": "definition"
    },
    {
@@ -7715,7 +7793,7 @@
   "locations": [
    {
     "file": "posim/src/vm.rs",
-    "line": 1881,
+    "line": 1933,
     "role": "definition"
    }
   ],
@@ -7746,7 +7824,7 @@
   "locations": [
    {
     "file": "posim/src/vm.rs",
-    "line": 1936,
+    "line": 1988,
     "role": "definition"
    }
   ],
@@ -7777,7 +7855,7 @@
   "locations": [
    {
     "file": "posim/src/vm.rs",
-    "line": 2737,
+    "line": 2789,
     "role": "definition"
    },
    {
@@ -7920,7 +7998,7 @@
   "locations": [
    {
     "file": "posim/src/scene/mod.rs",
-    "line": 372,
+    "line": 379,
     "role": "definition"
    },
    {
@@ -7959,7 +8037,7 @@
   "locations": [
    {
     "file": "posim/src/scene/mod.rs",
-    "line": 484,
+    "line": 517,
     "role": "definition"
    },
    {
@@ -7993,7 +8071,7 @@
   "locations": [
    {
     "file": "posim/src/scene/mod.rs",
-    "line": 500,
+    "line": 533,
     "role": "definition"
    },
    {
@@ -8027,7 +8105,7 @@
   "locations": [
    {
     "file": "posim/src/scene/mod.rs",
-    "line": 513,
+    "line": 546,
     "role": "definition"
    },
    {
@@ -8071,7 +8149,7 @@
   "locations": [
    {
     "file": "posim/src/scene/mod.rs",
-    "line": 522,
+    "line": 555,
     "role": "definition"
    },
    {
@@ -8105,7 +8183,7 @@
   "locations": [
    {
     "file": "posim/src/scene/mod.rs",
-    "line": 537,
+    "line": 570,
     "role": "definition"
    },
    {
@@ -8149,7 +8227,7 @@
   "locations": [
    {
     "file": "posim/src/scene/mod.rs",
-    "line": 549,
+    "line": 582,
     "role": "definition"
    },
    {
@@ -8193,7 +8271,7 @@
   "locations": [
    {
     "file": "posim/src/scene/mod.rs",
-    "line": 559,
+    "line": 592,
     "role": "definition"
    },
    {
@@ -8237,7 +8315,7 @@
   "locations": [
    {
     "file": "posim/src/scene/mod.rs",
-    "line": 571,
+    "line": 604,
     "role": "definition"
    },
    {
@@ -8271,7 +8349,7 @@
   "locations": [
    {
     "file": "posim/src/scene/mod.rs",
-    "line": 599,
+    "line": 632,
     "role": "definition"
    },
    {
@@ -8305,7 +8383,7 @@
   "locations": [
    {
     "file": "posim/src/scene/mod.rs",
-    "line": 615,
+    "line": 648,
     "role": "definition"
    },
    {
@@ -8339,7 +8417,7 @@
   "locations": [
    {
     "file": "posim/src/scene/mod.rs",
-    "line": 625,
+    "line": 658,
     "role": "definition"
    },
    {
@@ -8373,7 +8451,7 @@
   "locations": [
    {
     "file": "posim/src/scene/mod.rs",
-    "line": 657,
+    "line": 690,
     "role": "definition"
    },
    {
@@ -8412,7 +8490,7 @@
   "locations": [
    {
     "file": "posim/src/scene/mod.rs",
-    "line": 664,
+    "line": 697,
     "role": "definition"
    }
   ],
@@ -8443,7 +8521,7 @@
   "locations": [
    {
     "file": "posim/src/scene/mod.rs",
-    "line": 670,
+    "line": 703,
     "role": "definition"
    },
    {
@@ -8482,7 +8560,7 @@
   "locations": [
    {
     "file": "posim/src/scene/mod.rs",
-    "line": 676,
+    "line": 709,
     "role": "definition"
    },
    {
@@ -8521,7 +8599,7 @@
   "locations": [
    {
     "file": "posim/src/scene/mod.rs",
-    "line": 682,
+    "line": 715,
     "role": "definition"
    }
   ],
@@ -8552,7 +8630,7 @@
   "locations": [
    {
     "file": "posim/src/scene/mod.rs",
-    "line": 688,
+    "line": 721,
     "role": "definition"
    }
   ],
@@ -8583,7 +8661,7 @@
   "locations": [
    {
     "file": "posim/src/scene/mod.rs",
-    "line": 694,
+    "line": 727,
     "role": "definition"
    }
   ],
@@ -8614,7 +8692,7 @@
   "locations": [
    {
     "file": "posim/src/scene/mod.rs",
-    "line": 700,
+    "line": 733,
     "role": "definition"
    }
   ],
@@ -8975,7 +9053,7 @@
     "medium": "rust",
     "code": "use ::special_functions::airy_complex::airy_c;\nuse ::special_functions::complex::Complex64;\n\nlet _value = airy_c(Complex64::new(1.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -9023,7 +9101,7 @@
     "medium": "rust",
     "code": "use ::special_functions::airy_uniform::jy_airy;\n\nlet _value = jy_airy(0.5, 2.0);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -9060,6 +9138,11 @@
     "role": "used here"
    },
    {
+    "file": "special_functions/src/bessel_cnu_large.rs",
+    "line": 1,
+    "role": "used here"
+   },
+   {
     "file": "special_functions/src/debye.rs",
     "line": 1,
     "role": "used here"
@@ -9071,7 +9154,7 @@
     "medium": "rust",
     "code": "use ::special_functions::airy_uniform::jy_airy_c;\nuse ::special_functions::complex::Complex64;\n\nlet _value = jy_airy_c(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -9124,7 +9207,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel::bessel_j_array;\n\nlet _value = bessel_j_array(4, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -9179,7 +9262,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel::bessel_j;\n\nlet _value = bessel_j(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -9229,7 +9312,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_cnu::bessel_j_cnu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_j_cnu(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -9277,7 +9360,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_cnu::bessel_i_cnu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_i_cnu(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -9330,7 +9413,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_cnu::bessel_y_cnu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_y_cnu(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -9378,7 +9461,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_cnu::bessel_k_cnu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_k_cnu(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -9406,7 +9489,7 @@
   "locations": [
    {
     "file": "special_functions/src/bessel_cnu_large.rs",
-    "line": 68,
+    "line": 69,
     "role": "definition"
    },
    {
@@ -9440,7 +9523,7 @@
   "locations": [
    {
     "file": "special_functions/src/bessel_cnu_large.rs",
-    "line": 240,
+    "line": 241,
     "role": "definition"
    },
    {
@@ -9460,7 +9543,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_cnu_large::j_asym;\nuse ::special_functions::complex::Complex64;\n\nlet _value = j_asym(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -9488,7 +9571,7 @@
   "locations": [
    {
     "file": "special_functions/src/bessel_cnu_large.rs",
-    "line": 247,
+    "line": 248,
     "role": "definition"
    },
    {
@@ -9508,7 +9591,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_cnu_large::y_asym;\nuse ::special_functions::complex::Complex64;\n\nlet _value = y_asym(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -9536,7 +9619,7 @@
   "locations": [
    {
     "file": "special_functions/src/bessel_cnu_large.rs",
-    "line": 254,
+    "line": 255,
     "role": "definition"
    },
    {
@@ -9561,7 +9644,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_cnu_large::k_asym;\nuse ::special_functions::complex::Complex64;\n\nlet _value = k_asym(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -9589,7 +9672,7 @@
   "locations": [
    {
     "file": "special_functions/src/bessel_cnu_large.rs",
-    "line": 283,
+    "line": 284,
     "role": "definition"
    },
    {
@@ -9609,7 +9692,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_cnu_large::i_asym;\nuse ::special_functions::complex::Complex64;\n\nlet _value = i_asym(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -9637,7 +9720,7 @@
   "locations": [
    {
     "file": "special_functions/src/bessel_cnu_large.rs",
-    "line": 298,
+    "line": 299,
     "role": "definition"
    },
    {
@@ -9652,7 +9735,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_cnu_large::ik_uniform_unscaled;\nuse ::special_functions::complex::Complex64;\n\nlet _value = ik_uniform_unscaled(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -9695,7 +9778,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_complex::bessel_j_array_c;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_j_array_c(1, Complex64::new(1.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -9738,7 +9821,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_complex::bessel_j_c;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_j_c(0, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -9766,7 +9849,7 @@
   "locations": [
    {
     "file": "special_functions/src/bessel_complex.rs",
-    "line": 264,
+    "line": 268,
     "role": "definition"
    },
    {
@@ -9781,7 +9864,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_complex::bessel_i_c;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_i_c(0, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -9809,7 +9892,7 @@
   "locations": [
    {
     "file": "special_functions/src/bessel_complex.rs",
-    "line": 372,
+    "line": 376,
     "role": "definition"
    }
   ],
@@ -9819,7 +9902,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_complex::bessel_y_array_c;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_y_array_c(1, Complex64::new(1.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -9847,7 +9930,7 @@
   "locations": [
    {
     "file": "special_functions/src/bessel_complex.rs",
-    "line": 405,
+    "line": 409,
     "role": "definition"
    },
    {
@@ -9867,7 +9950,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_complex::bessel_y_c;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_y_c(0, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -9895,7 +9978,7 @@
   "locations": [
    {
     "file": "special_functions/src/bessel_complex.rs",
-    "line": 686,
+    "line": 690,
     "role": "definition"
    },
    {
@@ -9915,7 +9998,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_complex::bessel_k_c;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_k_c(0, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -9943,7 +10026,7 @@
   "locations": [
    {
     "file": "special_functions/src/bessel_complex.rs",
-    "line": 850,
+    "line": 854,
     "role": "definition"
    },
    {
@@ -9958,7 +10041,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_complex::bessel_j_nu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_j_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -9988,7 +10071,7 @@
   "locations": [
    {
     "file": "special_functions/src/bessel_complex.rs",
-    "line": 862,
+    "line": 866,
     "role": "definition"
    },
    {
@@ -10013,7 +10096,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_complex::bessel_i_nu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_i_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -10032,8 +10115,8 @@
   "indexKeys": [
    "B"
   ],
-  "summary": "fn `bessel_y_nu` in `special_functions::bessel_complex`.",
-  "definition": "No doc comment in the source.  Declared in the `bessel_complex` module of the `special_functions` crate.",
+  "summary": "`Y_nu(z)` for real order and complex `z`.",
+  "definition": "`Y_nu(z)` for real order and complex `z`.  **Prefer [`crate::bessel_cnu::bessel_y_cnu`] unless `|z|` is small.** This is one route, not a selector: for non-integer `nu` it forms `[J_nu cos(nu pi) - J_{-nu}] / sin(nu pi)`, and `J_{-nu}` comes from an ascending series whose terms reach `exp(|z|)`. Past `|z| ~ 30` that has consumed every digit and the result is not merely inaccurate but wrong \u2014 3.09e  Declared in the `bessel_complex` module of the `special_functions` crate.",
   "syntax": [
    "pub fn bessel_y_nu(nu: f64, z: C) -> Result<C, String>"
   ],
@@ -10043,7 +10126,7 @@
   "locations": [
    {
     "file": "special_functions/src/bessel_complex.rs",
-    "line": 908,
+    "line": 912,
     "role": "definition"
    },
    {
@@ -10068,7 +10151,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_complex::bessel_y_nu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_y_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -10098,7 +10181,7 @@
   "locations": [
    {
     "file": "special_functions/src/bessel_complex.rs",
-    "line": 979,
+    "line": 984,
     "role": "definition"
    },
    {
@@ -10113,7 +10196,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_complex::bessel_k_nu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_k_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -10153,7 +10236,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_scaled::asym_error_estimate;\nuse ::special_functions::complex::Complex64;\n\nlet _value = asym_error_estimate(0.5, Complex64::new(2.0, 0.5));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -10181,7 +10264,7 @@
   "locations": [
    {
     "file": "special_functions/src/bessel_scaled.rs",
-    "line": 489,
+    "line": 490,
     "role": "definition"
    },
    {
@@ -10196,7 +10279,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_scaled::hankel_h1_scaled_nu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = hankel_h1_scaled_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -10224,7 +10307,7 @@
   "locations": [
    {
     "file": "special_functions/src/bessel_scaled.rs",
-    "line": 503,
+    "line": 504,
     "role": "definition"
    },
    {
@@ -10239,7 +10322,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_scaled::hankel_h2_scaled_nu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = hankel_h2_scaled_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -10267,7 +10350,7 @@
   "locations": [
    {
     "file": "special_functions/src/bessel_scaled.rs",
-    "line": 634,
+    "line": 635,
     "role": "definition"
    },
    {
@@ -10287,7 +10370,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_scaled::bessel_k_scaled_nu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_k_scaled_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -10315,7 +10398,7 @@
   "locations": [
    {
     "file": "special_functions/src/bessel_scaled.rs",
-    "line": 657,
+    "line": 658,
     "role": "definition"
    },
    {
@@ -10330,7 +10413,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_scaled::bessel_i_scaled_nu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_i_scaled_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -10358,7 +10441,7 @@
   "locations": [
    {
     "file": "special_functions/src/bessel_scaled.rs",
-    "line": 779,
+    "line": 780,
     "role": "definition"
    },
    {
@@ -10373,7 +10456,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_scaled::bessel_j_scaled_nu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_j_scaled_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -10401,7 +10484,7 @@
   "locations": [
    {
     "file": "special_functions/src/bessel_scaled.rs",
-    "line": 880,
+    "line": 881,
     "role": "definition"
    },
    {
@@ -10421,7 +10504,7 @@
     "medium": "rust",
     "code": "use ::special_functions::bessel_scaled::bessel_y_scaled_nu;\nuse ::special_functions::complex::Complex64;\n\nlet _value = bessel_y_scaled_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -10513,7 +10596,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet _value = Complex64::new(0.5, 2.0);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -10571,7 +10654,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet _value = Complex64::real(0.5);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -10609,7 +10692,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet v = Complex64::I * Complex64::I;\nassert_eq!(v, Complex64::real(-1.0));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -10686,7 +10769,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet v = Complex64::ONE * Complex64::new(3.0, -4.0);\nassert_eq!(v.abs(), 5.0);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -10739,7 +10822,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet subject = Complex64::new(3.0, -4.0);\nlet _value = subject.conj();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -10782,7 +10865,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet subject = Complex64::new(3.0, -4.0);\nlet _value = subject.norm_sqr();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -10840,7 +10923,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet subject = Complex64::new(3.0, -4.0);\nlet _value = subject.abs();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -10885,7 +10968,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet subject = Complex64::new(3.0, -4.0);\nlet _value = subject.arg();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -10943,7 +11026,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet subject = Complex64::new(3.0, -4.0);\nlet _value = subject.exp();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -10998,7 +11081,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet subject = Complex64::new(3.0, -4.0);\nlet _value = subject.ln();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -11056,7 +11139,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet subject = Complex64::new(3.0, -4.0);\nlet _value = subject.powf(0.5);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -11153,7 +11236,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet subject = Complex64::new(3.0, -4.0);\nlet _value = subject.sin();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -11203,7 +11286,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet subject = Complex64::new(3.0, -4.0);\nlet _value = subject.cos();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -11263,7 +11346,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet _value = Complex64::from_polar(0.5, 2.0);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -11316,7 +11399,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet subject = Complex64::new(3.0, -4.0);\nlet _value = subject.is_finite();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -11374,7 +11457,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\n\nlet subject = Complex64::new(3.0, -4.0);\nlet _value = subject.inv();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -11456,7 +11539,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::debye::ik_uniform;\n\nlet _value = ik_uniform(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -11499,7 +11582,7 @@
     "medium": "rust",
     "code": "use ::special_functions::debye::jy_debye;\n\nlet _value = jy_debye(0.5, 2.0);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -11547,7 +11630,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::debye::jy_debye_c;\n\nlet _value = jy_debye_c(Complex64::new(0.5, 0.0), Complex64::new(2.0, 0.5));",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -11590,7 +11673,7 @@
     "medium": "rust",
     "code": "use ::special_functions::debye::jy_log_magnitude;\n\nlet _value = jy_log_magnitude(0.5, 2.0);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -11705,7 +11788,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::gamma_complex::ln_gamma_c;\n\nlet _value = ln_gamma_c(Complex64::new(1.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -11753,7 +11836,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::gamma_complex::gamma_c;\n\nlet _value = gamma_c(Complex64::new(1.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -11801,7 +11884,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::gamma_complex::rgamma_c;\n\nlet _value = rgamma_c(Complex64::new(1.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -11844,7 +11927,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::hankel_h1_c;\n\nlet _value = hankel_h1_c(0, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -11887,7 +11970,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::hankel_h2_c;\n\nlet _value = hankel_h2_c(0, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -11935,7 +12018,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::hankel_h1_nu;\n\nlet _value = hankel_h1_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -11990,7 +12073,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::hankel_h2_nu;\n\nlet _value = hankel_h2_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -12035,7 +12118,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::hankel_h1_prime_c;\n\nlet _value = hankel_h1_prime_c(0, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -12078,7 +12161,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::hankel_h2_prime_c;\n\nlet _value = hankel_h2_prime_c(0, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -12131,7 +12214,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::hankel_h1_prime_nu;\n\nlet _value = hankel_h1_prime_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -12186,7 +12269,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::hankel_h2_prime_nu;\n\nlet _value = hankel_h2_prime_nu(0.5, Complex64::new(2.0, 0.5))?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -12231,7 +12314,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::sph_hankel_h1;\n\nlet _value = sph_hankel_h1(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -12286,7 +12369,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::sph_hankel_h2;\n\nlet _value = sph_hankel_h2(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -12341,7 +12424,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::sph_hankel_h1_prime;\n\nlet _value = sph_hankel_h1_prime(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -12396,7 +12479,7 @@
     "medium": "rust",
     "code": "use ::special_functions::complex::Complex64;\nuse ::special_functions::hankel::sph_hankel_h2_prime;\n\nlet _value = sph_hankel_h2_prime(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -12480,7 +12563,7 @@
     "medium": "rust",
     "code": "use ::special_functions::lanczos::{LanczosResult, Stop};\n\n// what QM2/QM3 STATES return: the k lowest eigenvalues with their vectors\n// and the residual that justifies trusting them \u2014 an iterative eigensolver\n// has no exact stopping point, so the residual is part of the answer\nlet r = LanczosResult { values: vec![1.0], vectors: vec![vec![1.0]],\n                        residuals: vec![1e-8], iterations: 1, stop: Stop::Converged };\nassert_eq!(r.values.len(), r.residuals.len());",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -12572,7 +12655,7 @@
     "medium": "rust",
     "code": "use ::special_functions::legendre::legendre_p;\n\nlet _value = legendre_p(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -12627,7 +12710,7 @@
     "medium": "rust",
     "code": "use ::special_functions::legendre::legendre_p_prime;\n\nlet _value = legendre_p_prime(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -12682,7 +12765,7 @@
     "medium": "rust",
     "code": "use ::special_functions::legendre::assoc_legendre_p;\n\nlet _value = assoc_legendre_p(1, 1, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -12737,7 +12820,7 @@
     "medium": "rust",
     "code": "use ::special_functions::legendre::norm_assoc_legendre_p;\n\nlet _value = norm_assoc_legendre_p(1, 1, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -12792,7 +12875,7 @@
     "medium": "rust",
     "code": "use ::special_functions::legendre::sph_harm;\n\nlet _value = sph_harm(1, 1, 0.5, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -12847,7 +12930,7 @@
     "medium": "rust",
     "code": "use ::special_functions::legendre::sph_harm_real;\n\nlet _value = sph_harm_real(1, 1, 0.5, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -12892,7 +12975,7 @@
     "medium": "rust",
     "code": "use ::special_functions::rel_err;\n\nlet _value = rel_err(0.5, 2.0);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -12937,7 +13020,7 @@
     "medium": "rust",
     "code": "use ::special_functions::orthopoly::hermite_h;\n\nlet _value = hermite_h(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -12992,7 +13075,7 @@
     "medium": "rust",
     "code": "use ::special_functions::orthopoly::hermite_he;\n\nlet _value = hermite_he(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -13047,7 +13130,7 @@
     "medium": "rust",
     "code": "use ::special_functions::orthopoly::laguerre_l;\n\nlet _value = laguerre_l(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -13102,7 +13185,7 @@
     "medium": "rust",
     "code": "use ::special_functions::orthopoly::laguerre_l_assoc;\n\nlet _value = laguerre_l_assoc(1, 0.5, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -13157,7 +13240,7 @@
     "medium": "rust",
     "code": "use ::special_functions::orthopoly::chebyshev_t;\n\nlet _value = chebyshev_t(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -13212,7 +13295,7 @@
     "medium": "rust",
     "code": "use ::special_functions::orthopoly::chebyshev_u;\n\nlet _value = chebyshev_u(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -13267,7 +13350,7 @@
     "medium": "rust",
     "code": "use ::special_functions::orthopoly::gegenbauer_c;\n\nlet _value = gegenbauer_c(1, 0.5, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -13322,7 +13405,7 @@
     "medium": "rust",
     "code": "use ::special_functions::orthopoly::jacobi_p;\n\nlet _value = jacobi_p(1, 0.5, 0.5, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -13377,7 +13460,7 @@
     "medium": "rust",
     "code": "use ::special_functions::quadrature::gauss_legendre;\n\nlet _value = gauss_legendre(1)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -13466,7 +13549,7 @@
     "medium": "rust",
     "code": "use ::special_functions::quadrature::integrate_adaptive;\n\nlet v = integrate_adaptive(|x: f64| x * x * x, 0.0, 1.0, 1e-10)?;\nassert!((v - 0.25).abs() < 1e-10);\n// and the honest failure: 1/sqrt(x) on [0,1] is finite but Simpson\n// cannot resolve the endpoint, so it ERRORS rather than guessing.\nassert!(integrate_adaptive(|x: f64| 1.0 / x.sqrt(), 0.0, 1.0, 1e-10).is_err());",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -13504,7 +13587,7 @@
     "medium": "rust",
     "code": "use ::special_functions::quadrature::brent_root;\n\n// cos x = x, bracketed on [0, 1]\nlet r = brent_root(|x: f64| x.cos() - x, 0.0, 1.0, 1e-12)?;\nassert!((r - 0.739085133215).abs() < 1e-9);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -13542,7 +13625,7 @@
     "medium": "rust",
     "code": "use ::special_functions::quadrature::find_roots;\n\n// find_roots CANNOT tell a pole from a root: a pole flips the sign of f\n// too, and Brent converges on it. Check f at each value it returns.\nlet rs = find_roots(|x: f64| x.sin(), 0.1, 7.0, 100, 1e-12)?;\nassert!(!rs.is_empty());",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -13590,7 +13673,7 @@
     "medium": "rust",
     "code": "use ::special_functions::sph_bessel::sph_j;\n\nlet _value = sph_j(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -13635,7 +13718,7 @@
     "medium": "rust",
     "code": "use ::special_functions::sph_bessel::sph_y;\n\nlet _value = sph_y(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -13690,7 +13773,7 @@
     "medium": "rust",
     "code": "use ::special_functions::sph_bessel::sph_j_prime;\n\nlet _value = sph_j_prime(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -13745,7 +13828,7 @@
     "medium": "rust",
     "code": "use ::special_functions::sph_bessel::sph_y_prime;\n\nlet _value = sph_y_prime(0, 2.0)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -13800,7 +13883,7 @@
     "medium": "rust",
     "code": "use ::special_functions::tridiag::solve_tridiag;\n\nlet _value = solve_tridiag(&[1.0, 2.0, 3.0], &[1.0, 2.0, 3.0], &[1.0, 2.0, 3.0], &[1.0, 2.0, 3.0])?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -14096,7 +14179,7 @@
   "locations": [
    {
     "file": "quantum/src/absorber.rs",
-    "line": 59,
+    "line": 60,
     "role": "definition"
    }
   ],
@@ -14106,7 +14189,7 @@
     "medium": "rust",
     "code": "use ::quantum::absorber::Ramp;\n\nlet ramp = Ramp { width: 15.0, power: 2.0 };\n// power 2 is the measured optimum: too steep a ramp is a mirror,\n// whether it is real or imaginary\nassert_eq!(ramp.power, 2.0);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -14134,7 +14217,7 @@
   "locations": [
    {
     "file": "quantum/src/absorber.rs",
-    "line": 66,
+    "line": 67,
     "role": "definition"
    }
   ],
@@ -14144,7 +14227,7 @@
     "medium": "rust",
     "code": "use ::quantum::absorber::Band;\n\nlet band = Band { k_lo: 1.0, k_hi: 4.0, samples: 8 };\nassert_eq!(band.samples, 8);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -14182,7 +14265,7 @@
     "medium": "rust",
     "code": "use ::quantum::absorber::Leak;\n\n// the two ways probability escapes an absorber, which trade off against\n// each other: too weak and it passes THROUGH, too strong and it reflects\n// off the absorber's own leading edge\nlet leak = Leak { k: 3.0, reflection: 1e-9, leakage: 2e-9, absorbed: 1.0 };\nassert!(leak.escaped() > 0.0);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -14220,7 +14303,7 @@
     "medium": "rust",
     "code": "use ::quantum::absorber::Leak;\n\nlet leak = Leak { k: 3.0, reflection: 1e-9, leakage: 2e-9, absorbed: 1.0 };\n// R + T: everything the absorber failed to swallow\nassert!((leak.escaped() - 3e-9).abs() < 1e-18);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -14238,7 +14321,7 @@
    "L"
   ],
   "summary": "What the absorber does to a wave of wavenumber `k`.",
-  "definition": "What the absorber does to a wave of wavenumber `k`.  # Errors A non-positive or non-finite parameter, or a failure inside [`scatter`].  # Examples ``` use quantum::absorber::{leak, Ramp}; // Width 6, strength 3, quadratic ramp, k = 2. Almost all of the // escape is LEAKAGE through a slightly-too-weak absorber, not // reflection off it \u2014 R = 5.6e-6 against T = 4.2e-3. Separating // those two is the  Declared in the `absorber` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `posim/src/qm.rs`, `posim/src/vm.rs`.",
+  "definition": "What the absorber does to a wave of wavenumber `k`.  # Errors A non-positive or non-finite parameter, or a failure inside [`scatter`].  # Examples ``` use quantum::absorber::{leak, Ramp}; // Width 6, strength 3, quadratic ramp, k = 2. Almost all of the // escape is LEAKAGE through a slightly-too-weak absorber, not // reflection off it \u2014 R = 5.6e-6 against T = 4.2e-3. Separating // those two is the  Declared in the `absorber` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `posim/src/qm.rs`, `posim/src/vm.rs`, `special_functions/src/bessel_complex.rs`.",
   "syntax": [
    "pub fn leak(ramp: Ramp, strength: f64, k: f64, mass: f64, hbar: f64) -> Result<Leak, String>"
   ],
@@ -14258,6 +14341,11 @@
    },
    {
     "file": "posim/src/vm.rs",
+    "line": 1,
+    "role": "used here"
+   },
+   {
+    "file": "special_functions/src/bessel_complex.rs",
     "line": 1,
     "role": "used here"
    }
@@ -14297,7 +14385,7 @@
     "medium": "rust",
     "code": "use ::quantum::absorber::{Ramp, Band, worst_escape};\n\nlet w = worst_escape(Ramp { width: 15.0, power: 2.0 }, 3.0,\n                    Band { k_lo: 2.0, k_hi: 4.0, samples: 4 }, 1.0, 1.0)?;\nassert!(w >= 0.0);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -14335,7 +14423,7 @@
     "medium": "rust",
     "code": "use ::quantum::absorber::{Ramp, Band, choose_strength};\n\n// the tuning surface has a wide optimum \u2014 over an order of magnitude \u2014\n// but it is not infinite, so the strength is SEARCHED rather than guessed\nlet (strength, escape) = choose_strength(Ramp { width: 15.0, power: 2.0 },\n                                        Band { k_lo: 2.0, k_hi: 4.0, samples: 4 },\n                                        1.0, 1.0)?;\nassert!(strength > 0.0 && escape >= 0.0);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -14373,7 +14461,7 @@
     "medium": "rust",
     "code": "use ::quantum::isosurface::Mesh;\n\nlet m = Mesh::default();\nassert!(m.triangles.is_empty() || !m.triangles.is_empty());",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -14518,7 +14606,7 @@
     "medium": "rust",
     "code": "use ::quantum::isosurface::Mesh;\n\nlet m = Mesh::default();\n// checked by the divergence theorem against shapes whose volume is known\nassert_eq!(m.enclosed_volume(), 0.0);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -14556,7 +14644,7 @@
     "medium": "rust",
     "code": "use ::quantum::isosurface::Mesh;\n\nlet m = Mesh::default();\n// every directed edge exactly once, its reverse exactly once: a hole\n// leaves an unmatched edge, a flipped triangle leaves a duplicate\nassert!(m.is_watertight());",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -14667,7 +14755,7 @@
     "medium": "rust",
     "code": "use ::quantum::nash::PeriodicGrid;\n\nlet _value = PeriodicGrid::new(0.5, 0.5, 1)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -14827,7 +14915,7 @@
     "medium": "rust",
     "code": "use ::quantum::nash::order_for;\n\nlet _value = order_for(0.5, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -14870,7 +14958,7 @@
     "medium": "rust",
     "code": "use ::quantum::nash::truncation_bound;\n\nlet _value = truncation_bound(0.5, 1)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -14887,8 +14975,8 @@
   "indexKeys": [
    "S"
   ],
-  "summary": "A Bessel-expanded split-operator propagator on a periodic grid.",
-  "definition": "A Bessel-expanded split-operator propagator on a periodic grid.  Built once for a fixed potential and time step; every step then costs `O(n K)` multiply-adds and no allocation beyond one scratch buffer. Which way the exponential is split.  The two share every ingredient \u2014 the same Bessel stencil, the same `lambda`, the same diagonal phase. They differ only in how the factors are ordered, and that   Declared in the `nash` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `quantum/examples/nash_propagator.rs`.",
+  "summary": "Which way the exponential is split.",
+  "definition": "Which way the exponential is split.  The two share every ingredient \u2014 the same Bessel stencil, the same `lambda`, the same diagonal phase. They differ only in how the factors are ordered, and that ordering is worth a whole order of accuracy.  Declared in the `nash` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `quantum/examples/nash_propagator.rs`.",
   "syntax": [
    "pub enum Splitting"
   ],
@@ -14898,7 +14986,7 @@
   "locations": [
    {
     "file": "quantum/src/nash.rs",
-    "line": 231,
+    "line": 227,
     "role": "definition"
    },
    {
@@ -14921,8 +15009,8 @@
   "indexKeys": [
    "N"
   ],
-  "summary": "struct `NashPropagator` in `quantum::nash`.",
-  "definition": "No doc comment in the source.  Declared in the `nash` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `quantum/examples/nash_propagator.rs`.",
+  "summary": "A Bessel-expanded split-operator propagator on a periodic grid.",
+  "definition": "A Bessel-expanded split-operator propagator on a periodic grid.  Built once for a fixed potential and time step; every step then costs `O(n K)` multiply-adds and no allocation beyond one scratch buffer.  Declared in the `nash` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `quantum/examples/nash_propagator.rs`.",
   "syntax": [
    "pub struct NashPropagator"
   ],
@@ -15049,7 +15137,7 @@
     "medium": "rust",
     "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.splitting();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -15107,7 +15195,7 @@
     "medium": "rust",
     "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.grid();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -15145,7 +15233,7 @@
     "medium": "rust",
     "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.dt();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -15198,7 +15286,7 @@
     "medium": "rust",
     "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.hbar();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -15256,7 +15344,7 @@
     "medium": "rust",
     "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.mass();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -15304,7 +15392,7 @@
     "medium": "rust",
     "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.lambda();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -15362,7 +15450,7 @@
     "medium": "rust",
     "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.order();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -15405,7 +15493,7 @@
     "medium": "rust",
     "code": "use ::quantum::nash::{PeriodicGrid, NashPropagator};\n\nlet subject = NashPropagator::new(PeriodicGrid::new(-8.0, 8.0, 60)?, &vec![0.0; 60], 1.0, 1.0, 0.01, None)?;\nlet _value = subject.truncation_error();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -15675,7 +15763,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::Grid;\n\nlet _value = Grid::new(0.5, 0.5, 1)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -15718,7 +15806,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::Grid;\n\nlet subject = Grid::new(-8.0, 8.0, 60)?;\nlet _value = subject.h();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -15761,7 +15849,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::Grid;\n\nlet subject = Grid::new(-8.0, 8.0, 60)?;\nlet _value = subject.x(1);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -15819,7 +15907,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::Grid;\n\nlet subject = Grid::new(-8.0, 8.0, 60)?;\nlet _value = subject.points();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -15906,7 +15994,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::{Grid, Hamiltonian};\n\nlet _value = Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 0.5, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -15978,7 +16066,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::{Grid, Hamiltonian};\n\nlet h = Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?;\n// QM STATES is refused while an absorber is on, because H - iW is not\n// Hermitian; this is the Hermitian half of the same operator\nlet bare = h.without_absorber();\nlet _ = bare;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -16031,7 +16119,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::{Grid, Hamiltonian};\n\nlet subject = Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?;\nlet _value = subject.is_absorbing();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -16083,7 +16171,7 @@
    "A"
   ],
   "summary": "Apply `H` to a complex wavefunction, returning `H psi`.",
-  "definition": "Apply `H` to a complex wavefunction, returning `H psi`.  Declared in the `qm1d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/src/integrate.rs`, `posim/src/vm.rs`, `quantum/src/nash.rs`.",
+  "definition": "Apply `H` to a complex wavefunction, returning `H psi`.  Declared in the `qm1d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/src/integrate.rs`, `posim/src/parser.rs`, `posim/src/vm.rs`.",
   "syntax": [
    "pub fn apply(&self, psi: &[C]) -> Vec<C>"
   ],
@@ -16102,12 +16190,12 @@
     "role": "used here"
    },
    {
-    "file": "posim/src/vm.rs",
+    "file": "posim/src/parser.rs",
     "line": 1,
     "role": "used here"
    },
    {
-    "file": "quantum/src/nash.rs",
+    "file": "posim/src/vm.rs",
     "line": 1,
     "role": "used here"
    }
@@ -16162,7 +16250,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::{Grid, Hamiltonian};\n\nlet subject = Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?;\nlet _value = subject.bound_states(1)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -16234,7 +16322,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::Grid;\nuse ::quantum::qm1d::Wavefunction;\nuse ::special_functions::complex::Complex64;\n\nlet _value = Wavefunction::new(Grid::new(-8.0, 8.0, 60)?, vec![Complex64::new(1.0, 0.0); 60])?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -16277,7 +16365,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::Grid;\nuse ::quantum::qm1d::Wavefunction;\n\nlet _value = Wavefunction::gaussian(Grid::new(-8.0, 8.0, 60)?, 0.5, 0.5, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -16320,7 +16408,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::Grid;\nuse ::quantum::qm1d::Wavefunction;\n\nlet _value = Wavefunction::from_real(Grid::new(-8.0, 8.0, 60)?, &[1.0, 2.0, 3.0])?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -16780,7 +16868,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::{Grid, Hamiltonian, Propagator};\n\nlet subject = Propagator::new(Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?, 0.01)?;\nlet _value = subject.dt();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -16833,7 +16921,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::{Grid, Hamiltonian, Propagator};\n\nlet subject = Propagator::new(Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?, 0.01)?;\nlet _value = subject.hamiltonian();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -17052,7 +17140,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::{Grid, Hamiltonian, DrivenPropagator};\n\nlet subject = DrivenPropagator::new(Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?, vec![0.0; 60], 0.01)?;\nlet _value = subject.time();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -17090,7 +17178,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::{Grid, Hamiltonian, DrivenPropagator};\n\nlet subject = DrivenPropagator::new(Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?, vec![0.0; 60], 0.01)?;\nlet _value = subject.dt();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -17128,7 +17216,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::{Grid, Hamiltonian, DrivenPropagator};\n\nlet h = Hamiltonian::new(Grid::new(-8.0, 8.0, 60)?, vec![0.0; 60], 1.0, 1.0)?;\nlet d = DrivenPropagator::new(h, vec![0.0; 60], 0.01)?;\n// the modulation is a CLOSURE of t, sampled at the MIDPOINT of each step \u2014\n// which is what keeps the scheme second order\nlet hn = d.hamiltonian_now(|t: f64| 0.3 * t.cos())?;\nlet _ = hn;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -17259,7 +17347,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm1d::barrier_transmission;\n\nlet _value = barrier_transmission(0.5, 0.5, 0.5);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -17390,7 +17478,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::Grid2;\n\nlet subject = Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?;\nlet _value = subject.hx();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -17443,7 +17531,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::Grid2;\n\nlet subject = Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?;\nlet _value = subject.hy();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -17486,7 +17574,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::Grid2;\n\nlet subject = Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?;\nlet _value = subject.x(1);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -17539,7 +17627,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::Grid2;\n\nlet subject = Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?;\nlet _value = subject.y(1);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -17592,7 +17680,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::Grid2;\n\nlet subject = Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?;\nlet _value = subject.idx(1, 1);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -17650,7 +17738,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::Grid2;\n\nlet subject = Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?;\nlet _value = subject.len();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -17667,8 +17755,8 @@
   "indexKeys": [
    "I"
   ],
-  "summary": "fn `is_empty` in `quantum::qm2d`.",
-  "definition": "No doc comment in the source.  Declared in the `qm2d` module of the `quantum` crate.",
+  "summary": "Always false for a grid built via `new` (every axis has n >= 1).",
+  "definition": "Always false for a grid built via `new` (every axis has n >= 1).  Declared in the `qm2d` module of the `quantum` crate.",
   "syntax": [
    "pub fn is_empty(&self) -> bool"
   ],
@@ -17678,7 +17766,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 109,
+    "line": 110,
     "role": "definition"
    },
    {
@@ -17698,7 +17786,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::Grid2;\n\nlet subject = Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?;\nlet _value = subject.is_empty();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -17726,7 +17814,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 113,
+    "line": 114,
     "role": "definition"
    },
    {
@@ -17741,7 +17829,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::Grid2;\n\nlet subject = Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?;\nlet _value = subject.cell();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -17769,7 +17857,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 120,
+    "line": 121,
     "role": "definition"
    },
    {
@@ -17808,7 +17896,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 133,
+    "line": 134,
     "role": "definition"
    },
    {
@@ -17823,7 +17911,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::Grid2;\nuse ::quantum::qm2d::Hamiltonian2;\n\nlet _value = Hamiltonian2::new(Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?, vec![0.0; 60], 0.5, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -17851,7 +17939,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 162,
+    "line": 163,
     "role": "definition"
    },
    {
@@ -17885,7 +17973,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 185,
+    "line": 186,
     "role": "definition"
    },
    {
@@ -17919,7 +18007,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 220,
+    "line": 221,
     "role": "definition"
    },
    {
@@ -17953,7 +18041,7 @@
    "A"
   ],
   "summary": "The full `H psi`, used for `<E>`.",
-  "definition": "The full `H psi`, used for `<E>`. Five-point stencil.  Declared in the `qm2d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/src/integrate.rs`, `posim/src/vm.rs`, `quantum/src/nash.rs`.",
+  "definition": "The full `H psi`, used for `<E>`. Five-point stencil.  Declared in the `qm2d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/src/integrate.rs`, `posim/src/parser.rs`, `posim/src/vm.rs`.",
   "syntax": [
    "pub fn apply(&self, psi: &[C]) -> Vec<C>"
   ],
@@ -17963,7 +18051,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 234,
+    "line": 235,
     "role": "definition"
    },
    {
@@ -17972,12 +18060,12 @@
     "role": "used here"
    },
    {
-    "file": "posim/src/vm.rs",
+    "file": "posim/src/parser.rs",
     "line": 1,
     "role": "used here"
    },
    {
-    "file": "quantum/src/nash.rs",
+    "file": "posim/src/vm.rs",
     "line": 1,
     "role": "used here"
    }
@@ -18007,7 +18095,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 270,
+    "line": 271,
     "role": "definition"
    },
    {
@@ -18041,7 +18129,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 318,
+    "line": 323,
     "role": "definition"
    },
    {
@@ -18085,7 +18173,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 387,
+    "line": 392,
     "role": "definition"
    },
    {
@@ -18119,7 +18207,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 402,
+    "line": 407,
     "role": "definition"
    },
    {
@@ -18163,7 +18251,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 408,
+    "line": 413,
     "role": "definition"
    },
    {
@@ -18202,7 +18290,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 416,
+    "line": 421,
     "role": "definition"
    },
    {
@@ -18217,7 +18305,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::Grid2;\nuse ::quantum::qm2d::Wavefunction2;\nuse ::special_functions::complex::Complex64;\n\nlet _value = Wavefunction2::new(Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?, vec![Complex64::new(1.0, 0.0); 60])?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -18245,7 +18333,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 434,
+    "line": 439,
     "role": "definition"
    },
    {
@@ -18279,7 +18367,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 464,
+    "line": 469,
     "role": "definition"
    },
    {
@@ -18330,7 +18418,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 470,
+    "line": 475,
     "role": "definition"
    },
    {
@@ -18374,7 +18462,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 483,
+    "line": 488,
     "role": "definition"
    },
    {
@@ -18418,7 +18506,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 501,
+    "line": 506,
     "role": "definition"
    },
    {
@@ -18467,7 +18555,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 519,
+    "line": 524,
     "role": "definition"
    },
    {
@@ -18501,7 +18589,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 540,
+    "line": 545,
     "role": "definition"
    },
    {
@@ -18545,7 +18633,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 545,
+    "line": 550,
     "role": "definition"
    },
    {
@@ -18589,7 +18677,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 584,
+    "line": 589,
     "role": "definition"
    },
    {
@@ -18628,7 +18716,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 595,
+    "line": 600,
     "role": "definition"
    },
    {
@@ -18667,7 +18755,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 623,
+    "line": 628,
     "role": "definition"
    }
   ],
@@ -18677,7 +18765,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::{Grid2, Hamiltonian2, Propagator2};\n\nlet subject = Propagator2::new(Hamiltonian2::new(Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?, vec![0.0; 400], 1.0, 1.0)?, 0.01)?;\nlet _value = subject.dt();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -18705,7 +18793,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 626,
+    "line": 631,
     "role": "definition"
    },
    {
@@ -18730,7 +18818,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::{Grid2, Hamiltonian2, Propagator2};\n\nlet subject = Propagator2::new(Hamiltonian2::new(Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?, vec![0.0; 400], 1.0, 1.0)?, 0.01)?;\nlet _value = subject.hamiltonian();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -18758,7 +18846,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 674,
+    "line": 679,
     "role": "definition"
    },
    {
@@ -18807,7 +18895,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 688,
+    "line": 693,
     "role": "definition"
    },
    {
@@ -18846,7 +18934,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 699,
+    "line": 704,
     "role": "definition"
    },
    {
@@ -18880,7 +18968,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 709,
+    "line": 714,
     "role": "definition"
    },
    {
@@ -18914,7 +19002,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 726,
+    "line": 731,
     "role": "definition"
    },
    {
@@ -18944,7 +19032,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::{Grid2, Hamiltonian2, DrivenPropagator2};\n\nlet subject = DrivenPropagator2::new(Hamiltonian2::new(Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?, vec![0.0; 400], 1.0, 1.0)?, vec![0.0; 400], 0.01)?;\nlet _value = subject.time();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -18972,7 +19060,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 729,
+    "line": 734,
     "role": "definition"
    }
   ],
@@ -18982,7 +19070,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm2d::{Grid2, Hamiltonian2, DrivenPropagator2};\n\nlet subject = DrivenPropagator2::new(Hamiltonian2::new(Grid2::new(-4.0, 4.0, 20, -4.0, 4.0, 20)?, vec![0.0; 400], 1.0, 1.0)?, vec![0.0; 400], 0.01)?;\nlet _value = subject.dt();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -19010,7 +19098,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 758,
+    "line": 763,
     "role": "definition"
    },
    {
@@ -19059,7 +19147,7 @@
   "locations": [
    {
     "file": "quantum/src/qm2d.rs",
-    "line": 776,
+    "line": 781,
     "role": "definition"
    },
    {
@@ -19230,7 +19318,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\n\nlet subject = Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?;\nlet _value = subject.hx();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -19283,7 +19371,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\n\nlet subject = Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?;\nlet _value = subject.hy();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -19326,7 +19414,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\n\nlet subject = Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?;\nlet _value = subject.hz();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -19369,7 +19457,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\n\nlet subject = Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?;\nlet _value = subject.x(1);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -19422,7 +19510,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\n\nlet subject = Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?;\nlet _value = subject.y(1);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -19465,7 +19553,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\n\nlet subject = Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?;\nlet _value = subject.z(1);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -19518,7 +19606,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\n\nlet subject = Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?;\nlet _value = subject.idx(1, 1, 1);",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -19576,7 +19664,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\n\nlet subject = Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?;\nlet _value = subject.len();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -19593,8 +19681,8 @@
   "indexKeys": [
    "I"
   ],
-  "summary": "fn `is_empty` in `quantum::qm3d`.",
-  "definition": "No doc comment in the source.  Declared in the `qm3d` module of the `quantum` crate.",
+  "summary": "Always false for a grid built via `new` (every axis has n >= 1).",
+  "definition": "Always false for a grid built via `new` (every axis has n >= 1).  Declared in the `qm3d` module of the `quantum` crate.",
   "syntax": [
    "pub fn is_empty(&self) -> bool"
   ],
@@ -19604,7 +19692,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 124,
+    "line": 125,
     "role": "definition"
    },
    {
@@ -19624,7 +19712,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\n\nlet subject = Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?;\nlet _value = subject.is_empty();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -19652,7 +19740,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 128,
+    "line": 129,
     "role": "definition"
    },
    {
@@ -19667,7 +19755,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\n\nlet subject = Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?;\nlet _value = subject.cell();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -19695,7 +19783,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 181,
+    "line": 182,
     "role": "definition"
    },
    {
@@ -19729,7 +19817,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 192,
+    "line": 193,
     "role": "definition"
    },
    {
@@ -19744,7 +19832,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\nuse ::quantum::qm3d::Hamiltonian3;\n\nlet _value = Hamiltonian3::new(Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?, vec![0.0; 60], 0.5, 0.5)?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -19772,7 +19860,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 216,
+    "line": 217,
     "role": "definition"
    },
    {
@@ -19806,7 +19894,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 240,
+    "line": 241,
     "role": "definition"
    },
    {
@@ -19840,7 +19928,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 284,
+    "line": 285,
     "role": "definition"
    },
    {
@@ -19884,7 +19972,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 299,
+    "line": 300,
     "role": "definition"
    },
    {
@@ -19908,7 +19996,7 @@
    "A"
   ],
   "summary": "`H psi` for a complex vector, including any absorber.",
-  "definition": "`H psi` for a complex vector, including any absorber.  Declared in the `qm3d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/src/integrate.rs`, `posim/src/vm.rs`, `quantum/src/nash.rs`.",
+  "definition": "`H psi` for a complex vector, including any absorber.  Declared in the `qm3d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `physical_object/src/integrate.rs`, `posim/src/parser.rs`, `posim/src/vm.rs`.",
   "syntax": [
    "pub fn apply(&self, psi: &[C]) -> Vec<C>"
   ],
@@ -19918,7 +20006,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 335,
+    "line": 336,
     "role": "definition"
    },
    {
@@ -19927,12 +20015,12 @@
     "role": "used here"
    },
    {
-    "file": "posim/src/vm.rs",
+    "file": "posim/src/parser.rs",
     "line": 1,
     "role": "used here"
    },
    {
-    "file": "quantum/src/nash.rs",
+    "file": "posim/src/vm.rs",
     "line": 1,
     "role": "used here"
    }
@@ -19952,7 +20040,7 @@
    "B"
   ],
   "summary": "The lowest `k` bound states, by matrix-free Lanczos.",
-  "definition": "The lowest `k` bound states, by matrix-free Lanczos.  # Cost The eigensolver's full reorthogonalisation is `O(m^2 n)` and it stores the whole Krylov basis, so this is practical to roughly **40\u00b3** and not beyond. Propagation has no such limit.  # Errors `k == 0` or `k > n`, an absorbing Hamiltonian, or a Lanczos failure.  Declared in the `qm3d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `posim/src/qm.rs`, `posim/src/qm2.rs`, `posim/src/qm3.rs`.",
+  "definition": "The lowest `k` bound states, by matrix-free Lanczos.  # Cost The eigensolver's full reorthogonalisation is `O(m^2 n)` and it stores the whole Krylov basis, so this is practical to roughly **40\u00b3** and not beyond. Propagation has no such limit.  Pass `max_iters = 0` to let the solver choose its own Krylov budget, scaling with `k` and capped at the grid size; any positive value overrides it.  # Error  Declared in the `qm3d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `posim/src/qm.rs`, `posim/src/qm2.rs`, `posim/src/qm3.rs`.",
   "syntax": [
    "pub fn bound_states(&self, k: usize, max_iters: usize) -> Result<BoundStates3, String>"
   ],
@@ -19962,7 +20050,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 393,
+    "line": 398,
     "role": "definition"
    },
    {
@@ -20006,7 +20094,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 436,
+    "line": 441,
     "role": "definition"
    },
    {
@@ -20040,7 +20128,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 446,
+    "line": 451,
     "role": "definition"
    },
    {
@@ -20084,7 +20172,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 452,
+    "line": 457,
     "role": "definition"
    },
    {
@@ -20123,7 +20211,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 460,
+    "line": 465,
     "role": "definition"
    },
    {
@@ -20138,7 +20226,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::Grid3;\nuse ::quantum::qm3d::Wavefunction3;\nuse ::special_functions::complex::Complex64;\n\nlet _value = Wavefunction3::new(Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?, vec![Complex64::new(1.0, 0.0); 60])?;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -20166,7 +20254,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 476,
+    "line": 481,
     "role": "definition"
    },
    {
@@ -20200,7 +20288,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 511,
+    "line": 516,
     "role": "definition"
    },
    {
@@ -20251,7 +20339,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 517,
+    "line": 522,
     "role": "definition"
    },
    {
@@ -20295,7 +20383,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 530,
+    "line": 535,
     "role": "definition"
    },
    {
@@ -20339,7 +20427,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 551,
+    "line": 556,
     "role": "definition"
    },
    {
@@ -20388,7 +20476,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 569,
+    "line": 574,
     "role": "definition"
    },
    {
@@ -20422,7 +20510,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 603,
+    "line": 608,
     "role": "definition"
    },
    {
@@ -20456,7 +20544,7 @@
    "M"
   ],
   "summary": "A **marginal probability density**: the density integrated over the axis named by `over`.",
-  "definition": "A **marginal probability density**: the density integrated over the axis named by `over`.  These are the honest way to look at a volume. `P(x, y) = integral |psi|^2 dz` is the probability of finding the particle at `(x, y)` whatever its `z` \u2014 a real observable, not a rendering convention \u2014 and each marginal integrates to the full norm, which the tests check.  Returned row-major over the two remain  Declared in the `qm3d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `posim/src/qm3.rs`, `posim/src/vm.rs`.",
+  "definition": "A **marginal probability density**: the density integrated over the axis named by `over`.  These are the honest way to look at a volume. `P(x, y) = integral |psi|^2 dz` is the probability of finding the particle at `(x, y)` whatever its `z` \u2014 a real observable, not a rendering convention \u2014 and each marginal integrates to the full norm, which the tests check.  Returned row-major over the two remain  Declared in the `qm3d` module of the `quantum` crate.  No snippet is generated for this signature shape \u2014 see the status page for why an invented one would be worse than none \u2014 but it is called from `posim/src/qm3.rs`, `posim/src/vm.rs`, `quantum/src/lib.rs`.",
   "syntax": [
    "pub fn marginal(&self, over: Axis) -> Vec<f64>"
   ],
@@ -20466,7 +20554,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 620,
+    "line": 625,
     "role": "definition"
    },
    {
@@ -20476,6 +20564,11 @@
    },
    {
     "file": "posim/src/vm.rs",
+    "line": 1,
+    "role": "used here"
+   },
+   {
+    "file": "quantum/src/lib.rs",
     "line": 1,
     "role": "used here"
    }
@@ -20505,7 +20598,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 654,
+    "line": 659,
     "role": "definition"
    },
    {
@@ -20549,7 +20642,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 689,
+    "line": 694,
     "role": "definition"
    },
    {
@@ -20583,7 +20676,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 697,
+    "line": 702,
     "role": "definition"
    },
    {
@@ -20617,7 +20710,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 704,
+    "line": 709,
     "role": "definition"
    }
   ],
@@ -20627,7 +20720,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::{Grid3, Hamiltonian3, Propagator3};\n\nlet subject = Propagator3::new(Hamiltonian3::new(Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?, vec![0.0; 1000], 1.0, 1.0)?, 0.01)?;\nlet _value = subject.dt();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -20655,7 +20748,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 707,
+    "line": 712,
     "role": "definition"
    },
    {
@@ -20680,7 +20773,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::{Grid3, Hamiltonian3, Propagator3};\n\nlet subject = Propagator3::new(Hamiltonian3::new(Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?, vec![0.0; 1000], 1.0, 1.0)?, 0.01)?;\nlet _value = subject.hamiltonian();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -20708,7 +20801,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 758,
+    "line": 759,
     "role": "definition"
    },
    {
@@ -20757,7 +20850,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 775,
+    "line": 776,
     "role": "definition"
    },
    {
@@ -20796,7 +20889,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 786,
+    "line": 787,
     "role": "definition"
    },
    {
@@ -20830,7 +20923,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 796,
+    "line": 797,
     "role": "definition"
    },
    {
@@ -20864,7 +20957,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 813,
+    "line": 814,
     "role": "definition"
    },
    {
@@ -20894,7 +20987,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::{Grid3, Hamiltonian3, DrivenPropagator3};\n\nlet subject = DrivenPropagator3::new(Hamiltonian3::new(Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?, vec![0.0; 1000], 1.0, 1.0)?, vec![0.0; 1000], 0.01)?;\nlet _value = subject.time();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -20922,7 +21015,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 816,
+    "line": 817,
     "role": "definition"
    }
   ],
@@ -20932,7 +21025,7 @@
     "medium": "rust",
     "code": "use ::quantum::qm3d::{Grid3, Hamiltonian3, DrivenPropagator3};\n\nlet subject = DrivenPropagator3::new(Hamiltonian3::new(Grid3::new(-3.0, 3.0, 10, -3.0, 3.0, 10, -3.0, 3.0, 10)?, vec![0.0; 1000], 1.0, 1.0)?, vec![0.0; 1000], 0.01)?;\nlet _value = subject.dt();",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
@@ -20960,7 +21053,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 845,
+    "line": 846,
     "role": "definition"
    },
    {
@@ -21009,7 +21102,7 @@
   "locations": [
    {
     "file": "quantum/src/qm3d.rs",
-    "line": 863,
+    "line": 864,
     "role": "definition"
    },
    {
@@ -21136,7 +21229,7 @@
     "medium": "rust",
     "code": "use ::quantum::transfer::scatter_real;\n\n// T(E) and R(E) for a potential sampled on a grid, by transfer matrix \u2014\n// exact at one energy, with no packet and no time stepping\nlet v = vec![0.0f64; 40];\nlet out = scatter_real(&v, -8.0, 8.0, 2.0, 1.0, 1.0)?;\nlet _ = out;",
     "expected": "compiles",
-    "verified": "2026-07-31",
+    "verified": "2026-08-06",
     "runner": "cargo build"
    }
   ],
