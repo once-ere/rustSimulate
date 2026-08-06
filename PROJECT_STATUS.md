@@ -15,7 +15,7 @@ Date: 2026-07-26 · Repository: <https://github.com/once-ere/rustSimulate>
 | `physical_object` — the union struct, get/set API, observables | complete | 40 library tests |
 | collision detection & impulse response | complete | 19 collision tests, analytic TOI checks |
 | `integrate` — CVODE Adams/BDF + ARKODE SPRK, event rootfinding | complete | 9 conservation tests; solar-system energy drift < 1e-6 over 1369 years |
-| `posim` — lexer → parser → stack machine → notebook/machine/scene | complete | 107 tests |
+| `posim` — lexer → parser → stack machine → notebook/machine/scene | complete | 109 tests |
 | `quantum` — nash / qm1d / qm2d / qm3d / transfer / absorber / isosurface | complete | 92 tests + 5 doctests |
 | scene window (std-only HTTP + WebSocket + canvas) | complete | live browser verification |
 | JupyterLab kernel | complete | protocol test + 7-cell ZMQ test |
@@ -23,7 +23,7 @@ Date: 2026-07-26 · Repository: <https://github.com/once-ere/rustSimulate>
 | `special_functions` — spherical Bessel (native) | new | 7 unit + 3 doctests |
 | `special_functions` — Cephes classical chapters | vendored | 11 identity tests |
 
-**566 passed workspace-wide, zero warnings, zero `unsafe`, zero
+**568 passed workspace-wide, zero warnings, zero `unsafe`, zero
 crates.io dependencies.**
 
 ---
