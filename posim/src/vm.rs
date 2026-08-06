@@ -677,13 +677,22 @@ pub fn execute(prog: &[Instr], state: &mut SimState) -> Result<Value, String> {
         if let Err(e) = exec_one(instr, state, &mut stack) {
             /* NEW is transactional: a failing initializer (or a failing
              * final validation) must not leave a half-built object in
-             * the system. The object was appended last, so removing it
-             * cannot renumber anything else. */
+             * the system. A nested call inside the initializer may have
+             * appended objects AFTER this one, so removing it renumbers
+             * them — do exactly the bookkeeping DEL does. */
             if let Some(idx) = state.last_new.take() {
                 state.system.remove_object(idx);
+                state.wall_indices.retain(|w| *w != idx);
+                for w in &mut state.wall_indices {
+                    if *w > idx {
+                        *w -= 1;
+                    }
+                }
+                unregister_index(&mut state.names, idx);
                 state.pending_velocity = None;
                 state.pending_angular_velocity = None;
                 state.pending_torus = None;
+                state.pending_dumbbell = None;
             }
             return Err(e);
         }
@@ -2146,7 +2155,7 @@ fn call_builtin(name: &str, mut args: Vec<Value>) -> Result<Value, String> {
     let num1 = |args: &mut Vec<Value>| -> Result<f64, String> {
         match args.remove(0) {
             Value::Num(n) => Ok(n),
-            v => Err(format!("{} expects a number, got {}", "builtin", type_name(&v))),
+            v => Err(format!("{name}() expects a number, got {}", type_name(&v))),
         }
     };
     match name {
@@ -3300,6 +3309,34 @@ mod tests {
         execute_line("let n = 2", &mut st).unwrap();
         let e = execute_line("new sphere as n", &mut st).unwrap_err();
         assert!(e.contains("not a string name"), "{e}");
+    }
+
+    /// A failing NEW whose initializer already created objects through
+    /// a nested call must renumber the name registry exactly as DEL
+    /// does. Before the fix, the survivor's name kept its stale index:
+    /// `get p.mass` here read whatever object happened to land on the
+    /// old slot (the cuboid), not the registered point.
+    #[test]
+    fn failing_new_with_nested_creation_renumbers_names() {
+        let mut st = SimState::default();
+        execute_line("def spawn(n) { new point as n { mass = 3 }\n7 }", &mut st).unwrap();
+        // The outer sphere is appended first, the named point second;
+        // the sphere's failing validation rolls back index 0, so the
+        // point shifts down and `p` must follow it.
+        let e = execute_line("new sphere { mass = spawn(\"p\"), radius = -1 }", &mut st)
+            .unwrap_err();
+        assert!(e.contains("radius"), "{e}");
+        assert_eq!(execute_line("get system.count", &mut st).unwrap(), Value::Num(1.0));
+        assert_eq!(execute_line("get p.mass", &mut st).unwrap(), Value::Num(3.0));
+        // A later object must NOT be captured by the stale name.
+        execute_line("new cuboid { mass = 8 }", &mut st).unwrap();
+        assert_eq!(execute_line("get p.mass", &mut st).unwrap(), Value::Num(3.0));
+        assert_eq!(execute_line("get obj0.mass", &mut st).unwrap(), Value::Num(3.0));
+        assert_eq!(execute_line("get obj1.mass", &mut st).unwrap(), Value::Num(8.0));
+        // And the registry stays consistent under a further DEL.
+        execute_line("del 0", &mut st).unwrap();
+        assert!(execute_line("get p.mass", &mut st).is_err(), "p should be gone");
+        assert_eq!(execute_line("get obj0.mass", &mut st).unwrap(), Value::Num(8.0));
     }
 
     #[test]

@@ -511,9 +511,12 @@ crate root (module/type namespace collision) — do not try.
   window pushes `set_box` too, clearing the window's box wireframe
   and wall flags along with the synced copy.
 - **NEW is transactional** (`vm.rs::execute`): a failing initializer
-  or a failing final validation removes the just-appended object — no
-  half-built ghosts (the object was appended last, so removal
-  renumbers nothing else). Torus geometry in `NEW` is **deferred**
+  or a failing final validation removes the half-built object — no
+  ghosts. A nested call in the initializer may have appended objects
+  after it, so the rollback renumbers the name registry and the wall
+  index list exactly as `DEL` does
+  (`failing_new_with_nested_creation_renumbers_names`). Torus geometry
+  in `NEW` is **deferred**
   (`SimState.pending_torus`; the dumbbell's seven parameters likewise
   in `SimState.pending_dumbbell` — §3.4) and resolved + validated
   once at `FinishNew`: ring/tube apply first, inner/outer override

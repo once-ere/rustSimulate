@@ -125,26 +125,7 @@ impl Notebook {
                      * like script mode — a %saved multi-line DEF must
                      * replay as ONE cell */
                     let mut shown = Vec::new();
-                    let mut pending = String::new();
-                    let mut depth = 0i32;
-                    for raw in text.lines() {
-                        let line = raw.trim_end();
-                        if depth == 0 {
-                            let t = line.trim();
-                            if t.is_empty() || t.starts_with('#') {
-                                continue;
-                            }
-                            pending = t.to_string();
-                            depth = brace_delta(t);
-                        } else {
-                            depth += brace_delta(line);
-                            pending.push('\n');
-                            pending.push_str(line);
-                        }
-                        if depth > 0 {
-                            continue;
-                        }
-                        let cell = std::mem::take(&mut pending);
+                    for cell in script_cells(&text) {
                         shown.push(format!("In[{}]:= {}", self.cells.len() + 1, cell));
                         let out = self.execute_cell(&cell);
                         if !out.is_empty() {
@@ -313,17 +294,25 @@ fn loaded_hint(nb: &Notebook) -> String {
                 browser film of |psi|^2 instead (QM2 shows the configuration)"
             .to_string();
     }
+    if nb.state.qm3.grid.is_some() || nb.state.qm3.psi.is_some() {
+        return "a 3-D quantum problem is set up. The 3-D scene window draws\n\
+                rigid bodies only — QM3 ANIMATE \"<file>.html\" <time> writes a\n\
+                browser film of the marginals instead (QM3 shows the configuration)"
+            .to_string();
+    }
     "its results are printed above (no bodies were left in the\n\
      system, so there is nothing for the scene window to show)"
         .to_string()
 }
 
-/// Replays a script file into an existing notebook, echoing cells;
-/// returns whether any cell failed. Continuation lines are joined by
-/// brace depth so a multi-line DEF replays as one cell.
-fn replay_into(nb: &mut Notebook, path: &str) -> Result<bool, String> {
-    let text = std::fs::read_to_string(path).map_err(|e| format!("cannot read {path}: {e}"))?;
-    let mut failed = false;
+/// Splits script text into executable cells: blank and `#` comment
+/// lines are skipped, and continuation lines are joined by brace depth
+/// so a multi-line DEF is ONE cell. An unterminated trailing block is
+/// dropped, as the two former copies of this loop both did. One home
+/// for the joining rule — the `%load` magic and `replay_into` had
+/// separately maintained copies that had already diverged.
+fn script_cells(text: &str) -> Vec<String> {
+    let mut cells = Vec::new();
     let mut pending = String::new();
     let mut depth = 0i32;
     for raw in text.lines() {
@@ -343,8 +332,19 @@ fn replay_into(nb: &mut Notebook, path: &str) -> Result<bool, String> {
         if depth > 0 {
             continue; /* still inside a DEF block */
         }
-        let line = std::mem::take(&mut pending);
-        let line = line.as_str();
+        cells.push(std::mem::take(&mut pending));
+    }
+    cells
+}
+
+/// Replays a script file into an existing notebook, echoing cells;
+/// returns whether any cell failed. Continuation lines are joined by
+/// brace depth so a multi-line DEF replays as one cell.
+fn replay_into(nb: &mut Notebook, path: &str) -> Result<bool, String> {
+    let text = std::fs::read_to_string(path).map_err(|e| format!("cannot read {path}: {e}"))?;
+    let mut failed = false;
+    for cell in script_cells(&text) {
+        let line = cell.as_str();
         println!("In[{}]:= {}", nb.cells.len() + 1, line);
         if line.starts_with('%') {
             match nb.magic(line) {
