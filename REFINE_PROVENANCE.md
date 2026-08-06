@@ -104,6 +104,12 @@ zero warnings, `#![forbid(unsafe_code)]`, zero crates.io dependencies)
   are missing — each carries the file's own italic retirement note
   naming the module that built it; `jupyter/README.md`'s op list gains
   `{"op":"events"}` (implemented, tested, and relied on by the kernel).
+  Running `scripts/certify_clean.sh` on the refined fresh clone then
+  caught three more **live** count claims its gate polices —
+  `CLEANROOM_PROVENANCE.md`, `EXPORT_PROVENANCE.md` and
+  `SPECIAL_FUNCTIONS_PROVENANCE.md` all asserted "561 passed", stale
+  even against the 563 of the base tree (pre-existing drift) — updated
+  to 566, after which the certifier passes every check.
 
 ## 3. Re-adjudicated findings (applied as deliberate behavior changes)
 
