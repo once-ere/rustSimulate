@@ -101,14 +101,25 @@ def scan(path):
 
     impl_stack = []          # [(type_name, brace_depth_at_entry)]
     depth = 0
+    pending_test = False     # saw #[cfg(test)]; decide on its target line
     test_depth = None        # brace depth at which the #[cfg(test)] mod opened
     out = []
 
     for i, line in enumerate(lines):
         stripped = line.strip()
 
-        if stripped.startswith("#[cfg(test)]"):
-            test_depth = depth
+        # Exclude #[cfg(test)] MODULES only (the stated policy): the
+        # flag arms on the attribute and fires when its target turns
+        # out to be a `mod`. An attribute-gated single item (a helper
+        # fn compiled for tests) stays indexed. The old version set and
+        # cleared the depth marker on the attribute line itself, so the
+        # exclusion could never fire.
+        if test_depth is None and stripped.startswith("#[cfg(test)]"):
+            pending_test = True
+        elif pending_test and stripped and not stripped.startswith(("#[", "//")):
+            if re.match(r"(pub(\([a-z]+\))?\s+)?mod\b", stripped):
+                test_depth = depth
+            pending_test = False
         in_test = test_depth is not None
 
         if not in_test:
