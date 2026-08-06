@@ -274,7 +274,7 @@ restated here so the move does not quietly bury them.
 git clone https://github.com/once-ere/rustSimulate.git
 cd rustSimulate
 cargo build --workspace          # expect zero warnings
-cargo test --workspace           # expect 566 passed
+cargo test --workspace           # expect 568 passed
 cargo run -p physical_object --release --example kepler_orbit   # expect SUCCESS
 python3 jupyter/test_protocol.py
 git ls-files -ci --exclude-standard    # expect no output

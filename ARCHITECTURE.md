@@ -515,8 +515,15 @@ crate root (module/type namespace collision) — do not try.
   ghosts. A nested call in the initializer may have appended objects
   after it, so the rollback renumbers the name registry and the wall
   index list exactly as `DEL` does
-  (`failing_new_with_nested_creation_renumbers_names`). Torus geometry
-  in `NEW` is **deferred**
+  (`failing_new_with_nested_creation_renumbers_names`). The converse
+  holds too: a `DEL`/`BOX` executed *during* the initializer (through
+  a user-function call) renumbers every live NEW rollback target —
+  the active `last_new` and the frames `Instr::Call` stashes in
+  `SimState.stashed_last_new` (`shift_new_targets`); deleting the
+  half-built object itself disarms its rollback
+  (`del_inside_a_new_initializer_keeps_the_rollback_on_target`,
+  `box_off_inside_a_new_initializer_keeps_the_rollback_on_target`).
+  Torus geometry in `NEW` is **deferred**
   (`SimState.pending_torus`; the dumbbell's seven parameters likewise
   in `SimState.pending_dumbbell` — §3.4) and resolved + validated
   once at `FinishNew`: ring/tube apply first, inner/outer override

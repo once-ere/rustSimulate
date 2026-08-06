@@ -158,10 +158,18 @@ asserted error string observes the old behavior.
 - The parallel disk–disk face-on crossing is invisible to
   downward-crossing rootfinding — pinned as a documented limitation
   (`parallel_disk_disk_separation_is_the_documented_limitation`).
-- `DEL`/`BOX` executed on a *lower* index from inside a NEW
-  initializer would leave `SimState.last_new` itself stale — an
-  adjacent, pre-existing defect the rollback fix neither fixes nor
-  worsens; noted by the verifier as follow-up.
+- ~~`DEL`/`BOX` executed on a *lower* index from inside a NEW
+  initializer would leave `SimState.last_new` itself stale~~ — the
+  adjacent defect the verifier flagged as follow-up was **fixed in a
+  follow-up commit**: the Call instruction's NEW-context stash moved
+  into `SimState.stashed_last_new` so `shift_new_targets` renumbers
+  the active and every stashed rollback target on both deletion paths
+  (`DEL`, `BOX` wall removal); deleting the half-built object itself
+  disarms its rollback. Reproduced first (both repro tests failed on
+  the old code), then pinned:
+  `del_inside_a_new_initializer_keeps_the_rollback_on_target`,
+  `box_off_inside_a_new_initializer_keeps_the_rollback_on_target`.
+  Workspace count: 568.
 - The committed `index_data/rust_items.jsonl` carries minor
   pre-existing staleness relative to the current sources (line-number
   drift, two missing constant entries); the published index entries are

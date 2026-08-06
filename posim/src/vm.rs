@@ -309,6 +309,13 @@ pub struct SimState {
     /// Object indices of the six wall slabs (kept in sync by DEL).
     pub wall_indices: Vec<usize>,
     last_new: Option<usize>,
+    /// NEW contexts stashed by `Instr::Call` while a user function runs
+    /// inside an initializer. A stack, because calls nest. Held HERE
+    /// (not in Call-frame locals) so deletions during the call — `DEL`
+    /// or `BOX` on a lower index — can renumber every live rollback
+    /// target (`shift_new_targets`), exactly as the wall indices are
+    /// kept in sync.
+    stashed_last_new: Vec<Option<usize>>,
     pending_velocity: Option<Vec3>,
     pending_angular_velocity: Option<Vec3>,
     /// Deferred torus geometry from a `NEW TORUS { ... }` initializer
@@ -345,6 +352,7 @@ impl Default for SimState {
             box_size: None,
             wall_indices: Vec::new(),
             last_new: None,
+            stashed_last_new: Vec::new(),
             pending_velocity: None,
             pending_angular_velocity: None,
             pending_torus: None,
@@ -842,20 +850,25 @@ fn exec_one(instr: &Instr, state: &mut SimState, stack: &mut Vec<Value>) -> Resu
                  * (e.g. `new sphere { mass = f() }`) must not clobber
                  * the in-progress NEW context: stash it, call, restore
                  * on BOTH paths so the outer initializers and the
-                 * outer rollback still see their own object */
+                 * outer rollback still see their own object. The
+                 * `last_new` INDEX is stashed in SimState (not a
+                 * local) so a DEL/BOX during the call can renumber it
+                 * with the objects (`shift_new_targets`); the four
+                 * pending_* are plain values no deletion can
+                 * invalidate, so a local tuple is fine for them. */
+                state.stashed_last_new.push(state.last_new.take());
                 let stash = (
-                    state.last_new.take(),
                     state.pending_velocity.take(),
                     state.pending_angular_velocity.take(),
                     state.pending_torus.take(),
                     state.pending_dumbbell.take(),
                 );
                 let result = call_user_function(name, args, state);
-                state.last_new = stash.0;
-                state.pending_velocity = stash.1;
-                state.pending_angular_velocity = stash.2;
-                state.pending_torus = stash.3;
-                state.pending_dumbbell = stash.4;
+                state.last_new = state.stashed_last_new.pop().unwrap_or(None);
+                state.pending_velocity = stash.0;
+                state.pending_angular_velocity = stash.1;
+                state.pending_torus = stash.2;
+                state.pending_dumbbell = stash.3;
                 stack.push(result?);
             } else {
                 stack.push(call_builtin(name, args)?);
@@ -1117,6 +1130,9 @@ fn exec_one(instr: &Instr, state: &mut SimState, stack: &mut Vec<Value>) -> Resu
             }
             /* user names renumber the same way */
             unregister_index(&mut state.names, *i);
+            /* ... and so does any NEW under construction (a DEL can
+             * run mid-initializer through a user-function call) */
+            shift_new_targets(state, *i);
             if state.wall_indices.len() < 6 && state.box_size.is_some() {
                 state.box_size = None; // a wall was deleted: no closed box anymore
             }
@@ -1376,6 +1392,27 @@ fn exec_one(instr: &Instr, state: &mut SimState, stack: &mut Vec<Value>) -> Resu
     Ok(())
 }
 
+/// Keeps every live NEW rollback target in step with a deletion,
+/// exactly like the wall indices: a target above the removed index
+/// shifts down; the removed index itself disarms that rollback (the
+/// half-built object is already gone, so there is nothing to remove —
+/// a later initializer field then errors honestly instead of writing
+/// to a neighbour). Covers the active `last_new` and every frame the
+/// Call instruction has stashed.
+fn shift_new_targets(state: &mut SimState, removed: usize) {
+    fn shift(slot: &mut Option<usize>, removed: usize) {
+        match *slot {
+            Some(ln) if ln == removed => *slot = None,
+            Some(ln) if ln > removed => *slot = Some(ln - 1),
+            _ => {}
+        }
+    }
+    shift(&mut state.last_new, removed);
+    for s in &mut state.stashed_last_new {
+        shift(s, removed);
+    }
+}
+
 /// Removes a deleted object index from the name registry and shifts
 /// every higher index down by one (Vec renumbering).
 fn unregister_index(names: &mut BTreeMap<String, usize>, removed: usize) {
@@ -1520,6 +1557,7 @@ fn exec_box(mode: BoxMode, state: &mut SimState, stack: &mut Vec<Value>) -> Resu
         for &i in idx.iter().rev() {
             state.system.remove_object(i);
             unregister_index(&mut state.names, i);
+            shift_new_targets(state, i);
         }
         state.wall_indices.clear();
         state.box_size = None;
@@ -3337,6 +3375,50 @@ mod tests {
         execute_line("del 0", &mut st).unwrap();
         assert!(execute_line("get p.mass", &mut st).is_err(), "p should be gone");
         assert_eq!(execute_line("get obj0.mass", &mut st).unwrap(), Value::Num(8.0));
+    }
+
+    /// A user function called from a NEW initializer can DEL an object
+    /// BELOW the one under construction. The objects renumber, so the
+    /// NEW context — including the stashed copy the Call instruction
+    /// holds during the call — must follow: later initializer fields
+    /// must write to the shifted index, and a failing NEW must roll
+    /// back the half-built object, not a neighbour (and never leave a
+    /// ghost).
+    #[test]
+    fn del_inside_a_new_initializer_keeps_the_rollback_on_target() {
+        let mut st = SimState::default();
+        execute_line("new sphere as anchor { mass = 1 }", &mut st).unwrap(); // obj0
+        execute_line("new sphere as target { mass = 5 }", &mut st).unwrap(); // obj1
+        execute_line("def evil() { del 0\n7 }", &mut st).unwrap();
+        // Failing NEW: appended at index 2, shifted to 1 by the DEL.
+        let e = execute_line("new sphere { mass = evil(), radius = -1 }", &mut st).unwrap_err();
+        assert!(e.contains("radius"), "{e}");
+        assert_eq!(execute_line("get system.count", &mut st).unwrap(), Value::Num(1.0));
+        assert_eq!(execute_line("get target.mass", &mut st).unwrap(), Value::Num(5.0));
+        assert_eq!(execute_line("get obj0.mass", &mut st).unwrap(), Value::Num(5.0));
+        assert!(execute_line("get anchor.mass", &mut st).is_err(), "anchor was deleted");
+
+        // Succeeding NEW: the field AFTER the call must reach the
+        // half-built object at its shifted index, and the AS name must
+        // register there too.
+        execute_line("def evil2() { del 0\n7 }", &mut st).unwrap();
+        execute_line("new sphere as s { mass = evil2(), radius = 0.25 }", &mut st).unwrap();
+        assert_eq!(execute_line("get system.count", &mut st).unwrap(), Value::Num(1.0));
+        assert_eq!(execute_line("get s.mass", &mut st).unwrap(), Value::Num(7.0));
+        assert_eq!(execute_line("get obj0.radius", &mut st).unwrap(), Value::Num(0.25));
+    }
+
+    /// The same staleness through the OTHER deletion path: BOX OFF
+    /// removes six wall slabs below the object under construction.
+    #[test]
+    fn box_off_inside_a_new_initializer_keeps_the_rollback_on_target() {
+        let mut st = SimState::default();
+        execute_line("box 4", &mut st).unwrap(); // walls obj0..obj5
+        execute_line("def evil() { box off\n7 }", &mut st).unwrap();
+        // Half-built sphere appended at index 6, shifted to 0.
+        let e = execute_line("new sphere { mass = evil(), radius = -1 }", &mut st).unwrap_err();
+        assert!(e.contains("radius"), "{e}");
+        assert_eq!(execute_line("get system.count", &mut st).unwrap(), Value::Num(0.0));
     }
 
     #[test]
