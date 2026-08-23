@@ -24,6 +24,20 @@ This project is a standalone export of the simulator; its lineage,
 byte-identity manifest and full verification transcript are recorded in
 [EXPORT_PROVENANCE.md](EXPORT_PROVENANCE.md).
 
+Descendants of this repository: the refined export
+[`rustSolveIt`](https://github.com/once-ere/rustSolveIt), its
+SUNDIALS-7.8.0 upgrade
+[`rustSolveIt_Using_SUNDIALS_7_8_0`](https://github.com/once-ere/rustSolveIt_Using_SUNDIALS_7_8_0),
+and that project's Windows 11 port
+[`rustSolveIt_Win11_SUNDIALS_7_8_0`](https://github.com/once-ere/rustSolveIt_Win11_SUNDIALS_7_8_0)
+— out of whose physics acceptance test came
+[`rebound_rust`](https://github.com/once-ere/rebound_rust), a
+pure-Rust translation of the
+[REBOUND](https://github.com/hannorein/rebound) 5.1.1 N-body code,
+built with the same discipline (zero `unsafe`, zero dependencies, zero
+warnings, C names preserved) and verified bit-for-bit against its
+MSVC-compiled C reference.
+
 Latest release: a programmable notebook and a compound rigid body —
 user-defined functions (`DEF name(param = default, ...) { body }`,
 every body line syntax-checked at definition, `FUNCS`/`SHOW` to list
